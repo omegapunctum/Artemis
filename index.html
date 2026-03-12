@@ -254,9 +254,7 @@
   // ── КОНФИГУРАЦИЯ СЛОЁВ ────────────────────────────────────
   // [TODO: Фаза 2] загружать из таблицы Layers через API
   const LAYERS_CONFIG = [
-    { layer_id: 'romanesque', name_ru: 'Романская архитектура', color_hex: '#e8a838', is_enabled: true },
-    { layer_id: 'napoleon',   name_ru: 'Наполеоновские походы', color_hex: '#3a8fe8', is_enabled: true },
-    { layer_id: 'amur_tiger', name_ru: 'Амурский тигр',         color_hex: '#e84a3a', is_enabled: true }
+    { layer_id: 'romanesque', name_ru: 'Романская архитектура', color_hex: '#e8a838', is_enabled: true }
   ];
 
   // ── СОСТОЯНИЕ ─────────────────────────────────────────────
@@ -447,7 +445,15 @@
   // ── СПИСОК СЛОЁВ ─────────────────────────────────────────
   function renderLayersList() {
     const container = document.getElementById('layers-list');
+    const section   = document.getElementById('layers-section');
     container.innerHTML = '';
+
+    // Скрыть секцию если слой один — переключать нечего
+    if (LAYERS_CONFIG.length === 1) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = 'block';
     LAYERS_CONFIG.forEach(layer => {
       const isActive = state.activeLayerIds.has(layer.layer_id);
       const item     = document.createElement('div');
