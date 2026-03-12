@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
@@ -7,82 +6,53 @@
   <title>ARTEMIS — Интерактивная карта истории</title>
 
   <!-- MapLibre GL JS v4.7.1 -->
-
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 
   <style>
-    /* ── Сброс и базовый макет ── */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Segoe UI', sans-serif; background: #0a0a0f; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column; }
 
-    /* ── Шапка ── */
     #header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 16px;
-      background: #12121a;
-      border-bottom: 1px solid #2a2a3a;
-      z-index: 10;
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px; background: #12121a;
+      border-bottom: 1px solid #2a2a3a; z-index: 10;
     }
     #header h1 { font-size: 18px; letter-spacing: 2px; color: #a0b4ff; }
     #header span { font-size: 12px; color: #666; }
 
-    /* ── Основной контейнер: карта + боковая панель ── */
     #main { display: flex; flex: 1; overflow: hidden; }
+    #map  { flex: 1; }
 
-    /* ── Карта ── */
-    #map { flex: 1; }
-
-    /* ── Боковая панель ── */
     #sidebar {
-      width: 260px;
-      background: #12121a;
+      width: 260px; background: #12121a;
       border-left: 1px solid #2a2a3a;
-      display: flex;
-      flex-direction: column;
-      padding: 16px;
-      gap: 20px;
-      overflow-y: auto;
+      display: flex; flex-direction: column;
+      padding: 16px; gap: 20px; overflow-y: auto;
     }
-
     .section-title {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: #666;
-      margin-bottom: 10px;
+      font-size: 11px; text-transform: uppercase;
+      letter-spacing: 1.5px; color: #666; margin-bottom: 10px;
     }
 
-    /* ── Переключатели слоёв ── */
+    /* ── Слои ── */
     .layer-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 0;
-      border-bottom: 1px solid #1e1e2e;
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid #1e1e2e;
     }
-    .layer-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .layer-dot  { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
     .layer-label { font-size: 13px; }
     .layer-toggle {
-      margin-left: auto;
-      width: 32px; height: 18px;
-      background: #333;
-      border-radius: 9px;
-      position: relative;
-      cursor: pointer;
-      border: none;
+      margin-left: auto; width: 32px; height: 18px;
+      background: #333; border-radius: 9px;
+      position: relative; cursor: pointer; border: none;
       transition: background 0.2s;
     }
     .layer-toggle.active { background: #4a6aff; }
     .layer-toggle::after {
-      content: '';
-      position: absolute;
-      width: 14px; height: 14px;
-      background: #fff;
-      border-radius: 50%;
-      top: 2px; left: 2px;
+      content: ''; position: absolute;
+      width: 14px; height: 14px; background: #fff;
+      border-radius: 50%; top: 2px; left: 2px;
       transition: left 0.2s;
     }
     .layer-toggle.active::after { left: 16px; }
@@ -90,29 +60,34 @@
     /* ── Шкала времени ── */
     #timeline-section { margin-top: auto; }
     #year-display {
-      font-size: 24px;
-      color: #a0b4ff;
-      text-align: center;
-      margin-bottom: 8px;
+      font-size: 24px; color: #a0b4ff;
+      text-align: center; margin-bottom: 8px;
       font-variant-numeric: tabular-nums;
     }
     #timeline-slider { width: 100%; accent-color: #4a6aff; cursor: pointer; }
     #timeline-labels {
-      display: flex;
-      justify-content: space-between;
-      font-size: 10px;
-      color: #555;
-      margin-top: 4px;
+      display: flex; justify-content: space-between;
+      font-size: 10px; color: #555; margin-top: 4px;
     }
 
-    /* ── Попап маркера ── */
+    /* ── Режим диапазона ── */
+    #range-mode-toggle {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 10px;
+    }
+    #range-mode-toggle input { accent-color: #4a6aff; cursor: pointer; }
+    #range-mode-toggle label { font-size: 11px; color: #888; cursor: pointer; }
+    #range-sliders { display: none; flex-direction: column; gap: 8px; }
+    #range-sliders.visible { display: flex; }
+    .range-row { display: flex; align-items: center; gap: 8px; }
+    .range-label { font-size: 10px; color: #666; width: 28px; }
+    .range-val   { font-size: 11px; color: #a0b4ff; width: 72px; text-align: right; font-variant-numeric: tabular-nums; }
+
+    /* ── Попап ── */
     .maplibregl-popup-content {
-      background: #1a1a2e;
-      color: #e0e0e0;
-      border-radius: 8px;
-      padding: 14px;
-      max-width: 280px;
-      border: 1px solid #2a2a4a;
+      background: #1a1a2e; color: #e0e0e0;
+      border-radius: 8px; padding: 14px;
+      max-width: 280px; border: 1px solid #2a2a4a;
     }
     .popup-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; color: #a0b4ff; }
     .popup-date  { font-size: 11px; color: #888; margin-bottom: 8px; }
@@ -120,113 +95,101 @@
     .popup-img   { width: 100%; border-radius: 4px; margin-bottom: 8px; max-height: 120px; object-fit: cover; }
     .popup-link  { display: inline-block; margin-top: 8px; font-size: 11px; color: #4a6aff; text-decoration: none; }
 
-    /* ── Оверлей под панелью токена ── */
+    /* ── Панель токена ── */
     #token-overlay {
       position: fixed; inset: 0;
-      background: rgba(0,0,0,0.75);
-      z-index: 998;
+      background: rgba(0,0,0,0.75); z-index: 998;
     }
-
-    /* ── Панель ввода токена ── */
     #token-panel {
-      position: fixed;
-      top: 50%; left: 50%;
+      position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      z-index: 999;
-      background: #1a1a2e;
-      border: 1px solid #2a2a4a;
-      border-radius: 10px;
+      z-index: 999; background: #1a1a2e;
+      border: 1px solid #2a2a4a; border-radius: 10px;
       padding: 28px 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      width: 340px;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+      display: flex; flex-direction: column; gap: 12px;
+      width: 340px; box-shadow: 0 8px 40px rgba(0,0,0,0.7);
     }
     #token-panel h2 { font-size: 13px; color: #a0b4ff; letter-spacing: 1.5px; text-transform: uppercase; }
     #token-panel p  { font-size: 11px; color: #666; line-height: 1.6; }
     #token-input {
-      width: 100%;
-      padding: 9px 10px;
-      background: #0a0a0f;
-      border: 1px solid #2a2a4a;
-      border-radius: 6px;
-      color: #e0e0e0;
-      font-size: 12px;
-      font-family: monospace;
-      outline: none;
+      width: 100%; padding: 9px 10px;
+      background: #0a0a0f; border: 1px solid #2a2a4a;
+      border-radius: 6px; color: #e0e0e0;
+      font-size: 12px; font-family: monospace; outline: none;
     }
     #token-input:focus { border-color: #4a6aff; }
     #token-submit {
-      padding: 9px;
-      background: #4a6aff;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 13px;
-      transition: background 0.2s;
+      padding: 9px; background: #4a6aff; color: #fff;
+      border: none; border-radius: 6px; cursor: pointer;
+      font-size: 13px; transition: background 0.2s;
     }
     #token-submit:hover:not(:disabled) { background: #3a5aef; }
     #token-submit:disabled { opacity: 0.6; cursor: default; }
     #token-error { font-size: 11px; color: #e84a3a; display: none; }
 
-    /* ── Статус ── */
     #status-bar {
-      padding: 6px 16px;
-      background: #0d0d1a;
-      font-size: 11px;
-      color: #555;
+      padding: 6px 16px; background: #0d0d1a;
+      font-size: 11px; color: #555;
       border-top: 1px solid #1a1a2a;
     }
   </style>
-
 </head>
 <body>
-
-  <!-- Шапка -->
 
   <div id="header">
     <h1>ARTEMIS</h1>
     <span>интерактивная карта истории</span>
   </div>
 
-  <!-- Основной блок -->
-
   <div id="main">
     <div id="map"></div>
 
-```
-<div id="sidebar">
-  <div id="layers-section">
-    <div class="section-title">Слои</div>
-    <div id="layers-list"></div>
-  </div>
+    <div id="sidebar">
 
-  <div id="timeline-section">
-    <div class="section-title">Шкала времени</div>
-    <div id="year-display">1200</div>
-    <input type="range" id="timeline-slider" min="-500" max="2024" value="1200" step="1" />
-    <div id="timeline-labels">
-      <span>500 до н.э.</span>
-      <span>2024</span>
+      <div id="layers-section">
+        <div class="section-title">Слои</div>
+        <div id="layers-list"></div>
+      </div>
+
+      <div id="timeline-section">
+        <div class="section-title">Шкала времени</div>
+
+        <!-- Переключатель режима -->
+        <div id="range-mode-toggle">
+          <input type="checkbox" id="range-checkbox" />
+          <label for="range-checkbox">Диапазон (от — до)</label>
+        </div>
+
+        <!-- Одиночный год -->
+        <div id="single-slider">
+          <div id="year-display">1200</div>
+          <input type="range" id="timeline-slider" min="-500" max="2024" value="1200" step="1" />
+          <div id="timeline-labels">
+            <span>500 до н.э.</span>
+            <span>2024</span>
+          </div>
+        </div>
+
+        <!-- Диапазон от–до -->
+        <div id="range-sliders">
+          <div class="range-row">
+            <span class="range-label">От</span>
+            <input type="range" id="range-from" min="-500" max="2024" value="1000" step="1" style="flex:1;accent-color:#4a6aff" />
+            <span class="range-val" id="range-from-val">1000</span>
+          </div>
+          <div class="range-row">
+            <span class="range-label">До</span>
+            <input type="range" id="range-to" min="-500" max="2024" value="1300" step="1" style="flex:1;accent-color:#4a6aff" />
+            <span class="range-val" id="range-to-val">1300</span>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
-</div>
-```
-
-  </div>
-
-  <!-- Статус -->
 
   <div id="status-bar">Введите токен для загрузки данных…</div>
-
-  <!-- Оверлей -->
-
   <div id="token-overlay"></div>
-
-  <!-- Панель ввода токена -->
-
   <div id="token-panel">
     <h2>ARTEMIS — Доступ к данным</h2>
     <p>Введите Airtable Personal Access Token.<br>Токен не сохраняется и не передаётся никуда, кроме Airtable API.</p>
@@ -236,12 +199,13 @@
   </div>
 
 <script>
-  // ── КОНФИГУРАЦИЯ ──────────────────────────────────────────
+  // ── КОНФИГУРАЦИЯ AIRTABLE ─────────────────────────────────
   const BASE_ID  = 'appHmf8ubeUF9nfkO';
   const TABLE_ID = 'tblNGMtwZuLlhrZNe';
   const API_URL  = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`;
 
   // ── КОНФИГУРАЦИЯ СЛОЁВ ────────────────────────────────────
+  // [TODO: Фаза 2] загружать из таблицы Layers через API
   const LAYERS_CONFIG = [
     { layer_id: 'romanesque', name_ru: 'Романская архитектура', color_hex: '#e8a838', is_enabled: true },
     { layer_id: 'napoleon',   name_ru: 'Наполеоновские походы', color_hex: '#3a8fe8', is_enabled: true },
@@ -251,6 +215,9 @@
   // ── СОСТОЯНИЕ ─────────────────────────────────────────────
   const state = {
     currentYear:    1200,
+    rangeFrom:      1000,
+    rangeTo:        1300,
+    rangeMode:      false,
     activeLayerIds: new Set(LAYERS_CONFIG.filter(l => l.is_enabled).map(l => l.layer_id)),
     features:       [],
     markers:        []
@@ -266,55 +233,48 @@
   map.addControl(new maplibregl.NavigationControl(), 'top-left');
   map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
 
-  // ── ЗАГРУЗКА ЗАПИСЕЙ ИЗ AIRTABLE (постраничная) ──────────
+  // ── ЗАГРУЗКА ИЗ AIRTABLE ─────────────────────────────────
   async function loadFeatures(token) {
     let allRecords = [];
     let offset     = null;
-
     do {
       const url      = offset ? `${API_URL}?offset=${offset}` : API_URL;
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (!response.ok) {
-        throw new Error(response.status === 401 || response.status === 403 ? 'auth' : `HTTP ${response.status}`);
-      }
-
+      const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? 'auth' : `HTTP ${response.status}`);
       const data = await response.json();
-      allRecords  = allRecords.concat(data.records);
-      offset      = data.offset;
-
+      allRecords     = allRecords.concat(data.records);
+      offset         = data.offset;
     } while (offset);
-
     return allRecords;
   }
 
-  // ── КОНВЕРТАЦИЯ ЗАПИСЕЙ В ФОРМАТ ПРИЛОЖЕНИЯ ───────────────
+  // ── КОНВЕРТАЦИЯ ЗАПИСЕЙ ───────────────────────────────────
   function parseRecords(records) {
     return records
       .filter(r => r.fields.is_active)
       .map(r => ({
-        id:          r.id,
-        layer_id:    r.fields.layer_id    || '',
-        name_ru:     r.fields.name_ru     || '',
-        date_start:  r.fields.date_start  || null,
-        date_end:    r.fields.date_end    || null,
-        longitude:   r.fields.longitude   != null ? parseFloat(r.fields.longitude) : null,
-        latitude:    r.fields.latitude    != null ? parseFloat(r.fields.latitude)  : null,
-        title_short: r.fields.title_short || '',
-        image_url:   r.fields.image_url   || null,
-        source_url:  r.fields.source_url  || ''
+        id:               r.id,
+        layer_id:         r.fields.layer_id             || '',
+        layer_type:       r.fields.layer_type           || '',
+        name_ru:          r.fields.name_ru              || '',
+        date_start:       r.fields.date_start           || null,
+        date_end:         r.fields.date_end             || null,
+        longitude:        r.fields.longitude   != null  ? parseFloat(r.fields.longitude)           : null,
+        latitude:         r.fields.latitude    != null  ? parseFloat(r.fields.latitude)            : null,
+        influence_radius: r.fields.influence_radius_km  ? parseInt(r.fields.influence_radius_km)   : null,
+        sequence_order:   r.fields.sequence_order       ? parseInt(r.fields.sequence_order)        : null,
+        title_short:      r.fields.title_short          || '',
+        image_url:        r.fields.image_url            || null,
+        source_url:       r.fields.source_url           || ''
       }));
   }
 
-  // ── ОБРАБОТКА КНОПКИ «ЗАГРУЗИТЬ» ─────────────────────────
+  // ── ОБРАБОТКА ТОКЕНА ─────────────────────────────────────
   async function handleTokenSubmit() {
-    const token   = document.getElementById('token-input').value.trim();
-    const errEl   = document.getElementById('token-error');
-    const btn     = document.getElementById('token-submit');
+    const token = document.getElementById('token-input').value.trim();
+    const errEl = document.getElementById('token-error');
+    const btn   = document.getElementById('token-submit');
     errEl.style.display = 'none';
-
     if (!token) return;
 
     btn.textContent = 'Загружаю…';
@@ -324,33 +284,24 @@
     try {
       const records  = await loadFeatures(token);
       state.features = parseRecords(records);
-
-      // Скрыть панель
-      document.getElementById('token-panel').style.display  = 'none';
+      document.getElementById('token-panel').style.display   = 'none';
       document.getElementById('token-overlay').style.display = 'none';
-
-      console.log(`Загружено: ${records.length} записей, активных: ${state.features.length}`);
+      console.log(`Загружено: ${records.length}, активных: ${state.features.length}`);
       renderLayersList();
-      renderMarkers();
-
+      renderAll();
     } catch (e) {
       errEl.style.display = 'block';
-      errEl.textContent   = e.message === 'auth'
-        ? 'Ошибка авторизации — проверьте токен.'
-        : `Ошибка: ${e.message}`;
+      errEl.textContent   = e.message === 'auth' ? 'Ошибка авторизации — проверьте токен.' : `Ошибка: ${e.message}`;
       setStatus('Ошибка загрузки данных.');
       btn.textContent = 'Загрузить карту';
       btn.disabled    = false;
     }
   }
 
-  // Enter в поле токена
-  document.getElementById('token-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') handleTokenSubmit();
-  });
+  document.getElementById('token-input').addEventListener('keydown', e => { if (e.key === 'Enter') handleTokenSubmit(); });
   document.getElementById('token-submit').addEventListener('click', handleTokenSubmit);
 
-  // ── ОТРИСОВКА СПИСКА СЛОЁВ ───────────────────────────────
+  // ── СПИСОК СЛОЁВ ─────────────────────────────────────────
   function renderLayersList() {
     const container = document.getElementById('layers-list');
     container.innerHTML = '';
@@ -368,32 +319,50 @@
     });
   }
 
-  // ── ПЕРЕКЛЮЧЕНИЕ СЛОЯ ─────────────────────────────────────
   function toggleLayer(layerId) {
     state.activeLayerIds.has(layerId)
       ? state.activeLayerIds.delete(layerId)
       : state.activeLayerIds.add(layerId);
     renderLayersList();
-    renderMarkers();
+    renderAll();
   }
 
-  // ── ВИДИМОСТЬ ОБЪЕКТА В ЗАДАННОМ ГОДУ ────────────────────
-  function visibleInYear(feature, year) {
+  // ── ПРОВЕРКА ВИДИМОСТИ ПО ВРЕМЕНИ ────────────────────────
+  function visibleInTime(feature) {
     const start = parseInt(feature.date_start);
     const end   = feature.date_end ? parseInt(feature.date_end) : start + 100;
-    return year >= start && year <= end;
+    return state.rangeMode
+      ? start <= state.rangeTo && end >= state.rangeFrom
+      : state.currentYear >= start && state.currentYear <= end;
   }
 
-  // ── ОТРИСОВКА МАРКЕРОВ ────────────────────────────────────
+  // ── ГЕНЕРАЦИЯ ПОЛИГОНА ОКРУЖНОСТИ ────────────────────────
+  function circlePolygon(lng, lat, radiusKm, steps = 64) {
+    const coords = [];
+    for (let i = 0; i <= steps; i++) {
+      const angle = (i / steps) * 2 * Math.PI;
+      const dlng  = (radiusKm / 111.32) / Math.cos(lat * Math.PI / 180);
+      const dlat  =  radiusKm / 111.32;
+      coords.push([lng + dlng * Math.sin(angle), lat + dlat * Math.cos(angle)]);
+    }
+    return coords;
+  }
+
+  // ── ГЛАВНАЯ ОТРИСОВКА ─────────────────────────────────────
+  function renderAll() {
+    renderMarkers();
+    renderCircles();
+    renderRoutes();
+  }
+
+  // ── МАРКЕРЫ ───────────────────────────────────────────────
   function renderMarkers() {
     state.markers.forEach(m => m.remove());
     state.markers = [];
 
-    const year = state.currentYear;
-
     state.features.forEach(feature => {
-      if (!state.activeLayerIds.has(feature.layer_id))          return;
-      if (!visibleInYear(feature, year))                        return;
+      if (!state.activeLayerIds.has(feature.layer_id))           return;
+      if (!visibleInTime(feature))                               return;
       if (feature.longitude == null || feature.latitude == null) return;
 
       const layerCfg = LAYERS_CONFIG.find(l => l.layer_id === feature.layer_id);
@@ -419,36 +388,132 @@
           <a class="popup-link" href="${feature.source_url}" target="_blank">→ источник</a>
         `);
 
-      const marker = new maplibregl.Marker({ element: el })
-        .setLngLat([feature.longitude, feature.latitude])
-        .setPopup(popup)
-        .addTo(map);
-
-      state.markers.push(marker);
+      state.markers.push(
+        new maplibregl.Marker({ element: el })
+          .setLngLat([feature.longitude, feature.latitude])
+          .setPopup(popup)
+          .addTo(map)
+      );
     });
 
-    setStatus(`Показано: ${state.markers.length} объектов | Год: ${formatYear(year)}`);
+    updateStatus();
   }
 
-  // ── ФОРМАТИРОВАНИЕ ГОДА ───────────────────────────────────
-  function formatYear(y) {
-    return y < 0 ? `${Math.abs(y)} до н.э.` : String(y);
+  // ── КРУГИ ВЛИЯНИЯ ─────────────────────────────────────────
+  function renderCircles() {
+    if (map.getLayer('circles-fill'))   map.removeLayer('circles-fill');
+    if (map.getLayer('circles-stroke')) map.removeLayer('circles-stroke');
+    if (map.getSource('circles'))       map.removeSource('circles');
+
+    const features = state.features
+      .filter(f =>
+        state.activeLayerIds.has(f.layer_id) &&
+        visibleInTime(f) &&
+        f.longitude != null && f.latitude != null &&
+        f.influence_radius != null
+      )
+      .map(f => {
+        const color = (LAYERS_CONFIG.find(l => l.layer_id === f.layer_id) || {}).color_hex || '#fff';
+        return {
+          type: 'Feature',
+          geometry: { type: 'Polygon', coordinates: [circlePolygon(f.longitude, f.latitude, f.influence_radius)] },
+          properties: { color }
+        };
+      });
+
+    if (!features.length) return;
+
+    map.addSource('circles', { type: 'geojson', data: { type: 'FeatureCollection', features } });
+    map.addLayer({ id: 'circles-fill',   type: 'fill', source: 'circles', paint: { 'fill-color': ['get','color'], 'fill-opacity': 0.08 } });
+    map.addLayer({ id: 'circles-stroke', type: 'line', source: 'circles', paint: { 'line-color': ['get','color'], 'line-width': 1.5, 'line-opacity': 0.4 } });
   }
 
-  // ── ШКАЛА ВРЕМЕНИ ─────────────────────────────────────────
+  // ── МАРШРУТНЫЕ ЛИНИИ ──────────────────────────────────────
+  function renderRoutes() {
+    if (map.getLayer('routes-line')) map.removeLayer('routes-line');
+    if (map.getSource('routes'))     map.removeSource('routes');
+
+    // Собираем точки маршрута по слоям
+    const byLayer = {};
+    state.features
+      .filter(f =>
+        state.activeLayerIds.has(f.layer_id) &&
+        f.layer_type === 'route_point' &&
+        f.longitude != null && f.latitude != null &&
+        f.sequence_order != null
+      )
+      .forEach(f => {
+        (byLayer[f.layer_id] = byLayer[f.layer_id] || []).push(f);
+      });
+
+    const features = Object.entries(byLayer).map(([layerId, pts]) => {
+      const sorted = pts.sort((a, b) => a.sequence_order - b.sequence_order);
+      const color  = (LAYERS_CONFIG.find(l => l.layer_id === layerId) || {}).color_hex || '#fff';
+      return {
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: sorted.map(p => [p.longitude, p.latitude]) },
+        properties: { color }
+      };
+    });
+
+    if (!features.length) return;
+
+    map.addSource('routes', { type: 'geojson', data: { type: 'FeatureCollection', features } });
+    map.addLayer({
+      id: 'routes-line', type: 'line', source: 'routes',
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: { 'line-color': ['get','color'], 'line-width': 1.5, 'line-opacity': 0.5, 'line-dasharray': [2, 2] }
+    });
+  }
+
+  // ── ШКАЛА — ОДИНОЧНЫЙ ГОД ────────────────────────────────
   const slider      = document.getElementById('timeline-slider');
   const yearDisplay = document.getElementById('year-display');
-
   slider.addEventListener('input', () => {
     state.currentYear       = parseInt(slider.value);
     yearDisplay.textContent = formatYear(state.currentYear);
-    renderMarkers();
+    renderAll();
   });
 
-  // ── СТАТУСНАЯ СТРОКА ──────────────────────────────────────
-  function setStatus(msg) {
-    document.getElementById('status-bar').textContent = msg;
+  // ── ШКАЛА — ДИАПАЗОН ─────────────────────────────────────
+  const rangeCheckbox = document.getElementById('range-checkbox');
+  const rangeFrom     = document.getElementById('range-from');
+  const rangeTo       = document.getElementById('range-to');
+  const rangeFromVal  = document.getElementById('range-from-val');
+  const rangeToVal    = document.getElementById('range-to-val');
+
+  rangeCheckbox.addEventListener('change', () => {
+    state.rangeMode = rangeCheckbox.checked;
+    document.getElementById('single-slider').style.display = state.rangeMode ? 'none' : 'block';
+    document.getElementById('range-sliders').classList.toggle('visible', state.rangeMode);
+    renderAll();
+  });
+
+  rangeFrom.addEventListener('input', () => {
+    state.rangeFrom = parseInt(rangeFrom.value);
+    if (state.rangeFrom > state.rangeTo) { state.rangeTo = state.rangeFrom; rangeTo.value = state.rangeTo; rangeToVal.textContent = formatYear(state.rangeTo); }
+    rangeFromVal.textContent = formatYear(state.rangeFrom);
+    renderAll();
+  });
+
+  rangeTo.addEventListener('input', () => {
+    state.rangeTo = parseInt(rangeTo.value);
+    if (state.rangeTo < state.rangeFrom) { state.rangeFrom = state.rangeTo; rangeFrom.value = state.rangeFrom; rangeFromVal.textContent = formatYear(state.rangeFrom); }
+    rangeToVal.textContent = formatYear(state.rangeTo);
+    renderAll();
+  });
+
+  // ── УТИЛИТЫ ───────────────────────────────────────────────
+  function formatYear(y) { return y < 0 ? `${Math.abs(y)} до н.э.` : String(y); }
+
+  function updateStatus() {
+    const timeStr = state.rangeMode
+      ? `${formatYear(state.rangeFrom)} — ${formatYear(state.rangeTo)}`
+      : `Год: ${formatYear(state.currentYear)}`;
+    setStatus(`Показано: ${state.markers.length} объектов | ${timeStr}`);
   }
+
+  function setStatus(msg) { document.getElementById('status-bar').textContent = msg; }
 
   // ── ЗАПУСК ────────────────────────────────────────────────
   map.on('load', () => {
@@ -456,6 +521,5 @@
     setStatus('Введите токен для загрузки данных…');
   });
 </script>
-
 </body>
 </html>
