@@ -3,960 +3,878 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ARTEMIS — Интерактивная карта истории</title>
-
-  <!-- MapLibre GL JS v4.7.1 -->
+  <title>ARTEMIS</title>
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-
-  <!-- Turf.js — объединение полигонов областей влияния -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
-
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Inter:wght@300;400;500&display=swap');
-
-    :root {
-      --bg:          #080810;
-      --bg2:         #0f0f1a;
-      --bg3:         #141428;
-      --border:      rgba(120,140,255,0.12);
-      --border-hi:   rgba(120,140,255,0.35);
-      --text:        #d8dff5;
-      --text-dim:    #5a6080;
-      --accent:      #7a9fff;
-      --accent2:     #c87aff;
-      --glass-bg:    rgba(10, 10, 22, 0.72);
-      --glass-blur:  blur(18px) saturate(160%);
-      --sidebar-w:   280px;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
+    /* ── СБРОС И БАЗОВЫЕ СТИЛИ ── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Inter', sans-serif;
-      background: var(--bg); color: var(--text);
-      height: 100vh; overflow: hidden;
-      display: flex; flex-direction: column;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #060610;
+      color: #dde0f0;
+      height: 100vh;
+      overflow: hidden;
     }
-
-    /* ── КАРТА (занимает весь экран) ── */
-    #map {
-      position: fixed; inset: 0; z-index: 0;
+ 
+    /* ── КАРТА — ФОНОВЫЙ СЛОЙ ── */
+    #map { position: fixed; inset: 0; z-index: 0; }
+ 
+    /* ── ОБЩИЙ КЛАСС «ЖИДКОЕ СТЕКЛО» ── */
+    .glass {
+      background: rgba(8, 8, 20, 0.68);
+      backdrop-filter: blur(22px) saturate(160%);
+      -webkit-backdrop-filter: blur(22px) saturate(160%);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
     }
-
-    /* ── ШАПКА ── */
-    #header {
-      position: fixed; top: 0; left: 0; right: 0;
-      z-index: 100;
-      display: flex; align-items: center; gap: 16px;
-      padding: 12px 20px;
-      background: var(--glass-bg);
-      backdrop-filter: var(--glass-blur);
-      -webkit-backdrop-filter: var(--glass-blur);
-      border-bottom: 1px solid var(--border);
-    }
-    #header h1 {
-      font-family: 'Cinzel', serif;
-      font-size: 17px; font-weight: 600;
-      letter-spacing: 4px; color: var(--accent);
-      text-shadow: 0 0 20px rgba(122,159,255,0.4);
-    }
-    #header span { font-size: 11px; color: var(--text-dim); letter-spacing: 1px; }
-
-    /* Переключатель стиля карты в шапке */
-    #map-style-btn {
-      margin-left: auto;
-      padding: 5px 12px;
-      background: transparent;
-      border: 1px solid var(--border-hi);
-      border-radius: 20px;
-      color: var(--text-dim); font-size: 11px;
-      cursor: pointer; transition: all 0.2s;
-      font-family: 'Inter', sans-serif;
-    }
-    #map-style-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-    /* ── ЛЕВАЯ ПАНЕЛЬ (навигация) ── */
+ 
+    /* ════════════════════════════════════
+       ЛЕВАЯ ПАНЕЛЬ
+    ════════════════════════════════════ */
     #sidebar {
-      position: fixed; top: 0; left: 0; bottom: 0;
-      width: var(--sidebar-w); z-index: 90;
-      background: var(--glass-bg);
-      backdrop-filter: var(--glass-blur);
-      -webkit-backdrop-filter: var(--glass-blur);
-      border-right: 1px solid var(--border);
-      display: flex; flex-direction: column;
-      padding: 68px 16px 16px;
-      gap: 20px; overflow-y: auto;
-      transition: transform 0.3s ease;
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      width: 256px;
+      max-height: calc(100vh - 32px);
+      z-index: 200;
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
-
-    /* Кнопка скрыть/показать сайдбар */
-    #sidebar-toggle {
-      position: fixed; left: var(--sidebar-w); top: 50%;
-      transform: translateY(-50%);
-      z-index: 91;
-      width: 18px; height: 48px;
-      background: var(--glass-bg);
-      backdrop-filter: var(--glass-blur);
-      -webkit-backdrop-filter: var(--glass-blur);
-      border: 1px solid var(--border);
-      border-left: none;
-      border-radius: 0 6px 6px 0;
-      cursor: pointer; color: var(--text-dim);
-      font-size: 10px; display: flex;
-      align-items: center; justify-content: center;
-      transition: left 0.3s ease, color 0.2s;
+ 
+    /* Шапка с логотипом */
+    #sidebar-header {
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      flex-shrink: 0;
     }
-    #sidebar-toggle:hover { color: var(--accent); }
-    body.sidebar-hidden #sidebar { transform: translateX(calc(-1 * var(--sidebar-w))); }
-    body.sidebar-hidden #sidebar-toggle { left: 0; }
-    body.sidebar-hidden #timeline-wrap { left: calc(var(--sidebar-w) / 2); } /* компенсация */
-
-    .section-title {
-      font-size: 9px; text-transform: uppercase;
-      letter-spacing: 2px; color: var(--text-dim);
+    #sidebar-header h1 {
+      font-size: 17px;
+      letter-spacing: 4px;
+      color: #a8bcff;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    #sidebar-header .subtitle {
+      font-size: 10px;
+      color: #444;
+      letter-spacing: 0.3px;
+    }
+ 
+    /* Тело — прокручиваемое */
+    #sidebar-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.08) transparent;
+    }
+ 
+    .section-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #445;
       margin-bottom: 8px;
-      font-family: 'Cinzel', serif;
     }
-
-    /* ── Слои ── */
-    .layer-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 0; border-bottom: 1px solid var(--border);
-    }
-    .layer-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .layer-label { font-size: 12px; flex: 1; }
-    .layer-count { font-size: 10px; color: var(--text-dim); margin-right: 4px; }
-    .layer-toggle {
-      width: 30px; height: 16px;
-      background: #222; border-radius: 8px;
-      position: relative; cursor: pointer; border: none;
-      transition: background 0.2s; flex-shrink: 0;
-    }
-    .layer-toggle.active { background: var(--accent); }
-    .layer-toggle::after {
-      content: ''; position: absolute;
-      width: 12px; height: 12px; background: #fff;
-      border-radius: 50%; top: 2px; left: 2px;
-      transition: left 0.2s;
-    }
-    .layer-toggle.active::after { left: 16px; }
-
-    /* ── Поиск ── */
+ 
+    /* ── ПОИСК ── */
     #search-wrap { position: relative; }
     #search-input {
-      width: 100%; padding: 8px 28px 8px 10px;
+      width: 100%;
+      padding: 8px 28px 8px 10px;
       background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      border-radius: 6px; color: var(--text);
-      font-size: 12px; font-family: 'Inter', sans-serif;
-      outline: none; transition: border-color 0.2s;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px;
+      color: #dde;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.2s;
     }
-    #search-input::placeholder { color: var(--text-dim); }
-    #search-input:focus { border-color: var(--border-hi); }
+    #search-input:focus { border-color: rgba(100,130,255,0.4); }
+    #search-input::placeholder { color: #3a3a52; }
     #search-clear {
-      position: absolute; right: 7px; top: 50%;
+      position: absolute; right: 8px; top: 50%;
       transform: translateY(-50%);
-      background: none; border: none; color: var(--text-dim);
+      background: none; border: none; color: #445;
       cursor: pointer; font-size: 15px; display: none; line-height: 1;
     }
     #search-clear.visible { display: block; }
     #search-results {
-      margin-top: 5px; display: none; flex-direction: column; gap: 2px;
-      max-height: 200px; overflow-y: auto;
+      margin-top: 5px;
+      display: none;
+      flex-direction: column;
+      gap: 1px;
+      max-height: 210px;
+      overflow-y: auto;
     }
     #search-results.visible { display: flex; }
-    .search-result-item {
-      padding: 6px 8px; border-radius: 4px; cursor: pointer;
-      font-size: 12px; line-height: 1.4; transition: background 0.15s;
+    .sr-item {
+      padding: 7px 9px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.12s;
     }
-    .search-result-item:hover { background: rgba(122,159,255,0.08); }
-    .search-result-name { color: var(--text); }
-    .search-result-meta { font-size: 10px; color: var(--text-dim); margin-top: 1px; }
-    .search-result-dot {
-      display: inline-block; width: 6px; height: 6px;
-      border-radius: 50%; margin-right: 4px; vertical-align: middle;
+    .sr-item:hover { background: rgba(74,106,255,0.1); }
+    .sr-name { color: #ccd; line-height: 1.3; }
+    .sr-meta { font-size: 10px; color: #445; margin-top: 2px; }
+    .sr-dot {
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
     }
-    .search-no-results { font-size: 12px; color: var(--text-dim); padding: 8px; text-align: center; }
-
-    /* ── НИЖНЯЯ ШКАЛА ВРЕМЕНИ (стеклянная) ── */
+    .sr-empty { font-size: 11px; color: #445; text-align: center; padding: 10px 0; }
+ 
+    /* ── СЛОИ ── */
+    .layer-row {
+      display: flex; align-items: center; gap: 9px;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.035);
+    }
+    .layer-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .layer-name { font-size: 12px; color: #bbc; flex: 1; }
+    .layer-cnt  { font-size: 10px; color: #445; }
+    .layer-toggle {
+      width: 28px; height: 16px;
+      background: #1e1e30;
+      border-radius: 8px;
+      position: relative;
+      cursor: pointer;
+      border: none;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .layer-toggle.on { background: #4a6aff; }
+    .layer-toggle::after {
+      content: '';
+      position: absolute;
+      width: 12px; height: 12px;
+      background: #fff;
+      border-radius: 50%;
+      top: 2px; left: 2px;
+      transition: left 0.18s;
+    }
+    .layer-toggle.on::after { left: 14px; }
+ 
+    /* ── СТИЛЬ КАРТЫ ── */
+    #style-buttons {
+      display: flex;
+      gap: 6px;
+    }
+    .style-btn {
+      flex: 1;
+      padding: 6px 4px;
+      font-size: 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 7px;
+      color: #556;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .style-btn:hover { background: rgba(255,255,255,0.07); color: #99a; }
+    .style-btn.active {
+      background: rgba(74,106,255,0.15);
+      border-color: rgba(74,106,255,0.35);
+      color: #a0b4ff;
+    }
+ 
+    /* ── СТАТУС ── */
+    #status-line { font-size: 10px; color: #333; padding-top: 2px; }
+ 
+    /* ════════════════════════════════════
+       ШКАЛА ВРЕМЕНИ — СНИЗУ ПО ЦЕНТРУ
+    ════════════════════════════════════ */
     #timeline-wrap {
       position: fixed;
-      bottom: 28px;
-      left: calc(var(--sidebar-w) + (100vw - var(--sidebar-w)) / 2);
+      bottom: 24px;
+      left: 50%;
       transform: translateX(-50%);
-      z-index: 100;
-      width: min(520px, calc(100vw - var(--sidebar-w) - 48px));
-      transition: bottom 0.35s cubic-bezier(0.34,1.56,0.64,1),
-                  left 0.3s ease;
+      z-index: 200;
+      width: 500px;
+      max-width: calc(100vw - 300px);
+      /* Переход при появлении диапазонных слайдеров */
+      transition: bottom 0.0s;
     }
-
-    /* Основная шкала — «таблетка» */
-    #timeline-main {
-      background: var(--glass-bg);
-      backdrop-filter: var(--glass-blur);
-      -webkit-backdrop-filter: var(--glass-blur);
-      border: 1px solid var(--border-hi);
-      border-radius: 50px;
-      padding: 10px 24px 10px 20px;
-      display: flex; align-items: center; gap: 14px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5),
-                  0 0 0 1px rgba(122,159,255,0.05) inset;
+ 
+    #timeline-bar {
+      border-radius: 16px;
+      padding: 13px 20px 12px;
+      /* Жидкое стекло */
+      background: rgba(6, 6, 18, 0.72);
+      backdrop-filter: blur(28px) saturate(200%);
+      -webkit-backdrop-filter: blur(28px) saturate(200%);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow:
+        0 8px 40px rgba(0,0,0,0.5),
+        0 1px 0 rgba(255,255,255,0.04) inset;
     }
+ 
+    /* Основная строка */
+    #tl-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+ 
     #year-display {
-      font-family: 'Cinzel', serif;
-      font-size: 20px; color: var(--accent);
-      min-width: 90px; text-align: center;
-      text-shadow: 0 0 12px rgba(122,159,255,0.5);
+      font-size: 18px;
+      color: #a0b4ff;
       font-variant-numeric: tabular-nums;
+      min-width: 80px;
+      text-align: right;
       flex-shrink: 0;
+      font-weight: 500;
+      letter-spacing: -0.3px;
     }
+ 
     #timeline-slider {
-      flex: 1; accent-color: var(--accent); cursor: pointer;
-      height: 4px;
+      flex: 1;
+      accent-color: #4a6aff;
+      cursor: pointer;
     }
-    /* Кнопка переключения режима диапазона */
-    #range-toggle-btn {
-      flex-shrink: 0;
-      width: 28px; height: 28px;
-      background: transparent;
-      border: 1px solid var(--border-hi);
-      border-radius: 50%;
-      color: var(--text-dim); font-size: 14px;
-      cursor: pointer; display: flex;
-      align-items: center; justify-content: center;
-      transition: all 0.2s; line-height: 1;
-    }
-    #range-toggle-btn:hover, #range-toggle-btn.active {
-      border-color: var(--accent); color: var(--accent);
-      background: rgba(122,159,255,0.08);
-    }
-
-    /* Панель диапазона — выезжает снизу */
-    #timeline-range {
-      background: var(--glass-bg);
-      backdrop-filter: var(--glass-blur);
-      -webkit-backdrop-filter: var(--glass-blur);
-      border: 1px solid var(--border);
-      border-bottom: none;
-      border-radius: 16px 16px 0 0;
-      padding: 12px 24px 6px;
-      display: flex; flex-direction: column; gap: 8px;
-      position: absolute; bottom: 100%; left: 0; right: 0;
-      /* скрыт по умолчанию */
-      opacity: 0; pointer-events: none;
-      transform: translateY(12px);
-      transition: opacity 0.3s ease, transform 0.3s ease;
-    }
-    #timeline-range.visible {
-      opacity: 1; pointer-events: all;
-      transform: translateY(0);
-    }
-    /* Когда диапазон открыт — main поднимается */
-    #timeline-wrap.range-open { bottom: 28px; }
-    #timeline-wrap.range-open #timeline-main {
-      border-radius: 0 0 50px 50px;
-      border-top: none;
-    }
-    .range-row {
-      display: flex; align-items: center; gap: 10px;
-    }
-    .range-label { font-size: 10px; color: var(--text-dim); width: 20px; }
-    .range-val {
-      font-size: 11px; color: var(--accent);
-      width: 80px; text-align: right;
-      font-variant-numeric: tabular-nums;
-      font-family: 'Cinzel', serif;
+ 
+    #tl-range-toggle {
+      display: flex;
+      align-items: center;
+      gap: 5px;
       flex-shrink: 0;
     }
-    .range-row input[type=range] {
-      flex: 1; accent-color: var(--accent2); cursor: pointer;
+    #range-checkbox { accent-color: #4a6aff; cursor: pointer; }
+    #tl-range-toggle label {
+      font-size: 10px;
+      color: #556;
+      cursor: pointer;
+      white-space: nowrap;
+      user-select: none;
     }
-
-    /* ── ПОПАП ── */
-    .maplibregl-popup-content {
-      background: rgba(12, 12, 28, 0.95) !important;
-      backdrop-filter: blur(20px);
-      color: var(--text) !important;
-      border-radius: 10px !important;
-      padding: 0 !important;
-      max-width: 300px;
-      border: 1px solid var(--border-hi) !important;
-      box-shadow: 0 16px 48px rgba(0,0,0,0.7) !important;
+ 
+    /* Диапазонные слайдеры — выезжают снизу */
+    #range-sliders {
       overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      transition: max-height 0.38s cubic-bezier(0.4,0,0.2,1),
+                  opacity    0.28s ease,
+                  margin-top 0.38s cubic-bezier(0.4,0,0.2,1);
+      margin-top: 0;
+    }
+    #range-sliders.open {
+      max-height: 72px;
+      opacity: 1;
+      margin-top: 10px;
+    }
+ 
+    .rrow {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 5px;
+    }
+    .rrow:last-child { margin-bottom: 0; }
+    .rlabel { font-size: 10px; color: #445; width: 24px; flex-shrink: 0; }
+    .rrow input[type=range] { flex: 1; accent-color: #4a6aff; cursor: pointer; }
+    .rval { font-size: 11px; color: #a0b4ff; width: 76px; text-align: right; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+ 
+    /* ════════════════════════════════════
+       ПОПАП
+    ════════════════════════════════════ */
+    .maplibregl-popup-content {
+      background: rgba(12, 12, 28, 0.97);
+      backdrop-filter: blur(16px);
+      color: #dde0f0;
+      border-radius: 11px;
+      padding: 0;
+      max-width: 295px;
+      border: 1px solid rgba(74,106,255,0.18);
+      overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6);
     }
     .maplibregl-popup-close-button {
-      color: var(--text-dim) !important;
-      font-size: 18px !important;
-      padding: 6px 10px !important;
-      background: transparent !important;
+      color: #445;
+      font-size: 18px;
+      padding: 8px 10px;
+      z-index: 1;
+      line-height: 1;
+      background: none;
+      border: none;
+      cursor: pointer;
+      position: absolute;
+      right: 0; top: 0;
     }
+    .maplibregl-popup-close-button:hover { color: #99a; }
+    .maplibregl-popup-tip { border-top-color: rgba(12,12,28,0.97) !important; }
+ 
     .popup-img {
-      width: 100%; max-height: 130px;
-      object-fit: cover; display: block;
+      width: 100%;
+      max-height: 130px;
+      object-fit: cover;
+      display: block;
     }
-    .popup-body { padding: 12px 14px 14px; }
-    .popup-style-tag {
+    .popup-body { padding: 11px 13px 13px; }
+    .popup-badge {
       display: inline-block;
-      font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
-      padding: 2px 8px; border-radius: 10px;
-      margin-bottom: 7px; font-family: 'Cinzel', serif;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      margin-bottom: 7px;
+      font-weight: 700;
     }
     .popup-title {
-      font-size: 14px; font-weight: 500; margin-bottom: 8px;
-      color: var(--accent); line-height: 1.3;
-      font-family: 'Cinzel', serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: #c8d4ff;
+      margin-bottom: 8px;
+      line-height: 1.3;
     }
     .popup-meta {
-      font-size: 11px; color: var(--text-dim);
-      line-height: 1.8; margin-bottom: 8px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 3px 9px;
+      margin-bottom: 8px;
     }
-    .popup-meta strong { color: var(--text); font-weight: 400; }
-    .popup-desc { font-size: 12px; line-height: 1.55; color: #aab; }
+    .pm-k { font-size: 10px; color: #445; }
+    .pm-v { font-size: 10px; color: #99a; }
+    .popup-desc {
+      font-size: 11px;
+      color: #778;
+      line-height: 1.55;
+      margin-bottom: 8px;
+    }
     .popup-link {
-      display: inline-block; margin-top: 10px;
-      font-size: 11px; color: var(--accent);
-      text-decoration: none; opacity: 0.8;
-      transition: opacity 0.2s;
+      font-size: 10px;
+      color: #4a6aff;
+      text-decoration: none;
     }
-    .popup-link:hover { opacity: 1; }
-
-    /* ── ПАНЕЛЬ ТОКЕНА ── */
+    .popup-link:hover { color: #7a9aff; }
+ 
+    /* ════════════════════════════════════
+       ПАНЕЛЬ ТОКЕНА
+    ════════════════════════════════════ */
     #token-overlay {
       position: fixed; inset: 0;
-      background: rgba(0,0,0,0.8); z-index: 998;
-      backdrop-filter: blur(4px);
+      background: rgba(0,0,0,0.82);
+      z-index: 998;
+      backdrop-filter: blur(6px);
     }
     #token-panel {
       position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       z-index: 999;
-      background: var(--bg2);
-      border: 1px solid var(--border-hi);
-      border-radius: 12px; padding: 28px 24px;
-      display: flex; flex-direction: column; gap: 12px;
+      background: rgba(12, 12, 28, 0.98);
+      border: 1px solid rgba(74,106,255,0.2);
+      border-radius: 14px;
+      padding: 28px 24px;
+      display: flex; flex-direction: column; gap: 13px;
       width: 340px;
-      box-shadow: 0 24px 60px rgba(0,0,0,0.8);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.7);
     }
     #token-panel h2 {
-      font-family: 'Cinzel', serif;
-      font-size: 13px; color: var(--accent);
-      letter-spacing: 2px; text-transform: uppercase;
+      font-size: 12px; color: #a0b4ff;
+      letter-spacing: 2.5px; text-transform: uppercase;
     }
-    #token-panel p { font-size: 11px; color: var(--text-dim); line-height: 1.6; }
+    #token-panel p { font-size: 11px; color: #556; line-height: 1.65; }
     #token-input {
       width: 100%; padding: 9px 10px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      border-radius: 6px; color: var(--text);
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 7px; color: #dde;
       font-size: 12px; font-family: monospace; outline: none;
     }
-    #token-input:focus { border-color: var(--border-hi); }
+    #token-input:focus { border-color: rgba(74,106,255,0.45); }
     #token-submit {
-      padding: 9px; background: var(--accent); color: #080810;
-      border: none; border-radius: 6px; cursor: pointer;
-      font-size: 13px; font-weight: 600;
-      font-family: 'Cinzel', serif;
-      transition: opacity 0.2s;
+      padding: 10px; background: #4a6aff; color: #fff;
+      border: none; border-radius: 7px; cursor: pointer;
+      font-size: 13px; font-weight: 500;
+      transition: background 0.18s;
     }
-    #token-submit:hover:not(:disabled) { opacity: 0.85; }
+    #token-submit:hover:not(:disabled) { background: #3a5aef; }
     #token-submit:disabled { opacity: 0.5; cursor: default; }
     #token-error { font-size: 11px; color: #e84a3a; display: none; }
-
-    /* ── СТАТУС-БАР ── */
-    #status-bar {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      z-index: 80;
-      padding: 4px 20px;
-      background: rgba(8,8,16,0.7);
-      backdrop-filter: blur(8px);
-      font-size: 10px; color: var(--text-dim);
-      letter-spacing: 0.5px;
-      border-top: 1px solid var(--border);
-    }
-
-    /* ── Скроллбар ── */
-    #sidebar::-webkit-scrollbar { width: 3px; }
-    #sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+ 
+    /* Позиции встроенных контролов карты */
+    .maplibregl-ctrl-top-left  { top: 16px; left: 288px; }
+    .maplibregl-ctrl-bottom-left { bottom: 110px; left: 16px; }
   </style>
 </head>
 <body>
-
-  <!-- Карта -->
+ 
+  <!-- КАРТА -->
   <div id="map"></div>
-
-  <!-- Шапка -->
-  <div id="header">
-    <h1>ARTEMIS</h1>
-    <span>интерактивная карта истории</span>
-    <button id="map-style-btn" title="Сменить стиль карты">карта: тёмная ▾</button>
-  </div>
-
-  <!-- Левая панель -->
-  <div id="sidebar">
-
-    <div id="search-section">
-      <div class="section-title">Поиск</div>
-      <div id="search-wrap">
-        <input id="search-input" type="text" placeholder="Название или тег…" autocomplete="off" />
-        <button id="search-clear" title="Очистить">×</button>
+ 
+  <!-- ЛЕВАЯ ПАНЕЛЬ -->
+  <div id="sidebar" class="glass">
+    <div id="sidebar-header">
+      <h1>ARTEMIS</h1>
+      <div class="subtitle">интерактивная карта истории</div>
+    </div>
+    <div id="sidebar-body">
+ 
+      <!-- Поиск -->
+      <div>
+        <div class="section-label">Поиск</div>
+        <div id="search-wrap">
+          <input id="search-input" type="text" placeholder="Название или тег…" autocomplete="off" />
+          <button id="search-clear" title="Очистить">×</button>
+        </div>
+        <div id="search-results"></div>
       </div>
-      <div id="search-results"></div>
+ 
+      <!-- Слои -->
+      <div id="layers-section">
+        <div class="section-label">Слои</div>
+        <div id="layers-list"></div>
+      </div>
+ 
+      <!-- Стиль карты -->
+      <div>
+        <div class="section-label">Стиль карты</div>
+        <div id="style-buttons">
+          <button class="style-btn active" data-style="dark">Тёмная</button>
+          <button class="style-btn" data-style="light">Светлая</button>
+          <button class="style-btn" data-style="voyager">Классика</button>
+        </div>
+      </div>
+ 
+      <!-- Статус -->
+      <div id="status-line">Введите токен…</div>
+ 
     </div>
-
-    <div id="layers-section">
-      <div class="section-title">Слои</div>
-      <div id="layers-list"></div>
-    </div>
-
   </div>
-
-  <!-- Кнопка скрытия сайдбара -->
-  <button id="sidebar-toggle" title="Скрыть/показать панель">‹</button>
-
-  <!-- Нижняя шкала времени -->
+ 
+  <!-- ШКАЛА ВРЕМЕНИ -->
   <div id="timeline-wrap">
-
-    <!-- Панель диапазона (выезжает снизу) -->
-    <div id="timeline-range">
-      <div class="range-row">
-        <span class="range-label">От</span>
-        <input type="range" id="range-from" min="-500" max="2024" value="1000" step="1" />
-        <span class="range-val" id="range-from-val">1000</span>
+    <div id="timeline-bar">
+      <div id="tl-main">
+        <div id="year-display">1200</div>
+        <input type="range" id="timeline-slider" min="-500" max="2024" value="1200" step="1" />
+        <div id="tl-range-toggle">
+          <input type="checkbox" id="range-checkbox" />
+          <label for="range-checkbox">Диапазон</label>
+        </div>
       </div>
-      <div class="range-row">
-        <span class="range-label">До</span>
-        <input type="range" id="range-to" min="-500" max="2024" value="1500" step="1" />
-        <span class="range-val" id="range-to-val">1500</span>
+      <div id="range-sliders">
+        <div class="rrow">
+          <span class="rlabel">От</span>
+          <input type="range" id="range-from" min="-500" max="2024" value="1000" step="1" />
+          <span class="rval" id="rfrom-val">1000</span>
+        </div>
+        <div class="rrow">
+          <span class="rlabel">До</span>
+          <input type="range" id="range-to" min="-500" max="2024" value="1400" step="1" />
+          <span class="rval" id="rto-val">1400</span>
+        </div>
       </div>
     </div>
-
-    <!-- Основная полоска -->
-    <div id="timeline-main">
-      <div id="year-display">1200</div>
-      <input type="range" id="timeline-slider" min="-500" max="2024" value="1200" step="1" />
-      <button id="range-toggle-btn" title="Режим диапазона">⇔</button>
-    </div>
-
   </div>
-
-  <div id="status-bar">Введите токен для загрузки данных…</div>
-
-  <!-- Токен -->
+ 
+  <!-- ПАНЕЛЬ ТОКЕНА -->
   <div id="token-overlay"></div>
   <div id="token-panel">
-    <h2>ARTEMIS — Доступ к данным</h2>
-    <p>Введите Airtable Personal Access Token.<br>Токен не сохраняется и не передаётся никуда, кроме Airtable API.</p>
-    <input id="token-input" type="password" placeholder="patXXXXXXXXXXXXXXXX..." autocomplete="off" />
+    <h2>ARTEMIS — Доступ</h2>
+    <p>Введите Airtable Personal Access Token.<br>
+    Токен не сохраняется и не передаётся никуда, кроме Airtable API.</p>
+    <input id="token-input" type="password" placeholder="patXXXXXXXXXXXXXXXX…" autocomplete="off" />
     <div id="token-error"></div>
     <button id="token-submit">Загрузить карту</button>
   </div>
-
+ 
 <script>
-  // ── КОНФИГУРАЦИЯ AIRTABLE ──────────────────────────────────────
+  // ── КОНФИГУРАЦИЯ ──────────────────────────────────────────
   const BASE_ID  = 'appHmf8ubeUF9nfkO';
   const TABLE_ID = 'tblNGMtwZuLlhrZNe';
   const API_URL  = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`;
-
-  // ── СТИЛИ КАРТЫ ────────────────────────────────────────────────
-  const MAP_STYLES = [
-    { key: 'dark',   label: 'тёмная',  url: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json' },
-    { key: 'light',  label: 'светлая', url: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'   },
-    { key: 'voyager',label: 'цветная', url: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'    },
-    { key: 'sat',    label: 'спутник', url: 'https://demotiles.maplibre.org/style.json'                       }
+ 
+  // Слои — цвет и подпись
+  const LAYERS = [
+    { id: 'romanesque',  ru: 'Романский',  hex: '#e8a838' },
+    { id: 'gothic',      ru: 'Готика',     hex: '#7a5af0' },
+    { id: 'renaissance', ru: 'Ренессанс',  hex: '#3ab87a' },
   ];
-  let currentStyleIdx = 0;
-
-  // ── КОНФИГУРАЦИЯ СЛОЁВ ─────────────────────────────────────────
-  // [TODO: Фаза 2] загружать из таблицы Layers
-  const LAYERS_CONFIG = [
-    { layer_id: 'romanesque', name_ru: 'Романский',   color_hex: '#e8a838', is_enabled: true  },
-    { layer_id: 'gothic',     name_ru: 'Готика',       color_hex: '#7a9fff', is_enabled: true  },
-    { layer_id: 'renaissance',name_ru: 'Ренессанс',    color_hex: '#8aff9f', is_enabled: true  }
-  ];
-
-  // ── СОСТОЯНИЕ ──────────────────────────────────────────────────
-  const state = {
-    currentYear:    1200,
-    rangeFrom:      1000,
-    rangeTo:        1500,
-    rangeMode:      false,
-    searchQuery:    '',
-    activeLayerIds: new Set(LAYERS_CONFIG.filter(l => l.is_enabled).map(l => l.layer_id)),
-    features:       [],
-    markers:        []
+ 
+  // Стили карты
+  const MAP_STYLES = {
+    dark:    'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+    light:   'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+    voyager: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
   };
-
-  // ── ИНИЦИАЛИЗАЦИЯ КАРТЫ ────────────────────────────────────────
+ 
+  // ── СОСТОЯНИЕ ─────────────────────────────────────────────
+  const state = {
+    year:      1200,
+    from:      1000,
+    to:        1400,
+    range:     false,
+    query:     '',
+    active:    new Set(LAYERS.map(l => l.id)),
+    features:  [],
+    markers:   [],
+  };
+ 
+  // ── ИНИЦИАЛИЗАЦИЯ КАРТЫ ───────────────────────────────────
   const map = new maplibregl.Map({
     container: 'map',
-    style:     MAP_STYLES[0].url,
-    center:    [15, 47],
-    zoom:      4
+    style:     MAP_STYLES.dark,
+    center:    [12, 48],
+    zoom:      4,
   });
-  map.addControl(new maplibregl.NavigationControl(), 'top-right');
-  map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
-
-  // ── СМЕНА СТИЛЯ КАРТЫ ─────────────────────────────────────────
-  document.getElementById('map-style-btn').addEventListener('click', () => {
-    currentStyleIdx = (currentStyleIdx + 1) % MAP_STYLES.length;
-    const s = MAP_STYLES[currentStyleIdx];
-    map.setStyle(s.url);
-    document.getElementById('map-style-btn').textContent = `карта: ${s.label} ▾`;
-    // После смены стиля — перерисовать источники MapLibre (маркеры выживают сами)
-    map.once('styledata', () => { renderCircles(); });
+  map.addControl(new maplibregl.NavigationControl(), 'top-left');
+  map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+ 
+  // ── СМЕНА СТИЛЯ КАРТЫ ─────────────────────────────────────
+  document.querySelectorAll('.style-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      map.setStyle(MAP_STYLES[btn.dataset.style]);
+      // После загрузки нового стиля — перерисовать GeoJSON-слои
+      map.once('style.load', () => renderCircles());
+    });
   });
-
-  // ── КНОПКА САЙДБАРА ───────────────────────────────────────────
-  const sidebarToggle = document.getElementById('sidebar-toggle');
-  sidebarToggle.addEventListener('click', () => {
-    document.body.classList.toggle('sidebar-hidden');
-    sidebarToggle.textContent = document.body.classList.contains('sidebar-hidden') ? '›' : '‹';
-    // Пересчитать позицию шкалы
-    updateTimelinePosition();
-  });
-
-  function updateTimelinePosition() {
-    const hidden = document.body.classList.contains('sidebar-hidden');
-    const sw = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-w'));
-    const offset = hidden ? sw / 2 : sw;
-    document.getElementById('timeline-wrap').style.left =
-      `calc(${offset}px + (100vw - ${offset}px) / 2)`;
-  }
-
-  // ── ЗАГРУЗКА ИЗ AIRTABLE ──────────────────────────────────────
+ 
+  // ── ЗАГРУЗКА ДАННЫХ ИЗ AIRTABLE ──────────────────────────
   async function loadFeatures(token) {
-    let allRecords = [];
-    let offset     = null;
+    let all = [], offset = null;
     do {
       const url = offset ? `${API_URL}?offset=${offset}` : API_URL;
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error(res.status === 401 || res.status === 403 ? 'auth' : `HTTP ${res.status}`);
       const data = await res.json();
-      allRecords = allRecords.concat(data.records);
+      all    = all.concat(data.records);
       offset = data.offset;
     } while (offset);
-    return allRecords;
+    return all;
   }
-
-  // ── КОНВЕРТАЦИЯ ЗАПИСЕЙ ───────────────────────────────────────
-  function parseRecords(records) {
+ 
+  // ── КОНВЕРТАЦИЯ ЗАПИСЕЙ ───────────────────────────────────
+  function parse(records) {
     return records
-      .filter(r => {
-        const v = r.fields.is_active;
-        // Поле хранится как строка 'TRUE'/'FALSE' или boolean
-        return v === true || v === 'TRUE' || v === 'true';
-      })
+      // is_active хранится как строка "TRUE"/"FALSE"
+      .filter(r => String(r.fields.is_active || '').toLowerCase() === 'true')
       .map(r => {
         const f = r.fields;
         return {
-          id:               r.id,
-          layer_id:         f.layer_id              || '',
-          layer_type:       f.layer_type            || 'architecture',
-          name_ru:          f.name_ru               || '',
-          name_en:          f.name_en               || '',
-          date_start:       f.date_start            || null,
-          date_end:         f.date_end              || null,   // null = объект существует до сих пор
-          longitude:        f.longitude   != null   ? parseFloat(f.longitude)          : null,
-          latitude:         f.latitude    != null   ? parseFloat(f.latitude)           : null,
-          influence_radius: f.influence_radius_km   ? parseInt(f.influence_radius_km)  : null,
-          title_short:      f.title_short           || '',
-          description:      f.description           || '',
-          image_url:        f.image_url             || null,
-          source_url:       f.source_url            || '',
-          architect:        f.architect             || null,    // поле для попапа
-          style_label:      f.style_label           || null,    // архитектурный стиль (текст)
-          tags:             f.tags ? f.tags.split(',').map(t => t.trim().toLowerCase()) : []
+          id:        r.id,
+          layer_id:  f.layer_id     || '',
+          name_ru:   f.name_ru      || '',
+          date_start: f.date_start  || null,
+          date_end:   f.date_end    || null,
+          lon:   f.longitude != null ? parseFloat(f.longitude) : null,
+          lat:   f.latitude  != null ? parseFloat(f.latitude)  : null,
+          radius:   f.influence_radius_km ? parseInt(f.influence_radius_km) : null,
+          desc:     f.title_short   || '',
+          architect:f.architect     || null,
+          img:      f.image_url     || null,
+          src:      f.source_url    || '',
+          tags:     f.tags ? f.tags.split(',').map(t => t.trim().toLowerCase()) : [],
         };
       });
   }
-
-  // ── ОБРАБОТКА ТОКЕНА ──────────────────────────────────────────
-  async function handleTokenSubmit() {
+ 
+  // ── ОБРАБОТКА ВВОДА ТОКЕНА ───────────────────────────────
+  async function submit() {
     const token = document.getElementById('token-input').value.trim();
     const errEl = document.getElementById('token-error');
     const btn   = document.getElementById('token-submit');
     errEl.style.display = 'none';
     if (!token) return;
-
     btn.textContent = 'Загружаю…';
     btn.disabled    = true;
-    setStatus('Загрузка данных из Airtable…');
-
+    setStatus('Загрузка из Airtable…');
     try {
       const records  = await loadFeatures(token);
-      state.features = parseRecords(records);
+      state.features = parse(records);
       document.getElementById('token-panel').style.display   = 'none';
       document.getElementById('token-overlay').style.display = 'none';
-      console.log(`Загружено: ${records.length}, активных: ${state.features.length}`);
-      renderLayersList();
+      renderLayers();
       initSearch();
       renderAll();
-    } catch (e) {
+    } catch(e) {
       errEl.style.display = 'block';
-      errEl.textContent   = e.message === 'auth'
-        ? 'Ошибка авторизации — проверьте токен.'
-        : `Ошибка: ${e.message}`;
-      setStatus('Ошибка загрузки данных.');
+      errEl.textContent   = e.message === 'auth' ? 'Ошибка авторизации — проверьте токен.' : `Ошибка: ${e.message}`;
       btn.textContent = 'Загрузить карту';
       btn.disabled    = false;
+      setStatus('Ошибка загрузки.');
     }
   }
-
-  document.getElementById('token-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') handleTokenSubmit();
-  });
-  document.getElementById('token-submit').addEventListener('click', handleTokenSubmit);
-
-  // ── ПОИСК ─────────────────────────────────────────────────────
-  function matchesSearch(feature, q) {
-    if (!q) return true;
-    if (feature.name_ru.toLowerCase().includes(q))        return true;
-    if ((feature.name_en || '').toLowerCase().includes(q)) return true;
-    if (feature.tags.some(tag => tag.includes(q)))        return true;
-    return false;
-  }
-
-  function renderSearchResults(query) {
-    const container = document.getElementById('search-results');
-    container.innerHTML = '';
-    if (!query) { container.classList.remove('visible'); return; }
-
-    const q       = query.toLowerCase();
-    const results = state.features.filter(f => matchesSearch(f, q)).slice(0, 20);
-
-    if (!results.length) {
-      container.innerHTML = '<div class="search-no-results">Ничего не найдено</div>';
-      container.classList.add('visible');
-      return;
-    }
-
-    results.forEach(feature => {
-      const layerCfg = LAYERS_CONFIG.find(l => l.layer_id === feature.layer_id);
-      const color    = layerCfg ? layerCfg.color_hex : '#888';
-      const item     = document.createElement('div');
-      item.className = 'search-result-item';
-      item.innerHTML = `
-        <div class="search-result-name">${feature.name_ru}</div>
-        <div class="search-result-meta">
-          <span class="search-result-dot" style="background:${color}"></span>
-          ${layerCfg ? layerCfg.name_ru : feature.layer_id}
-          ${feature.date_start ? ' · ' + feature.date_start : ''}
-        </div>
-      `;
-      item.addEventListener('click', () => {
-        if (feature.longitude == null || feature.latitude == null) return;
-        map.flyTo({ center: [feature.longitude, feature.latitude], zoom: 6, duration: 800 });
-        const marker = state.markers.find(m => {
-          const ll = m.getLngLat();
-          return Math.abs(ll.lng - feature.longitude) < 0.001 &&
-                 Math.abs(ll.lat - feature.latitude)  < 0.001;
-        });
-        if (marker) marker.togglePopup();
-        clearSearch();
-      });
-      container.appendChild(item);
-    });
-    container.classList.add('visible');
-  }
-
-  function clearSearch() {
-    document.getElementById('search-input').value = '';
-    document.getElementById('search-clear').classList.remove('visible');
-    document.getElementById('search-results').classList.remove('visible');
-    document.getElementById('search-results').innerHTML = '';
-    state.searchQuery = '';
-  }
-
-  function initSearch() {
-    const input = document.getElementById('search-input');
-    const clear = document.getElementById('search-clear');
-    input.addEventListener('input', () => {
-      state.searchQuery = input.value.trim();
-      clear.classList.toggle('visible', state.searchQuery.length > 0);
-      renderSearchResults(state.searchQuery);
-    });
-    input.addEventListener('keydown', e => { if (e.key === 'Escape') clearSearch(); });
-    clear.addEventListener('click', clearSearch);
-  }
-
-  // ── СПИСОК СЛОЁВ ──────────────────────────────────────────────
-  function renderLayersList() {
-    const container = document.getElementById('layers-list');
-    const section   = document.getElementById('layers-section');
-    container.innerHTML = '';
-
-    // Считаем объекты по слоям
-    const counts = {};
-    state.features.forEach(f => { counts[f.layer_id] = (counts[f.layer_id] || 0) + 1; });
-
-    // Скрыть переключатель если слой один
-    const activeLayers = LAYERS_CONFIG.filter(l => (counts[l.layer_id] || 0) > 0);
-    if (activeLayers.length <= 1) { section.style.display = 'none'; return; }
-    section.style.display = 'block';
-
-    LAYERS_CONFIG.forEach(layer => {
-      const count = counts[layer.layer_id] || 0;
-      if (!count) return; // не показывать пустые слои
-      const isActive = state.activeLayerIds.has(layer.layer_id);
-      const item = document.createElement('div');
-      item.className = 'layer-item';
-      item.innerHTML = `
-        <div class="layer-dot" style="background:${layer.color_hex}"></div>
-        <span class="layer-label">${layer.name_ru}</span>
-        <span class="layer-count">${count}</span>
-        <button class="layer-toggle ${isActive ? 'active' : ''}" data-id="${layer.layer_id}"></button>
-      `;
-      item.querySelector('button').addEventListener('click', () => toggleLayer(layer.layer_id));
-      container.appendChild(item);
-    });
-  }
-
-  function toggleLayer(layerId) {
-    state.activeLayerIds.has(layerId)
-      ? state.activeLayerIds.delete(layerId)
-      : state.activeLayerIds.add(layerId);
-    renderLayersList();
-    renderAll();
-  }
-
-  // ── ВИДИМОСТЬ ПО ВРЕМЕНИ ──────────────────────────────────────
-  function visibleInTime(feature) {
-    const start = parseInt(feature.date_start);
-    if (isNaN(start)) return false;
-
-    // date_end: null или пустое = объект существует до сих пор
-    const end = feature.date_end ? parseInt(feature.date_end) : 9999;
-
-    if (state.rangeMode) {
-      // Объект видим если он существовал хоть какую-то часть диапазона
-      return start <= state.rangeTo && end >= state.rangeFrom;
+  document.getElementById('token-submit').addEventListener('click', submit);
+  document.getElementById('token-input').addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+ 
+  // ── ВИДИМОСТЬ ОБЪЕКТА ВО ВРЕМЕНИ ─────────────────────────
+  // Здание показывается если: уже построено И ещё не разрушено.
+  // Если date_end отсутствует — здание стоит до сих пор (всегда visible после постройки).
+  function visible(f) {
+    const s = parseInt(f.date_start);
+    const e = f.date_end ? parseInt(f.date_end) : null;
+    if (state.range) {
+      if (s > state.to)                  return false; // ещё не построено
+      if (e !== null && e < state.from)  return false; // уже разрушено
+      return true;
     } else {
-      // Одиночный год: объект уже построен и ещё не разрушен
-      return start <= state.currentYear && end >= state.currentYear;
+      if (s > state.year)                return false; // ещё не построено
+      if (e !== null && e < state.year)  return false; // уже разрушено
+      return true;
     }
   }
-
-  // ── ГЕНЕРАЦИЯ ОКРУЖНОСТИ ──────────────────────────────────────
-  function circlePolygon(lng, lat, radiusKm, steps = 64) {
-    const coords = [];
-    for (let i = 0; i <= steps; i++) {
-      const angle = (i / steps) * 2 * Math.PI;
-      const dlng  = (radiusKm / 111.32) / Math.cos(lat * Math.PI / 180);
-      const dlat  =  radiusKm / 111.32;
-      coords.push([lng + dlng * Math.sin(angle), lat + dlat * Math.cos(angle)]);
-    }
-    return coords;
-  }
-
-  // ── ГЛАВНАЯ ОТРИСОВКА ─────────────────────────────────────────
-  function renderAll() {
-    renderMarkers();
-    renderCircles();
-  }
-
-  // ── МАРКЕРЫ ───────────────────────────────────────────────────
+ 
+  // ── ГЛАВНАЯ ОТРИСОВКА ─────────────────────────────────────
+  function renderAll() { renderMarkers(); renderCircles(); updateStatus(); }
+ 
+  // ── МАРКЕРЫ ───────────────────────────────────────────────
   function renderMarkers() {
     state.markers.forEach(m => m.remove());
     state.markers = [];
-
-    state.features.forEach(feature => {
-      if (!state.activeLayerIds.has(feature.layer_id))           return;
-      if (!visibleInTime(feature))                               return;
-      if (feature.longitude == null || feature.latitude == null) return;
-
-      const layerCfg = LAYERS_CONFIG.find(l => l.layer_id === feature.layer_id);
-      const color    = layerCfg ? layerCfg.color_hex : '#ffffff';
-
-      // Маркер
+ 
+    state.features.forEach(f => {
+      if (!state.active.has(f.layer_id)) return;
+      if (!visible(f))                   return;
+      if (f.lon == null || f.lat == null) return;
+ 
+      const layer = LAYERS.find(l => l.id === f.layer_id);
+      const color = layer ? layer.hex : '#fff';
+ 
+      // DOM-элемент маркера
       const el = document.createElement('div');
       el.style.cssText = `
-        width:12px; height:12px; border-radius:50%;
-        background:${color}; border:1.5px solid rgba(255,255,255,0.5);
-        cursor:pointer;
-        box-shadow:0 0 8px ${color}, 0 0 2px ${color};
-        transition: transform 0.15s;
+        width:11px;height:11px;border-radius:50%;
+        background:${color};border:2px solid rgba(255,255,255,0.45);
+        cursor:pointer;box-shadow:0 0 8px ${color}99;
+        transition:transform 0.15s, box-shadow 0.15s;
       `;
-      el.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.6)'; });
-      el.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)'; });
-
-      // Строки дат
-      const builtStr    = feature.date_start ? `Построен: ${feature.date_start}` : '';
-      const destroyedStr = feature.date_end   ? `Разрушен: ${feature.date_end}`   : '';
-      const architectStr = feature.architect  ? `Архитектор: ${feature.architect}` : '';
-      const styleStr     = feature.style_label || (layerCfg ? layerCfg.name_ru : '');
-
-      // Цвет бейджа стиля совпадает с цветом слоя
-      const badgeStyle = `background:${color}22; color:${color}; border:1px solid ${color}44;`;
-
-      const popup = new maplibregl.Popup({ offset: 12, closeButton: true, maxWidth: '300px' })
+      el.addEventListener('mouseenter', () => {
+        el.style.transform  = 'scale(1.6)';
+        el.style.boxShadow  = `0 0 14px ${color}cc`;
+      });
+      el.addEventListener('mouseleave', () => {
+        el.style.transform  = 'scale(1)';
+        el.style.boxShadow  = `0 0 8px ${color}99`;
+      });
+ 
+      // Данные для попапа
+      const styleName  = layer ? layer.ru : f.layer_id;
+      const builtStr   = f.date_start || '—';
+      const destroyStr = f.date_end   || null;
+      const archStr    = f.architect  || null;
+ 
+      // Изображение: referrerpolicy="no-referrer" решает проблему с блокировкой Wikimedia
+      const imgTag = f.img
+        ? `<img class="popup-img" src="${f.img}" alt="${f.name_ru}" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display='none'">`
+        : '';
+ 
+      // Метаданные в попапе (только непустые строки)
+      const metaRows = [
+        ['Построен',   builtStr],
+        destroyStr ? ['Разрушен', destroyStr] : null,
+        archStr    ? ['Архитектор', archStr]  : null,
+        ['Стиль',    styleName],
+      ].filter(Boolean).map(([k,v]) =>
+        `<span class="pm-k">${k}</span><span class="pm-v">${v}</span>`
+      ).join('');
+ 
+      const popup = new maplibregl.Popup({ offset: 14, closeButton: true, maxWidth: '295px' })
         .setHTML(`
-          ${feature.image_url
-            ? `<img class="popup-img" src="${feature.image_url}" alt="${feature.name_ru}"
-                    referrerpolicy="no-referrer" crossorigin="anonymous"
-                    onerror="this.style.display='none'">`
-            : ''}
+          ${imgTag}
           <div class="popup-body">
-            ${styleStr ? `<span class="popup-style-tag" style="${badgeStyle}">${styleStr}</span>` : ''}
-            <div class="popup-title">${feature.name_ru}</div>
-            <div class="popup-meta">
-              ${builtStr     ? `<span><strong>${builtStr}</strong></span><br>` : ''}
-              ${destroyedStr ? `<span>${destroyedStr}</span><br>` : ''}
-              ${architectStr ? `<span>${architectStr}</span><br>` : ''}
-            </div>
-            <div class="popup-desc">${feature.title_short}</div>
-            ${feature.source_url ? `<a class="popup-link" href="${feature.source_url}" target="_blank" rel="noopener">→ источник</a>` : ''}
+            <span class="popup-badge" style="background:${color}22;color:${color}">${styleName}</span>
+            <div class="popup-title">${f.name_ru}</div>
+            <div class="popup-meta">${metaRows}</div>
+            ${f.desc ? `<div class="popup-desc">${f.desc}</div>` : ''}
+            ${f.src  ? `<a class="popup-link" href="${f.src}" target="_blank" rel="noopener">→ источник</a>` : ''}
           </div>
         `);
-
+ 
       state.markers.push(
         new maplibregl.Marker({ element: el })
-          .setLngLat([feature.longitude, feature.latitude])
+          .setLngLat([f.lon, f.lat])
           .setPopup(popup)
           .addTo(map)
       );
     });
-
-    updateStatus();
   }
-
-  // ── КРУГИ ВЛИЯНИЯ (объединённые по слоям через Turf) ──────────
+ 
+  // ── КРУГИ ВЛИЯНИЯ ─────────────────────────────────────────
+  // Используется для объектов с заполненным influence_radius_km.
+  // Перекрывающиеся круги дают визуальный эффект "накопления" за счёт аддитивной непрозрачности.
   function renderCircles() {
-    // Убрать старые слои
-    ['circles-fill', 'circles-stroke'].forEach(id => {
-      if (map.getLayer(id)) map.removeLayer(id);
-    });
+    ['circles-fill','circles-stroke'].forEach(id => { if (map.getLayer(id)) map.removeLayer(id); });
     if (map.getSource('circles')) map.removeSource('circles');
-
-    // Собрать кандидатов
-    const candidates = state.features.filter(f =>
-      state.activeLayerIds.has(f.layer_id) &&
-      visibleInTime(f) &&
-      f.longitude != null && f.latitude != null &&
-      f.influence_radius != null
-    );
-    if (!candidates.length) return;
-
-    // Сгруппировать по layer_id
-    const byLayer = {};
-    candidates.forEach(f => {
-      (byLayer[f.layer_id] = byLayer[f.layer_id] || []).push(f);
-    });
-
-    const mergedFeatures = [];
-
-    Object.entries(byLayer).forEach(([layerId, pts]) => {
-      const color = (LAYERS_CONFIG.find(l => l.layer_id === layerId) || {}).color_hex || '#fff';
-
-      // Строим индивидуальные полигоны
-      const polys = pts.map(f => ({
-        type: 'Feature',
-        geometry: { type: 'Polygon', coordinates: [circlePolygon(f.longitude, f.latitude, f.influence_radius)] },
-        properties: { color }
-      }));
-
-      // Объединяем через Turf union (слияние пересекающихся)
-      let merged = polys[0];
-      for (let i = 1; i < polys.length; i++) {
-        try { merged = turf.union(merged, polys[i]); }
-        catch(e) { /* пропустить проблемный полигон */ }
-      }
-      if (merged) {
-        merged.properties = { color };
-        mergedFeatures.push(merged);
-      }
-    });
-
-    if (!mergedFeatures.length) return;
-
-    map.addSource('circles', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: mergedFeatures }
-    });
-    map.addLayer({
-      id: 'circles-fill', type: 'fill', source: 'circles',
-      paint: { 'fill-color': ['get','color'], 'fill-opacity': 0.07 }
-    });
-    map.addLayer({
-      id: 'circles-stroke', type: 'line', source: 'circles',
-      paint: { 'line-color': ['get','color'], 'line-width': 1, 'line-opacity': 0.35 }
+ 
+    const feats = state.features
+      .filter(f => state.active.has(f.layer_id) && visible(f) && f.lon != null && f.radius != null)
+      .map(f => {
+        const color = (LAYERS.find(l => l.id === f.layer_id) || {}).hex || '#fff';
+        return {
+          type: 'Feature',
+          geometry: { type: 'Polygon', coordinates: [circlePoly(f.lon, f.lat, f.radius)] },
+          properties: { color },
+        };
+      });
+ 
+    if (!feats.length) return;
+    map.addSource('circles', { type: 'geojson', data: { type: 'FeatureCollection', features: feats } });
+    map.addLayer({ id: 'circles-fill',   type: 'fill', source: 'circles', paint: { 'fill-color': ['get','color'], 'fill-opacity': 0.07 } });
+    map.addLayer({ id: 'circles-stroke', type: 'line', source: 'circles', paint: { 'line-color': ['get','color'], 'line-width': 1, 'line-opacity': 0.28 } });
+  }
+ 
+  // Генерация GeoJSON-полигона окружности
+  function circlePoly(lng, lat, km, n = 64) {
+    const pts = [];
+    for (let i = 0; i <= n; i++) {
+      const a = (i / n) * 2 * Math.PI;
+      pts.push([
+        lng + (km / 111.32 / Math.cos(lat * Math.PI / 180)) * Math.sin(a),
+        lat + (km / 111.32) * Math.cos(a),
+      ]);
+    }
+    return pts;
+  }
+ 
+  // ── СПИСОК СЛОЁВ В САЙДБАРЕ ──────────────────────────────
+  function renderLayers() {
+    const list = document.getElementById('layers-list');
+    list.innerHTML = '';
+    LAYERS.forEach(layer => {
+      const cnt    = state.features.filter(f => f.layer_id === layer.id).length;
+      const isOn   = state.active.has(layer.id);
+      const row    = document.createElement('div');
+      row.className = 'layer-row';
+      row.innerHTML = `
+        <div class="layer-dot" style="background:${layer.hex}"></div>
+        <span class="layer-name">${layer.ru}</span>
+        <span class="layer-cnt">${cnt}</span>
+        <button class="layer-toggle ${isOn ? 'on' : ''}" data-id="${layer.id}"></button>`;
+      row.querySelector('button').addEventListener('click', () => {
+        state.active.has(layer.id) ? state.active.delete(layer.id) : state.active.add(layer.id);
+        renderLayers();
+        renderAll();
+      });
+      list.appendChild(row);
     });
   }
-
-  // ── ШКАЛА — ОДИНОЧНЫЙ ГОД ─────────────────────────────────────
-  const slider      = document.getElementById('timeline-slider');
-  const yearDisplay = document.getElementById('year-display');
-
-  slider.addEventListener('input', () => {
-    state.currentYear       = parseInt(slider.value);
-    yearDisplay.textContent = formatYear(state.currentYear);
-    renderAll();
-  });
-
-  // ── ШКАЛА — РЕЖИМ ДИАПАЗОНА ───────────────────────────────────
-  const rangeToggleBtn = document.getElementById('range-toggle-btn');
-  const timelineWrap   = document.getElementById('timeline-wrap');
-  const rangePanel     = document.getElementById('timeline-range');
-  const rangeFrom      = document.getElementById('range-from');
-  const rangeTo        = document.getElementById('range-to');
-  const rangeFromVal   = document.getElementById('range-from-val');
-  const rangeToVal     = document.getElementById('range-to-val');
-
-  rangeToggleBtn.addEventListener('click', () => {
-    state.rangeMode = !state.rangeMode;
-    rangeToggleBtn.classList.toggle('active', state.rangeMode);
-    rangePanel.classList.toggle('visible', state.rangeMode);
-    timelineWrap.classList.toggle('range-open', state.rangeMode);
-
-    // В режиме диапазона одиночный слайдер не нужен визуально, но DOM оставляем
-    slider.style.opacity = state.rangeMode ? '0.4' : '1';
-    yearDisplay.style.opacity = state.rangeMode ? '0.4' : '1';
-    renderAll();
-  });
-
-  rangeFrom.addEventListener('input', () => {
-    state.rangeFrom = parseInt(rangeFrom.value);
-    if (state.rangeFrom > state.rangeTo) {
-      state.rangeTo = state.rangeFrom;
-      rangeTo.value = state.rangeTo;
-      rangeToVal.textContent = formatYear(state.rangeTo);
-    }
-    rangeFromVal.textContent = formatYear(state.rangeFrom);
-    renderAll();
-  });
-
-  rangeTo.addEventListener('input', () => {
-    state.rangeTo = parseInt(rangeTo.value);
-    if (state.rangeTo < state.rangeFrom) {
-      state.rangeFrom = state.rangeTo;
-      rangeFrom.value = state.rangeFrom;
-      rangeFromVal.textContent = formatYear(state.rangeFrom);
-    }
-    rangeToVal.textContent = formatYear(state.rangeTo);
-    renderAll();
-  });
-
-  // ── УТИЛИТЫ ───────────────────────────────────────────────────
-  function formatYear(y) {
-    return y < 0 ? `${Math.abs(y)} до н.э.` : String(y);
+ 
+  // ── ПОИСК ─────────────────────────────────────────────────
+  function initSearch() {
+    const inp = document.getElementById('search-input');
+    const clr = document.getElementById('search-clear');
+    inp.addEventListener('input', () => {
+      state.query = inp.value.trim();
+      clr.classList.toggle('visible', state.query.length > 0);
+      showSearchResults(state.query);
+    });
+    inp.addEventListener('keydown', e => { if (e.key === 'Escape') clearSearch(); });
+    clr.addEventListener('click', clearSearch);
   }
-
+ 
+  function showSearchResults(q) {
+    const box = document.getElementById('search-results');
+    box.innerHTML = '';
+    if (!q) { box.classList.remove('visible'); return; }
+    const ql      = q.toLowerCase();
+    const results = state.features.filter(f =>
+      f.name_ru.toLowerCase().includes(ql) || f.tags.some(t => t.includes(ql))
+    ).slice(0, 20);
+    if (!results.length) {
+      box.innerHTML = '<div class="sr-empty">Ничего не найдено</div>';
+      box.classList.add('visible');
+      return;
+    }
+    results.forEach(f => {
+      const layer = LAYERS.find(l => l.id === f.layer_id);
+      const item  = document.createElement('div');
+      item.className = 'sr-item';
+      item.innerHTML = `
+        <div class="sr-name">${f.name_ru}</div>
+        <div class="sr-meta">
+          <span class="sr-dot" style="background:${layer?.hex||'#888'}"></span>
+          ${layer?.ru || f.layer_id}${f.date_start ? ' · ' + f.date_start : ''}
+        </div>`;
+      item.addEventListener('click', () => {
+        if (f.lon == null) return;
+        map.flyTo({ center: [f.lon, f.lat], zoom: 7, duration: 800 });
+        const marker = state.markers.find(m => {
+          const ll = m.getLngLat();
+          return Math.abs(ll.lng - f.lon) < 0.001 && Math.abs(ll.lat - f.lat) < 0.001;
+        });
+        if (marker) marker.togglePopup();
+        clearSearch();
+      });
+      box.appendChild(item);
+    });
+    box.classList.add('visible');
+  }
+ 
+  function clearSearch() {
+    document.getElementById('search-input').value = '';
+    document.getElementById('search-clear').classList.remove('visible');
+    const box = document.getElementById('search-results');
+    box.classList.remove('visible');
+    box.innerHTML = '';
+    state.query = '';
+  }
+ 
+  // ── ШКАЛА — ОДИНОЧНЫЙ ГОД ────────────────────────────────
+  const sliderEl   = document.getElementById('timeline-slider');
+  const yearDispEl = document.getElementById('year-display');
+  sliderEl.addEventListener('input', () => {
+    state.year         = parseInt(sliderEl.value);
+    yearDispEl.textContent = fy(state.year);
+    renderAll();
+  });
+ 
+  // ── ШКАЛА — ДИАПАЗОН ─────────────────────────────────────
+  const chk      = document.getElementById('range-checkbox');
+  const rfEl     = document.getElementById('range-from');
+  const rtEl     = document.getElementById('range-to');
+  const rfValEl  = document.getElementById('rfrom-val');
+  const rtValEl  = document.getElementById('rto-val');
+  const rsEl     = document.getElementById('range-sliders');
+ 
+  chk.addEventListener('change', () => {
+    state.range = chk.checked;
+    rsEl.classList.toggle('open', state.range);
+    renderAll();
+  });
+ 
+  rfEl.addEventListener('input', () => {
+    state.from = parseInt(rfEl.value);
+    if (state.from > state.to) { state.to = state.from; rtEl.value = state.to; rtValEl.textContent = fy(state.to); }
+    rfValEl.textContent = fy(state.from);
+    renderAll();
+  });
+ 
+  rtEl.addEventListener('input', () => {
+    state.to = parseInt(rtEl.value);
+    if (state.to < state.from) { state.from = state.to; rfEl.value = state.from; rfValEl.textContent = fy(state.from); }
+    rtValEl.textContent = fy(state.to);
+    renderAll();
+  });
+ 
+  // ── УТИЛИТЫ ───────────────────────────────────────────────
+  // Форматирование года: отрицательные — до н.э.
+  function fy(y) { return y < 0 ? `${Math.abs(y)} до н.э.` : String(y); }
+ 
+  function setStatus(msg) { document.getElementById('status-line').textContent = msg; }
+ 
   function updateStatus() {
-    const visible = state.markers.length;
-    const total   = state.features.filter(f => state.activeLayerIds.has(f.layer_id)).length;
-    const timeStr = state.rangeMode
-      ? `${formatYear(state.rangeFrom)} — ${formatYear(state.rangeTo)}`
-      : formatYear(state.currentYear);
-    setStatus(`Показано: ${visible} из ${total} объектов · ${timeStr}`);
+    const vis   = state.markers.length;
+    const total = state.features.filter(f => state.active.has(f.layer_id)).length;
+    const time  = state.range ? `${fy(state.from)} — ${fy(state.to)}` : fy(state.year);
+    setStatus(`Показано: ${vis} / ${total} · ${time}`);
   }
-
-  function setStatus(msg) {
-    document.getElementById('status-bar').textContent = msg;
-  }
-
-  // ── ЗАПУСК ────────────────────────────────────────────────────
+ 
+  // ── ЗАПУСК ────────────────────────────────────────────────
   map.on('load', () => {
-    renderLayersList();
+    renderLayers();
     setStatus('Введите токен для загрузки данных…');
   });
 </script>
