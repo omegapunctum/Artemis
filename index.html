@@ -9,233 +9,440 @@
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 
+  <!-- Turf.js — объединение полигонов областей влияния -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Inter:wght@300;400;500&display=swap');
+
+    :root {
+      --bg:          #080810;
+      --bg2:         #0f0f1a;
+      --bg3:         #141428;
+      --border:      rgba(120,140,255,0.12);
+      --border-hi:   rgba(120,140,255,0.35);
+      --text:        #d8dff5;
+      --text-dim:    #5a6080;
+      --accent:      #7a9fff;
+      --accent2:     #c87aff;
+      --glass-bg:    rgba(10, 10, 22, 0.72);
+      --glass-blur:  blur(18px) saturate(160%);
+      --sidebar-w:   280px;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; background: #0a0a0f; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column; }
 
-    #header {
-      display: flex; align-items: center; gap: 12px;
-      padding: 10px 16px; background: #12121a;
-      border-bottom: 1px solid #2a2a3a; z-index: 10;
-    }
-    #header h1 { font-size: 18px; letter-spacing: 2px; color: #a0b4ff; }
-    #header span { font-size: 12px; color: #666; }
-
-    #main { display: flex; flex: 1; overflow: hidden; }
-    #map  { flex: 1; }
-
-    #sidebar {
-      width: 260px; background: #12121a;
-      border-left: 1px solid #2a2a3a;
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg); color: var(--text);
+      height: 100vh; overflow: hidden;
       display: flex; flex-direction: column;
-      padding: 16px; gap: 20px; overflow-y: auto;
     }
+
+    /* ── КАРТА (занимает весь экран) ── */
+    #map {
+      position: fixed; inset: 0; z-index: 0;
+    }
+
+    /* ── ШАПКА ── */
+    #header {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex; align-items: center; gap: 16px;
+      padding: 12px 20px;
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border-bottom: 1px solid var(--border);
+    }
+    #header h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 17px; font-weight: 600;
+      letter-spacing: 4px; color: var(--accent);
+      text-shadow: 0 0 20px rgba(122,159,255,0.4);
+    }
+    #header span { font-size: 11px; color: var(--text-dim); letter-spacing: 1px; }
+
+    /* Переключатель стиля карты в шапке */
+    #map-style-btn {
+      margin-left: auto;
+      padding: 5px 12px;
+      background: transparent;
+      border: 1px solid var(--border-hi);
+      border-radius: 20px;
+      color: var(--text-dim); font-size: 11px;
+      cursor: pointer; transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    #map-style-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── ЛЕВАЯ ПАНЕЛЬ (навигация) ── */
+    #sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: var(--sidebar-w); z-index: 90;
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      padding: 68px 16px 16px;
+      gap: 20px; overflow-y: auto;
+      transition: transform 0.3s ease;
+    }
+
+    /* Кнопка скрыть/показать сайдбар */
+    #sidebar-toggle {
+      position: fixed; left: var(--sidebar-w); top: 50%;
+      transform: translateY(-50%);
+      z-index: 91;
+      width: 18px; height: 48px;
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border);
+      border-left: none;
+      border-radius: 0 6px 6px 0;
+      cursor: pointer; color: var(--text-dim);
+      font-size: 10px; display: flex;
+      align-items: center; justify-content: center;
+      transition: left 0.3s ease, color 0.2s;
+    }
+    #sidebar-toggle:hover { color: var(--accent); }
+    body.sidebar-hidden #sidebar { transform: translateX(calc(-1 * var(--sidebar-w))); }
+    body.sidebar-hidden #sidebar-toggle { left: 0; }
+    body.sidebar-hidden #timeline-wrap { left: calc(var(--sidebar-w) / 2); } /* компенсация */
+
     .section-title {
-      font-size: 11px; text-transform: uppercase;
-      letter-spacing: 1.5px; color: #666; margin-bottom: 10px;
+      font-size: 9px; text-transform: uppercase;
+      letter-spacing: 2px; color: var(--text-dim);
+      margin-bottom: 8px;
+      font-family: 'Cinzel', serif;
     }
 
     /* ── Слои ── */
     .layer-item {
       display: flex; align-items: center; gap: 10px;
-      padding: 8px 0; border-bottom: 1px solid #1e1e2e;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
     }
-    .layer-dot  { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-    .layer-label { font-size: 13px; }
+    .layer-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .layer-label { font-size: 12px; flex: 1; }
+    .layer-count { font-size: 10px; color: var(--text-dim); margin-right: 4px; }
     .layer-toggle {
-      margin-left: auto; width: 32px; height: 18px;
-      background: #333; border-radius: 9px;
+      width: 30px; height: 16px;
+      background: #222; border-radius: 8px;
       position: relative; cursor: pointer; border: none;
-      transition: background 0.2s;
+      transition: background 0.2s; flex-shrink: 0;
     }
-    .layer-toggle.active { background: #4a6aff; }
+    .layer-toggle.active { background: var(--accent); }
     .layer-toggle::after {
       content: ''; position: absolute;
-      width: 14px; height: 14px; background: #fff;
+      width: 12px; height: 12px; background: #fff;
       border-radius: 50%; top: 2px; left: 2px;
       transition: left 0.2s;
     }
     .layer-toggle.active::after { left: 16px; }
 
-    /* ── Шкала времени ── */
-    #timeline-section { margin-top: auto; }
+    /* ── Поиск ── */
+    #search-wrap { position: relative; }
+    #search-input {
+      width: 100%; padding: 8px 28px 8px 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text);
+      font-size: 12px; font-family: 'Inter', sans-serif;
+      outline: none; transition: border-color 0.2s;
+    }
+    #search-input::placeholder { color: var(--text-dim); }
+    #search-input:focus { border-color: var(--border-hi); }
+    #search-clear {
+      position: absolute; right: 7px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none; color: var(--text-dim);
+      cursor: pointer; font-size: 15px; display: none; line-height: 1;
+    }
+    #search-clear.visible { display: block; }
+    #search-results {
+      margin-top: 5px; display: none; flex-direction: column; gap: 2px;
+      max-height: 200px; overflow-y: auto;
+    }
+    #search-results.visible { display: flex; }
+    .search-result-item {
+      padding: 6px 8px; border-radius: 4px; cursor: pointer;
+      font-size: 12px; line-height: 1.4; transition: background 0.15s;
+    }
+    .search-result-item:hover { background: rgba(122,159,255,0.08); }
+    .search-result-name { color: var(--text); }
+    .search-result-meta { font-size: 10px; color: var(--text-dim); margin-top: 1px; }
+    .search-result-dot {
+      display: inline-block; width: 6px; height: 6px;
+      border-radius: 50%; margin-right: 4px; vertical-align: middle;
+    }
+    .search-no-results { font-size: 12px; color: var(--text-dim); padding: 8px; text-align: center; }
+
+    /* ── НИЖНЯЯ ШКАЛА ВРЕМЕНИ (стеклянная) ── */
+    #timeline-wrap {
+      position: fixed;
+      bottom: 28px;
+      left: calc(var(--sidebar-w) + (100vw - var(--sidebar-w)) / 2);
+      transform: translateX(-50%);
+      z-index: 100;
+      width: min(520px, calc(100vw - var(--sidebar-w) - 48px));
+      transition: bottom 0.35s cubic-bezier(0.34,1.56,0.64,1),
+                  left 0.3s ease;
+    }
+
+    /* Основная шкала — «таблетка» */
+    #timeline-main {
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border-hi);
+      border-radius: 50px;
+      padding: 10px 24px 10px 20px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5),
+                  0 0 0 1px rgba(122,159,255,0.05) inset;
+    }
     #year-display {
-      font-size: 24px; color: #a0b4ff;
-      text-align: center; margin-bottom: 8px;
+      font-family: 'Cinzel', serif;
+      font-size: 20px; color: var(--accent);
+      min-width: 90px; text-align: center;
+      text-shadow: 0 0 12px rgba(122,159,255,0.5);
       font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
     }
-    #timeline-slider { width: 100%; accent-color: #4a6aff; cursor: pointer; }
-    #timeline-labels {
-      display: flex; justify-content: space-between;
-      font-size: 10px; color: #555; margin-top: 4px;
+    #timeline-slider {
+      flex: 1; accent-color: var(--accent); cursor: pointer;
+      height: 4px;
+    }
+    /* Кнопка переключения режима диапазона */
+    #range-toggle-btn {
+      flex-shrink: 0;
+      width: 28px; height: 28px;
+      background: transparent;
+      border: 1px solid var(--border-hi);
+      border-radius: 50%;
+      color: var(--text-dim); font-size: 14px;
+      cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+      transition: all 0.2s; line-height: 1;
+    }
+    #range-toggle-btn:hover, #range-toggle-btn.active {
+      border-color: var(--accent); color: var(--accent);
+      background: rgba(122,159,255,0.08);
     }
 
-    /* ── Режим диапазона ── */
-    #range-mode-toggle {
-      display: flex; align-items: center; gap: 8px;
-      margin-bottom: 10px;
+    /* Панель диапазона — выезжает снизу */
+    #timeline-range {
+      background: var(--glass-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-radius: 16px 16px 0 0;
+      padding: 12px 24px 6px;
+      display: flex; flex-direction: column; gap: 8px;
+      position: absolute; bottom: 100%; left: 0; right: 0;
+      /* скрыт по умолчанию */
+      opacity: 0; pointer-events: none;
+      transform: translateY(12px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
     }
-    #range-mode-toggle input { accent-color: #4a6aff; cursor: pointer; }
-    #range-mode-toggle label { font-size: 11px; color: #888; cursor: pointer; }
-    #range-sliders { display: none; flex-direction: column; gap: 8px; }
-    #range-sliders.visible { display: flex; }
-    .range-row { display: flex; align-items: center; gap: 8px; }
-    .range-label { font-size: 10px; color: #666; width: 28px; }
-    .range-val   { font-size: 11px; color: #a0b4ff; width: 72px; text-align: right; font-variant-numeric: tabular-nums; }
+    #timeline-range.visible {
+      opacity: 1; pointer-events: all;
+      transform: translateY(0);
+    }
+    /* Когда диапазон открыт — main поднимается */
+    #timeline-wrap.range-open { bottom: 28px; }
+    #timeline-wrap.range-open #timeline-main {
+      border-radius: 0 0 50px 50px;
+      border-top: none;
+    }
+    .range-row {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .range-label { font-size: 10px; color: var(--text-dim); width: 20px; }
+    .range-val {
+      font-size: 11px; color: var(--accent);
+      width: 80px; text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-family: 'Cinzel', serif;
+      flex-shrink: 0;
+    }
+    .range-row input[type=range] {
+      flex: 1; accent-color: var(--accent2); cursor: pointer;
+    }
 
-    /* ── Попап ── */
+    /* ── ПОПАП ── */
     .maplibregl-popup-content {
-      background: #1a1a2e; color: #e0e0e0;
-      border-radius: 8px; padding: 14px;
-      max-width: 280px; border: 1px solid #2a2a4a;
+      background: rgba(12, 12, 28, 0.95) !important;
+      backdrop-filter: blur(20px);
+      color: var(--text) !important;
+      border-radius: 10px !important;
+      padding: 0 !important;
+      max-width: 300px;
+      border: 1px solid var(--border-hi) !important;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.7) !important;
+      overflow: hidden;
     }
-    .popup-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; color: #a0b4ff; }
-    .popup-date  { font-size: 11px; color: #888; margin-bottom: 8px; }
-    .popup-desc  { font-size: 12px; line-height: 1.5; }
-    .popup-img   { width: 100%; border-radius: 4px; margin-bottom: 8px; max-height: 120px; object-fit: cover; }
-    .popup-link  { display: inline-block; margin-top: 8px; font-size: 11px; color: #4a6aff; text-decoration: none; }
+    .maplibregl-popup-close-button {
+      color: var(--text-dim) !important;
+      font-size: 18px !important;
+      padding: 6px 10px !important;
+      background: transparent !important;
+    }
+    .popup-img {
+      width: 100%; max-height: 130px;
+      object-fit: cover; display: block;
+    }
+    .popup-body { padding: 12px 14px 14px; }
+    .popup-style-tag {
+      display: inline-block;
+      font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+      padding: 2px 8px; border-radius: 10px;
+      margin-bottom: 7px; font-family: 'Cinzel', serif;
+    }
+    .popup-title {
+      font-size: 14px; font-weight: 500; margin-bottom: 8px;
+      color: var(--accent); line-height: 1.3;
+      font-family: 'Cinzel', serif;
+    }
+    .popup-meta {
+      font-size: 11px; color: var(--text-dim);
+      line-height: 1.8; margin-bottom: 8px;
+    }
+    .popup-meta strong { color: var(--text); font-weight: 400; }
+    .popup-desc { font-size: 12px; line-height: 1.55; color: #aab; }
+    .popup-link {
+      display: inline-block; margin-top: 10px;
+      font-size: 11px; color: var(--accent);
+      text-decoration: none; opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    .popup-link:hover { opacity: 1; }
 
-    /* ── Панель токена ── */
+    /* ── ПАНЕЛЬ ТОКЕНА ── */
     #token-overlay {
       position: fixed; inset: 0;
-      background: rgba(0,0,0,0.75); z-index: 998;
+      background: rgba(0,0,0,0.8); z-index: 998;
+      backdrop-filter: blur(4px);
     }
     #token-panel {
       position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      z-index: 999; background: #1a1a2e;
-      border: 1px solid #2a2a4a; border-radius: 10px;
-      padding: 28px 24px;
+      z-index: 999;
+      background: var(--bg2);
+      border: 1px solid var(--border-hi);
+      border-radius: 12px; padding: 28px 24px;
       display: flex; flex-direction: column; gap: 12px;
-      width: 340px; box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+      width: 340px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.8);
     }
-    #token-panel h2 { font-size: 13px; color: #a0b4ff; letter-spacing: 1.5px; text-transform: uppercase; }
-    #token-panel p  { font-size: 11px; color: #666; line-height: 1.6; }
+    #token-panel h2 {
+      font-family: 'Cinzel', serif;
+      font-size: 13px; color: var(--accent);
+      letter-spacing: 2px; text-transform: uppercase;
+    }
+    #token-panel p { font-size: 11px; color: var(--text-dim); line-height: 1.6; }
     #token-input {
       width: 100%; padding: 9px 10px;
-      background: #0a0a0f; border: 1px solid #2a2a4a;
-      border-radius: 6px; color: #e0e0e0;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text);
       font-size: 12px; font-family: monospace; outline: none;
     }
-    #token-input:focus { border-color: #4a6aff; }
+    #token-input:focus { border-color: var(--border-hi); }
     #token-submit {
-      padding: 9px; background: #4a6aff; color: #fff;
+      padding: 9px; background: var(--accent); color: #080810;
       border: none; border-radius: 6px; cursor: pointer;
-      font-size: 13px; transition: background 0.2s;
+      font-size: 13px; font-weight: 600;
+      font-family: 'Cinzel', serif;
+      transition: opacity 0.2s;
     }
-    #token-submit:hover:not(:disabled) { background: #3a5aef; }
-    #token-submit:disabled { opacity: 0.6; cursor: default; }
+    #token-submit:hover:not(:disabled) { opacity: 0.85; }
+    #token-submit:disabled { opacity: 0.5; cursor: default; }
     #token-error { font-size: 11px; color: #e84a3a; display: none; }
 
-    /* ── Поиск ── */
-    #search-section { flex-shrink: 0; }
-    #search-wrap { position: relative; }
-    #search-input {
-      width: 100%; padding: 8px 30px 8px 10px;
-      background: #0a0a0f; border: 1px solid #2a2a4a;
-      border-radius: 6px; color: #e0e0e0;
-      font-size: 12px; outline: none;
-      transition: border-color 0.2s;
-    }
-    #search-input:focus { border-color: #4a6aff; }
-    #search-clear {
-      position: absolute; right: 8px; top: 50%;
-      transform: translateY(-50%);
-      background: none; border: none; color: #555;
-      cursor: pointer; font-size: 16px; display: none; line-height: 1;
-    }
-    #search-clear.visible { display: block; }
-    #search-results {
-      margin-top: 6px; display: none;
-      flex-direction: column; gap: 2px;
-      max-height: 220px; overflow-y: auto;
-    }
-    #search-results.visible { display: flex; }
-    .search-result-item {
-      padding: 7px 8px; border-radius: 5px;
-      cursor: pointer; font-size: 12px; line-height: 1.4;
-      transition: background 0.15s;
-    }
-    .search-result-item:hover { background: #1e1e3a; }
-    .search-result-name { color: #e0e0e0; }
-    .search-result-meta { font-size: 10px; color: #555; margin-top: 2px; }
-    .search-result-dot {
-      display: inline-block; width: 7px; height: 7px;
-      border-radius: 50%; margin-right: 4px; vertical-align: middle;
-    }
-    .search-no-results { font-size: 12px; color: #555; padding: 8px; text-align: center; }
-
+    /* ── СТАТУС-БАР ── */
     #status-bar {
-      padding: 6px 16px; background: #0d0d1a;
-      font-size: 11px; color: #555;
-      border-top: 1px solid #1a1a2a;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      z-index: 80;
+      padding: 4px 20px;
+      background: rgba(8,8,16,0.7);
+      backdrop-filter: blur(8px);
+      font-size: 10px; color: var(--text-dim);
+      letter-spacing: 0.5px;
+      border-top: 1px solid var(--border);
     }
+
+    /* ── Скроллбар ── */
+    #sidebar::-webkit-scrollbar { width: 3px; }
+    #sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   </style>
 </head>
 <body>
 
+  <!-- Карта -->
+  <div id="map"></div>
+
+  <!-- Шапка -->
   <div id="header">
     <h1>ARTEMIS</h1>
     <span>интерактивная карта истории</span>
+    <button id="map-style-btn" title="Сменить стиль карты">карта: тёмная ▾</button>
   </div>
 
-  <div id="main">
-    <div id="map"></div>
+  <!-- Левая панель -->
+  <div id="sidebar">
 
-    <div id="sidebar">
-
-      <div id="search-section">
-        <div class="section-title">Поиск</div>
-        <div id="search-wrap">
-          <input id="search-input" type="text" placeholder="Название или тег…" autocomplete="off" />
-          <button id="search-clear" title="Очистить">×</button>
-        </div>
-        <div id="search-results"></div>
+    <div id="search-section">
+      <div class="section-title">Поиск</div>
+      <div id="search-wrap">
+        <input id="search-input" type="text" placeholder="Название или тег…" autocomplete="off" />
+        <button id="search-clear" title="Очистить">×</button>
       </div>
+      <div id="search-results"></div>
+    </div>
 
-      <div id="layers-section">
-        <div class="section-title">Слои</div>
-        <div id="layers-list"></div>
+    <div id="layers-section">
+      <div class="section-title">Слои</div>
+      <div id="layers-list"></div>
+    </div>
+
+  </div>
+
+  <!-- Кнопка скрытия сайдбара -->
+  <button id="sidebar-toggle" title="Скрыть/показать панель">‹</button>
+
+  <!-- Нижняя шкала времени -->
+  <div id="timeline-wrap">
+
+    <!-- Панель диапазона (выезжает снизу) -->
+    <div id="timeline-range">
+      <div class="range-row">
+        <span class="range-label">От</span>
+        <input type="range" id="range-from" min="-500" max="2024" value="1000" step="1" />
+        <span class="range-val" id="range-from-val">1000</span>
       </div>
-
-      <div id="timeline-section">
-        <div class="section-title">Шкала времени</div>
-
-        <!-- Переключатель режима -->
-        <div id="range-mode-toggle">
-          <input type="checkbox" id="range-checkbox" />
-          <label for="range-checkbox">Диапазон (от — до)</label>
-        </div>
-
-        <!-- Одиночный год -->
-        <div id="single-slider">
-          <div id="year-display">1200</div>
-          <input type="range" id="timeline-slider" min="-500" max="2024" value="1200" step="1" />
-          <div id="timeline-labels">
-            <span>500 до н.э.</span>
-            <span>2024</span>
-          </div>
-        </div>
-
-        <!-- Диапазон от–до -->
-        <div id="range-sliders">
-          <div class="range-row">
-            <span class="range-label">От</span>
-            <input type="range" id="range-from" min="-500" max="2024" value="1000" step="1" style="flex:1;accent-color:#4a6aff" />
-            <span class="range-val" id="range-from-val">1000</span>
-          </div>
-          <div class="range-row">
-            <span class="range-label">До</span>
-            <input type="range" id="range-to" min="-500" max="2024" value="1300" step="1" style="flex:1;accent-color:#4a6aff" />
-            <span class="range-val" id="range-to-val">1300</span>
-          </div>
-        </div>
-
+      <div class="range-row">
+        <span class="range-label">До</span>
+        <input type="range" id="range-to" min="-500" max="2024" value="1500" step="1" />
+        <span class="range-val" id="range-to-val">1500</span>
       </div>
     </div>
+
+    <!-- Основная полоска -->
+    <div id="timeline-main">
+      <div id="year-display">1200</div>
+      <input type="range" id="timeline-slider" min="-500" max="2024" value="1200" step="1" />
+      <button id="range-toggle-btn" title="Режим диапазона">⇔</button>
+    </div>
+
   </div>
 
   <div id="status-bar">Введите токен для загрузки данных…</div>
+
+  <!-- Токен -->
   <div id="token-overlay"></div>
   <div id="token-panel">
     <h2>ARTEMIS — Доступ к данным</h2>
@@ -246,22 +453,33 @@
   </div>
 
 <script>
-  // ── КОНФИГУРАЦИЯ AIRTABLE ─────────────────────────────────
+  // ── КОНФИГУРАЦИЯ AIRTABLE ──────────────────────────────────────
   const BASE_ID  = 'appHmf8ubeUF9nfkO';
   const TABLE_ID = 'tblNGMtwZuLlhrZNe';
   const API_URL  = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`;
 
-  // ── КОНФИГУРАЦИЯ СЛОЁВ ────────────────────────────────────
-  // [TODO: Фаза 2] загружать из таблицы Layers через API
+  // ── СТИЛИ КАРТЫ ────────────────────────────────────────────────
+  const MAP_STYLES = [
+    { key: 'dark',   label: 'тёмная',  url: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json' },
+    { key: 'light',  label: 'светлая', url: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'   },
+    { key: 'voyager',label: 'цветная', url: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'    },
+    { key: 'sat',    label: 'спутник', url: 'https://demotiles.maplibre.org/style.json'                       }
+  ];
+  let currentStyleIdx = 0;
+
+  // ── КОНФИГУРАЦИЯ СЛОЁВ ─────────────────────────────────────────
+  // [TODO: Фаза 2] загружать из таблицы Layers
   const LAYERS_CONFIG = [
-    { layer_id: 'romanesque', name_ru: 'Романская архитектура', color_hex: '#e8a838', is_enabled: true }
+    { layer_id: 'romanesque', name_ru: 'Романский',   color_hex: '#e8a838', is_enabled: true  },
+    { layer_id: 'gothic',     name_ru: 'Готика',       color_hex: '#7a9fff', is_enabled: true  },
+    { layer_id: 'renaissance',name_ru: 'Ренессанс',    color_hex: '#8aff9f', is_enabled: true  }
   ];
 
-  // ── СОСТОЯНИЕ ─────────────────────────────────────────────
+  // ── СОСТОЯНИЕ ──────────────────────────────────────────────────
   const state = {
     currentYear:    1200,
     rangeFrom:      1000,
-    rangeTo:        1300,
+    rangeTo:        1500,
     rangeMode:      false,
     searchQuery:    '',
     activeLayerIds: new Set(LAYERS_CONFIG.filter(l => l.is_enabled).map(l => l.layer_id)),
@@ -269,54 +487,91 @@
     markers:        []
   };
 
-  // ── ИНИЦИАЛИЗАЦИЯ КАРТЫ ───────────────────────────────────
+  // ── ИНИЦИАЛИЗАЦИЯ КАРТЫ ────────────────────────────────────────
   const map = new maplibregl.Map({
     container: 'map',
-    style:     'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-    center:    [20, 45],
-    zoom:      3
+    style:     MAP_STYLES[0].url,
+    center:    [15, 47],
+    zoom:      4
   });
-  map.addControl(new maplibregl.NavigationControl(), 'top-left');
-  map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+  map.addControl(new maplibregl.NavigationControl(), 'top-right');
+  map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-right');
 
-  // ── ЗАГРУЗКА ИЗ AIRTABLE ─────────────────────────────────
+  // ── СМЕНА СТИЛЯ КАРТЫ ─────────────────────────────────────────
+  document.getElementById('map-style-btn').addEventListener('click', () => {
+    currentStyleIdx = (currentStyleIdx + 1) % MAP_STYLES.length;
+    const s = MAP_STYLES[currentStyleIdx];
+    map.setStyle(s.url);
+    document.getElementById('map-style-btn').textContent = `карта: ${s.label} ▾`;
+    // После смены стиля — перерисовать источники MapLibre (маркеры выживают сами)
+    map.once('styledata', () => { renderCircles(); });
+  });
+
+  // ── КНОПКА САЙДБАРА ───────────────────────────────────────────
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  sidebarToggle.addEventListener('click', () => {
+    document.body.classList.toggle('sidebar-hidden');
+    sidebarToggle.textContent = document.body.classList.contains('sidebar-hidden') ? '›' : '‹';
+    // Пересчитать позицию шкалы
+    updateTimelinePosition();
+  });
+
+  function updateTimelinePosition() {
+    const hidden = document.body.classList.contains('sidebar-hidden');
+    const sw = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-w'));
+    const offset = hidden ? sw / 2 : sw;
+    document.getElementById('timeline-wrap').style.left =
+      `calc(${offset}px + (100vw - ${offset}px) / 2)`;
+  }
+
+  // ── ЗАГРУЗКА ИЗ AIRTABLE ──────────────────────────────────────
   async function loadFeatures(token) {
     let allRecords = [];
     let offset     = null;
     do {
-      const url      = offset ? `${API_URL}?offset=${offset}` : API_URL;
-      const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-      if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? 'auth' : `HTTP ${response.status}`);
-      const data = await response.json();
-      allRecords     = allRecords.concat(data.records);
-      offset         = data.offset;
+      const url = offset ? `${API_URL}?offset=${offset}` : API_URL;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error(res.status === 401 || res.status === 403 ? 'auth' : `HTTP ${res.status}`);
+      const data = await res.json();
+      allRecords = allRecords.concat(data.records);
+      offset = data.offset;
     } while (offset);
     return allRecords;
   }
 
-  // ── КОНВЕРТАЦИЯ ЗАПИСЕЙ ───────────────────────────────────
+  // ── КОНВЕРТАЦИЯ ЗАПИСЕЙ ───────────────────────────────────────
   function parseRecords(records) {
     return records
-      .filter(r => r.fields.is_active)
-      .map(r => ({
-        id:               r.id,
-        layer_id:         r.fields.layer_id             || '',
-        layer_type:       r.fields.layer_type           || '',
-        name_ru:          r.fields.name_ru              || '',
-        date_start:       r.fields.date_start           || null,
-        date_end:         r.fields.date_end             || null,
-        longitude:        r.fields.longitude   != null  ? parseFloat(r.fields.longitude)           : null,
-        latitude:         r.fields.latitude    != null  ? parseFloat(r.fields.latitude)            : null,
-        influence_radius: r.fields.influence_radius_km  ? parseInt(r.fields.influence_radius_km)   : null,
-        sequence_order:   r.fields.sequence_order       ? parseInt(r.fields.sequence_order)        : null,
-        title_short:      r.fields.title_short          || '',
-        image_url:        r.fields.image_url            || null,
-        source_url:       r.fields.source_url           || '',
-        tags:             r.fields.tags                 ? r.fields.tags.split(',').map(t => t.trim().toLowerCase()) : []
-      }));
+      .filter(r => {
+        const v = r.fields.is_active;
+        // Поле хранится как строка 'TRUE'/'FALSE' или boolean
+        return v === true || v === 'TRUE' || v === 'true';
+      })
+      .map(r => {
+        const f = r.fields;
+        return {
+          id:               r.id,
+          layer_id:         f.layer_id              || '',
+          layer_type:       f.layer_type            || 'architecture',
+          name_ru:          f.name_ru               || '',
+          name_en:          f.name_en               || '',
+          date_start:       f.date_start            || null,
+          date_end:         f.date_end              || null,   // null = объект существует до сих пор
+          longitude:        f.longitude   != null   ? parseFloat(f.longitude)          : null,
+          latitude:         f.latitude    != null   ? parseFloat(f.latitude)           : null,
+          influence_radius: f.influence_radius_km   ? parseInt(f.influence_radius_km)  : null,
+          title_short:      f.title_short           || '',
+          description:      f.description           || '',
+          image_url:        f.image_url             || null,
+          source_url:       f.source_url            || '',
+          architect:        f.architect             || null,    // поле для попапа
+          style_label:      f.style_label           || null,    // архитектурный стиль (текст)
+          tags:             f.tags ? f.tags.split(',').map(t => t.trim().toLowerCase()) : []
+        };
+      });
   }
 
-  // ── ОБРАБОТКА ТОКЕНА ─────────────────────────────────────
+  // ── ОБРАБОТКА ТОКЕНА ──────────────────────────────────────────
   async function handleTokenSubmit() {
     const token = document.getElementById('token-input').value.trim();
     const errEl = document.getElementById('token-error');
@@ -339,43 +594,38 @@
       renderAll();
     } catch (e) {
       errEl.style.display = 'block';
-      errEl.textContent   = e.message === 'auth' ? 'Ошибка авторизации — проверьте токен.' : `Ошибка: ${e.message}`;
+      errEl.textContent   = e.message === 'auth'
+        ? 'Ошибка авторизации — проверьте токен.'
+        : `Ошибка: ${e.message}`;
       setStatus('Ошибка загрузки данных.');
       btn.textContent = 'Загрузить карту';
       btn.disabled    = false;
     }
   }
 
-  document.getElementById('token-input').addEventListener('keydown', e => { if (e.key === 'Enter') handleTokenSubmit(); });
+  document.getElementById('token-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleTokenSubmit();
+  });
   document.getElementById('token-submit').addEventListener('click', handleTokenSubmit);
 
-  // ── ПОИСК ─────────────────────────────────────────────────
-
-  // Проверяет совпадение объекта с поисковым запросом
-  function matchesSearch(feature, query) {
-    if (!query) return true;
-    const q = query.toLowerCase();
-    // Поиск по названию
-    if (feature.name_ru.toLowerCase().includes(q)) return true;
-    // Поиск по тегам (точное совпадение тега)
-    if (feature.tags.some(tag => tag.includes(q)))  return true;
+  // ── ПОИСК ─────────────────────────────────────────────────────
+  function matchesSearch(feature, q) {
+    if (!q) return true;
+    if (feature.name_ru.toLowerCase().includes(q))        return true;
+    if ((feature.name_en || '').toLowerCase().includes(q)) return true;
+    if (feature.tags.some(tag => tag.includes(q)))        return true;
     return false;
   }
 
-  // Отрисовывает выпадающий список результатов поиска
   function renderSearchResults(query) {
     const container = document.getElementById('search-results');
     container.innerHTML = '';
-
-    if (!query) {
-      container.classList.remove('visible');
-      return;
-    }
+    if (!query) { container.classList.remove('visible'); return; }
 
     const q       = query.toLowerCase();
     const results = state.features.filter(f => matchesSearch(f, q)).slice(0, 20);
 
-    if (results.length === 0) {
+    if (!results.length) {
       container.innerHTML = '<div class="search-no-results">Ничего не найдено</div>';
       container.classList.add('visible');
       return;
@@ -384,35 +634,29 @@
     results.forEach(feature => {
       const layerCfg = LAYERS_CONFIG.find(l => l.layer_id === feature.layer_id);
       const color    = layerCfg ? layerCfg.color_hex : '#888';
-      const dateStr  = feature.date_start || '';
-
-      const item = document.createElement('div');
+      const item     = document.createElement('div');
       item.className = 'search-result-item';
       item.innerHTML = `
         <div class="search-result-name">${feature.name_ru}</div>
         <div class="search-result-meta">
           <span class="search-result-dot" style="background:${color}"></span>
           ${layerCfg ? layerCfg.name_ru : feature.layer_id}
-          ${dateStr ? ' · ' + dateStr : ''}
+          ${feature.date_start ? ' · ' + feature.date_start : ''}
         </div>
       `;
-
-      // Клик — летим на маркер и открываем попап
       item.addEventListener('click', () => {
         if (feature.longitude == null || feature.latitude == null) return;
         map.flyTo({ center: [feature.longitude, feature.latitude], zoom: 6, duration: 800 });
-        // Найти и открыть попап соответствующего маркера
         const marker = state.markers.find(m => {
           const ll = m.getLngLat();
-          return Math.abs(ll.lng - feature.longitude) < 0.001 && Math.abs(ll.lat - feature.latitude) < 0.001;
+          return Math.abs(ll.lng - feature.longitude) < 0.001 &&
+                 Math.abs(ll.lat - feature.latitude)  < 0.001;
         });
         if (marker) marker.togglePopup();
         clearSearch();
       });
-
       container.appendChild(item);
     });
-
     container.classList.add('visible');
   }
 
@@ -424,43 +668,43 @@
     state.searchQuery = '';
   }
 
-  // Слушатели поиска — инициализируются после загрузки данных
   function initSearch() {
     const input = document.getElementById('search-input');
     const clear = document.getElementById('search-clear');
-
     input.addEventListener('input', () => {
       state.searchQuery = input.value.trim();
       clear.classList.toggle('visible', state.searchQuery.length > 0);
       renderSearchResults(state.searchQuery);
     });
-
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Escape') clearSearch();
-    });
-
+    input.addEventListener('keydown', e => { if (e.key === 'Escape') clearSearch(); });
     clear.addEventListener('click', clearSearch);
   }
 
-  // ── СПИСОК СЛОЁВ ─────────────────────────────────────────
+  // ── СПИСОК СЛОЁВ ──────────────────────────────────────────────
   function renderLayersList() {
     const container = document.getElementById('layers-list');
     const section   = document.getElementById('layers-section');
     container.innerHTML = '';
 
-    // Скрыть секцию если слой один — переключать нечего
-    if (LAYERS_CONFIG.length === 1) {
-      section.style.display = 'none';
-      return;
-    }
+    // Считаем объекты по слоям
+    const counts = {};
+    state.features.forEach(f => { counts[f.layer_id] = (counts[f.layer_id] || 0) + 1; });
+
+    // Скрыть переключатель если слой один
+    const activeLayers = LAYERS_CONFIG.filter(l => (counts[l.layer_id] || 0) > 0);
+    if (activeLayers.length <= 1) { section.style.display = 'none'; return; }
     section.style.display = 'block';
+
     LAYERS_CONFIG.forEach(layer => {
+      const count = counts[layer.layer_id] || 0;
+      if (!count) return; // не показывать пустые слои
       const isActive = state.activeLayerIds.has(layer.layer_id);
-      const item     = document.createElement('div');
+      const item = document.createElement('div');
       item.className = 'layer-item';
       item.innerHTML = `
         <div class="layer-dot" style="background:${layer.color_hex}"></div>
         <span class="layer-label">${layer.name_ru}</span>
+        <span class="layer-count">${count}</span>
         <button class="layer-toggle ${isActive ? 'active' : ''}" data-id="${layer.layer_id}"></button>
       `;
       item.querySelector('button').addEventListener('click', () => toggleLayer(layer.layer_id));
@@ -476,15 +720,24 @@
     renderAll();
   }
 
-  // ── ПРОВЕРКА ВИДИМОСТИ ПО ВРЕМЕНИ ────────────────────────
+  // ── ВИДИМОСТЬ ПО ВРЕМЕНИ ──────────────────────────────────────
   function visibleInTime(feature) {
     const start = parseInt(feature.date_start);
-    return state.rangeMode
-      ? start <= state.rangeTo      // в диапазоне: построен до конца диапазона
-      : start <= state.currentYear; // одиночный год: уже построен
+    if (isNaN(start)) return false;
+
+    // date_end: null или пустое = объект существует до сих пор
+    const end = feature.date_end ? parseInt(feature.date_end) : 9999;
+
+    if (state.rangeMode) {
+      // Объект видим если он существовал хоть какую-то часть диапазона
+      return start <= state.rangeTo && end >= state.rangeFrom;
+    } else {
+      // Одиночный год: объект уже построен и ещё не разрушен
+      return start <= state.currentYear && end >= state.currentYear;
+    }
   }
 
-  // ── ГЕНЕРАЦИЯ ПОЛИГОНА ОКРУЖНОСТИ ────────────────────────
+  // ── ГЕНЕРАЦИЯ ОКРУЖНОСТИ ──────────────────────────────────────
   function circlePolygon(lng, lat, radiusKm, steps = 64) {
     const coords = [];
     for (let i = 0; i <= steps; i++) {
@@ -496,14 +749,13 @@
     return coords;
   }
 
-  // ── ГЛАВНАЯ ОТРИСОВКА ─────────────────────────────────────
+  // ── ГЛАВНАЯ ОТРИСОВКА ─────────────────────────────────────────
   function renderAll() {
     renderMarkers();
     renderCircles();
-    renderRoutes();
   }
 
-  // ── МАРКЕРЫ ───────────────────────────────────────────────
+  // ── МАРКЕРЫ ───────────────────────────────────────────────────
   function renderMarkers() {
     state.markers.forEach(m => m.remove());
     state.markers = [];
@@ -516,24 +768,45 @@
       const layerCfg = LAYERS_CONFIG.find(l => l.layer_id === feature.layer_id);
       const color    = layerCfg ? layerCfg.color_hex : '#ffffff';
 
+      // Маркер
       const el = document.createElement('div');
       el.style.cssText = `
-        width:14px; height:14px; border-radius:50%;
-        background:${color}; border:2px solid rgba(255,255,255,0.6);
-        cursor:pointer; box-shadow:0 0 6px ${color};
+        width:12px; height:12px; border-radius:50%;
+        background:${color}; border:1.5px solid rgba(255,255,255,0.5);
+        cursor:pointer;
+        box-shadow:0 0 8px ${color}, 0 0 2px ${color};
+        transition: transform 0.15s;
       `;
+      el.addEventListener('mouseenter', () => { el.style.transform = 'scale(1.6)'; });
+      el.addEventListener('mouseleave', () => { el.style.transform = 'scale(1)'; });
 
-      const dateStr = feature.date_end
-        ? `Построен: ${feature.date_start} — ${feature.date_end}`
-        : `Построен: ${feature.date_start}`;
+      // Строки дат
+      const builtStr    = feature.date_start ? `Построен: ${feature.date_start}` : '';
+      const destroyedStr = feature.date_end   ? `Разрушен: ${feature.date_end}`   : '';
+      const architectStr = feature.architect  ? `Архитектор: ${feature.architect}` : '';
+      const styleStr     = feature.style_label || (layerCfg ? layerCfg.name_ru : '');
 
-      const popup = new maplibregl.Popup({ offset: 14, closeButton: true, maxWidth: '300px' })
+      // Цвет бейджа стиля совпадает с цветом слоя
+      const badgeStyle = `background:${color}22; color:${color}; border:1px solid ${color}44;`;
+
+      const popup = new maplibregl.Popup({ offset: 12, closeButton: true, maxWidth: '300px' })
         .setHTML(`
-          ${feature.image_url ? `<img class="popup-img" src="${feature.image_url}" alt="${feature.name_ru}">` : ''}
-          <div class="popup-title">${feature.name_ru}</div>
-          <div class="popup-date">${dateStr}</div>
-          <div class="popup-desc">${feature.title_short}</div>
-          <a class="popup-link" href="${feature.source_url}" target="_blank">→ источник</a>
+          ${feature.image_url
+            ? `<img class="popup-img" src="${feature.image_url}" alt="${feature.name_ru}"
+                    referrerpolicy="no-referrer" crossorigin="anonymous"
+                    onerror="this.style.display='none'">`
+            : ''}
+          <div class="popup-body">
+            ${styleStr ? `<span class="popup-style-tag" style="${badgeStyle}">${styleStr}</span>` : ''}
+            <div class="popup-title">${feature.name_ru}</div>
+            <div class="popup-meta">
+              ${builtStr     ? `<span><strong>${builtStr}</strong></span><br>` : ''}
+              ${destroyedStr ? `<span>${destroyedStr}</span><br>` : ''}
+              ${architectStr ? `<span>${architectStr}</span><br>` : ''}
+            </div>
+            <div class="popup-desc">${feature.title_short}</div>
+            ${feature.source_url ? `<a class="popup-link" href="${feature.source_url}" target="_blank" rel="noopener">→ источник</a>` : ''}
+          </div>
         `);
 
       state.markers.push(
@@ -547,138 +820,141 @@
     updateStatus();
   }
 
-  // ── КРУГИ ВЛИЯНИЯ ─────────────────────────────────────────
+  // ── КРУГИ ВЛИЯНИЯ (объединённые по слоям через Turf) ──────────
   function renderCircles() {
-    if (map.getLayer('circles-fill'))   map.removeLayer('circles-fill');
-    if (map.getLayer('circles-stroke')) map.removeLayer('circles-stroke');
-    if (map.getSource('circles'))       map.removeSource('circles');
+    // Убрать старые слои
+    ['circles-fill', 'circles-stroke'].forEach(id => {
+      if (map.getLayer(id)) map.removeLayer(id);
+    });
+    if (map.getSource('circles')) map.removeSource('circles');
 
-    const features = state.features
-      .filter(f =>
-        state.activeLayerIds.has(f.layer_id) &&
-        visibleInTime(f) &&
-        f.longitude != null && f.latitude != null &&
-        f.influence_radius != null
-      )
-      .map(f => {
-        const color = (LAYERS_CONFIG.find(l => l.layer_id === f.layer_id) || {}).color_hex || '#fff';
-        return {
-          type: 'Feature',
-          geometry: { type: 'Polygon', coordinates: [circlePolygon(f.longitude, f.latitude, f.influence_radius)] },
-          properties: { color }
-        };
-      });
+    // Собрать кандидатов
+    const candidates = state.features.filter(f =>
+      state.activeLayerIds.has(f.layer_id) &&
+      visibleInTime(f) &&
+      f.longitude != null && f.latitude != null &&
+      f.influence_radius != null
+    );
+    if (!candidates.length) return;
 
-    if (!features.length) return;
-
-    map.addSource('circles', { type: 'geojson', data: { type: 'FeatureCollection', features } });
-    map.addLayer({ id: 'circles-fill',   type: 'fill', source: 'circles', paint: { 'fill-color': ['get','color'], 'fill-opacity': 0.08 } });
-    map.addLayer({ id: 'circles-stroke', type: 'line', source: 'circles', paint: { 'line-color': ['get','color'], 'line-width': 1.5, 'line-opacity': 0.4 } });
-  }
-
-  // ── МАРШРУТНЫЕ ЛИНИИ ──────────────────────────────────────
-  function renderRoutes() {
-    if (map.getLayer('routes-line')) map.removeLayer('routes-line');
-    if (map.getSource('routes'))     map.removeSource('routes');
-
-    // Собираем точки маршрута по слоям — только видимые по времени
+    // Сгруппировать по layer_id
     const byLayer = {};
-    state.features
-      .filter(f =>
-        state.activeLayerIds.has(f.layer_id) &&
-        f.layer_type === 'route_point' &&
-        f.longitude != null && f.latitude != null &&
-        f.sequence_order != null &&
-        routePointVisible(f)   // фильтр по шкале времени
-      )
-      .forEach(f => {
-        (byLayer[f.layer_id] = byLayer[f.layer_id] || []).push(f);
-      });
+    candidates.forEach(f => {
+      (byLayer[f.layer_id] = byLayer[f.layer_id] || []).push(f);
+    });
 
-    // Линия строится только если есть минимум 2 точки
-    const features = Object.entries(byLayer)
-      .filter(([, pts]) => pts.length >= 2)
-      .map(([layerId, pts]) => {
-        const sorted = pts.sort((a, b) => a.sequence_order - b.sequence_order);
-        const color  = (LAYERS_CONFIG.find(l => l.layer_id === layerId) || {}).color_hex || '#fff';
-        return {
-          type: 'Feature',
-          geometry: { type: 'LineString', coordinates: sorted.map(p => [p.longitude, p.latitude]) },
-          properties: { color }
-        };
-      });
+    const mergedFeatures = [];
 
-    if (!features.length) return;
+    Object.entries(byLayer).forEach(([layerId, pts]) => {
+      const color = (LAYERS_CONFIG.find(l => l.layer_id === layerId) || {}).color_hex || '#fff';
 
-    map.addSource('routes', { type: 'geojson', data: { type: 'FeatureCollection', features } });
+      // Строим индивидуальные полигоны
+      const polys = pts.map(f => ({
+        type: 'Feature',
+        geometry: { type: 'Polygon', coordinates: [circlePolygon(f.longitude, f.latitude, f.influence_radius)] },
+        properties: { color }
+      }));
+
+      // Объединяем через Turf union (слияние пересекающихся)
+      let merged = polys[0];
+      for (let i = 1; i < polys.length; i++) {
+        try { merged = turf.union(merged, polys[i]); }
+        catch(e) { /* пропустить проблемный полигон */ }
+      }
+      if (merged) {
+        merged.properties = { color };
+        mergedFeatures.push(merged);
+      }
+    });
+
+    if (!mergedFeatures.length) return;
+
+    map.addSource('circles', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: mergedFeatures }
+    });
     map.addLayer({
-      id: 'routes-line', type: 'line', source: 'routes',
-      layout: { 'line-join': 'round', 'line-cap': 'round' },
-      paint: { 'line-color': ['get','color'], 'line-width': 1.5, 'line-opacity': 0.5, 'line-dasharray': [2, 2] }
+      id: 'circles-fill', type: 'fill', source: 'circles',
+      paint: { 'fill-color': ['get','color'], 'fill-opacity': 0.07 }
+    });
+    map.addLayer({
+      id: 'circles-stroke', type: 'line', source: 'circles',
+      paint: { 'line-color': ['get','color'], 'line-width': 1, 'line-opacity': 0.35 }
     });
   }
 
-  // Точка маршрута видна если её date_start попадает в текущий временной срез
-  function routePointVisible(f) {
-    const start = parseInt(f.date_start);
-    if (state.rangeMode) {
-      // В режиме диапазона — точка внутри диапазона
-      return start >= state.rangeFrom && start <= state.rangeTo;
-    }
-    // В режиме одного года — все точки до текущего года включительно
-    return start <= state.currentYear;
-  }
-
-  // ── ШКАЛА — ОДИНОЧНЫЙ ГОД ────────────────────────────────
+  // ── ШКАЛА — ОДИНОЧНЫЙ ГОД ─────────────────────────────────────
   const slider      = document.getElementById('timeline-slider');
   const yearDisplay = document.getElementById('year-display');
+
   slider.addEventListener('input', () => {
     state.currentYear       = parseInt(slider.value);
     yearDisplay.textContent = formatYear(state.currentYear);
     renderAll();
   });
 
-  // ── ШКАЛА — ДИАПАЗОН ─────────────────────────────────────
-  const rangeCheckbox = document.getElementById('range-checkbox');
-  const rangeFrom     = document.getElementById('range-from');
-  const rangeTo       = document.getElementById('range-to');
-  const rangeFromVal  = document.getElementById('range-from-val');
-  const rangeToVal    = document.getElementById('range-to-val');
+  // ── ШКАЛА — РЕЖИМ ДИАПАЗОНА ───────────────────────────────────
+  const rangeToggleBtn = document.getElementById('range-toggle-btn');
+  const timelineWrap   = document.getElementById('timeline-wrap');
+  const rangePanel     = document.getElementById('timeline-range');
+  const rangeFrom      = document.getElementById('range-from');
+  const rangeTo        = document.getElementById('range-to');
+  const rangeFromVal   = document.getElementById('range-from-val');
+  const rangeToVal     = document.getElementById('range-to-val');
 
-  rangeCheckbox.addEventListener('change', () => {
-    state.rangeMode = rangeCheckbox.checked;
-    document.getElementById('single-slider').style.display = state.rangeMode ? 'none' : 'block';
-    document.getElementById('range-sliders').classList.toggle('visible', state.rangeMode);
+  rangeToggleBtn.addEventListener('click', () => {
+    state.rangeMode = !state.rangeMode;
+    rangeToggleBtn.classList.toggle('active', state.rangeMode);
+    rangePanel.classList.toggle('visible', state.rangeMode);
+    timelineWrap.classList.toggle('range-open', state.rangeMode);
+
+    // В режиме диапазона одиночный слайдер не нужен визуально, но DOM оставляем
+    slider.style.opacity = state.rangeMode ? '0.4' : '1';
+    yearDisplay.style.opacity = state.rangeMode ? '0.4' : '1';
     renderAll();
   });
 
   rangeFrom.addEventListener('input', () => {
     state.rangeFrom = parseInt(rangeFrom.value);
-    if (state.rangeFrom > state.rangeTo) { state.rangeTo = state.rangeFrom; rangeTo.value = state.rangeTo; rangeToVal.textContent = formatYear(state.rangeTo); }
+    if (state.rangeFrom > state.rangeTo) {
+      state.rangeTo = state.rangeFrom;
+      rangeTo.value = state.rangeTo;
+      rangeToVal.textContent = formatYear(state.rangeTo);
+    }
     rangeFromVal.textContent = formatYear(state.rangeFrom);
     renderAll();
   });
 
   rangeTo.addEventListener('input', () => {
     state.rangeTo = parseInt(rangeTo.value);
-    if (state.rangeTo < state.rangeFrom) { state.rangeFrom = state.rangeTo; rangeFrom.value = state.rangeFrom; rangeFromVal.textContent = formatYear(state.rangeFrom); }
+    if (state.rangeTo < state.rangeFrom) {
+      state.rangeFrom = state.rangeTo;
+      rangeFrom.value = state.rangeFrom;
+      rangeFromVal.textContent = formatYear(state.rangeFrom);
+    }
     rangeToVal.textContent = formatYear(state.rangeTo);
     renderAll();
   });
 
-  // ── УТИЛИТЫ ───────────────────────────────────────────────
-  function formatYear(y) { return y < 0 ? `${Math.abs(y)} до н.э.` : String(y); }
-
-  function updateStatus() {
-    const timeStr = state.rangeMode
-      ? `${formatYear(state.rangeFrom)} — ${formatYear(state.rangeTo)}`
-      : `Год: ${formatYear(state.currentYear)}`;
-    setStatus(`Показано: ${state.markers.length} объектов | ${timeStr}`);
+  // ── УТИЛИТЫ ───────────────────────────────────────────────────
+  function formatYear(y) {
+    return y < 0 ? `${Math.abs(y)} до н.э.` : String(y);
   }
 
-  function setStatus(msg) { document.getElementById('status-bar').textContent = msg; }
+  function updateStatus() {
+    const visible = state.markers.length;
+    const total   = state.features.filter(f => state.activeLayerIds.has(f.layer_id)).length;
+    const timeStr = state.rangeMode
+      ? `${formatYear(state.rangeFrom)} — ${formatYear(state.rangeTo)}`
+      : formatYear(state.currentYear);
+    setStatus(`Показано: ${visible} из ${total} объектов · ${timeStr}`);
+  }
 
-  // ── ЗАПУСК ────────────────────────────────────────────────
+  function setStatus(msg) {
+    document.getElementById('status-bar').textContent = msg;
+  }
+
+  // ── ЗАПУСК ────────────────────────────────────────────────────
   map.on('load', () => {
     renderLayersList();
     setStatus('Введите токен для загрузки данных…');
