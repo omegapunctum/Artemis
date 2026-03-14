@@ -16,10 +16,10 @@
       height: 100vh;
       overflow: hidden;
     }
- 
+
     /* ── КАРТА — ФОНОВЫЙ СЛОЙ ── */
     #map { position: fixed; inset: 0; z-index: 0; }
- 
+
     /* ── ОБЩИЙ КЛАСС «ЖИДКОЕ СТЕКЛО» ── */
     .glass {
       background: rgba(8, 8, 20, 0.68);
@@ -28,7 +28,7 @@
       border: 1px solid rgba(255, 255, 255, 0.07);
       box-shadow: 0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
     }
- 
+
     /* ════════════════════════════════════
        ЛЕВАЯ ПАНЕЛЬ
     ════════════════════════════════════ */
@@ -44,7 +44,7 @@
       flex-direction: column;
       overflow: hidden;
     }
- 
+
     /* Шапка с логотипом */
     #sidebar-header {
       padding: 14px 16px 12px;
@@ -63,7 +63,7 @@
       color: #444;
       letter-spacing: 0.3px;
     }
- 
+
     /* Тело — прокручиваемое */
     #sidebar-body {
       flex: 1;
@@ -75,7 +75,7 @@
       scrollbar-width: thin;
       scrollbar-color: rgba(255,255,255,0.08) transparent;
     }
- 
+
     .section-label {
       font-size: 9px;
       text-transform: uppercase;
@@ -83,7 +83,7 @@
       color: #445;
       margin-bottom: 8px;
     }
- 
+
     /* ── ПОИСК ── */
     #search-wrap { position: relative; }
     #search-input {
@@ -133,7 +133,7 @@
       vertical-align: middle;
     }
     .sr-empty { font-size: 11px; color: #445; text-align: center; padding: 10px 0; }
- 
+
     /* ── СЛОИ ── */
     .layer-row {
       display: flex; align-items: center; gap: 9px;
@@ -164,7 +164,7 @@
       transition: left 0.18s;
     }
     .layer-toggle.on::after { left: 14px; }
- 
+
     /* ── СТИЛЬ КАРТЫ ── */
     #style-buttons {
       display: flex;
@@ -188,10 +188,10 @@
       border-color: rgba(74,106,255,0.35);
       color: #a0b4ff;
     }
- 
+
     /* ── СТАТУС ── */
     #status-line { font-size: 10px; color: #333; padding-top: 2px; }
- 
+
     /* ════════════════════════════════════
        ШКАЛА ВРЕМЕНИ — СНИЗУ ПО ЦЕНТРУ
     ════════════════════════════════════ */
@@ -206,7 +206,7 @@
       /* Переход при появлении диапазонных слайдеров */
       transition: bottom 0.0s;
     }
- 
+
     #timeline-bar {
       border-radius: 16px;
       padding: 13px 20px 12px;
@@ -219,14 +219,14 @@
         0 8px 40px rgba(0,0,0,0.5),
         0 1px 0 rgba(255,255,255,0.04) inset;
     }
- 
+
     /* Основная строка */
     #tl-main {
       display: flex;
       align-items: center;
       gap: 12px;
     }
- 
+
     #year-display {
       font-size: 18px;
       color: #a0b4ff;
@@ -237,13 +237,13 @@
       font-weight: 500;
       letter-spacing: -0.3px;
     }
- 
+
     #timeline-slider {
       flex: 1;
       accent-color: #4a6aff;
       cursor: pointer;
     }
- 
+
     #tl-range-toggle {
       display: flex;
       align-items: center;
@@ -258,7 +258,7 @@
       white-space: nowrap;
       user-select: none;
     }
- 
+
     /* Диапазонные слайдеры — выезжают снизу */
     #range-sliders {
       overflow: hidden;
@@ -274,7 +274,7 @@
       opacity: 1;
       margin-top: 10px;
     }
- 
+
     .rrow {
       display: flex; align-items: center; gap: 8px;
       margin-bottom: 5px;
@@ -283,7 +283,7 @@
     .rlabel { font-size: 10px; color: #445; width: 24px; flex-shrink: 0; }
     .rrow input[type=range] { flex: 1; accent-color: #4a6aff; cursor: pointer; }
     .rval { font-size: 11px; color: #a0b4ff; width: 76px; text-align: right; font-variant-numeric: tabular-nums; flex-shrink: 0; }
- 
+
     /* ════════════════════════════════════
        ПОПАП
     ════════════════════════════════════ */
@@ -312,7 +312,7 @@
     }
     .maplibregl-popup-close-button:hover { color: #99a; }
     .maplibregl-popup-tip { border-top-color: rgba(12,12,28,0.97) !important; }
- 
+
     .popup-img {
       width: 100%;
       max-height: 130px;
@@ -357,7 +357,7 @@
       text-decoration: none;
     }
     .popup-link:hover { color: #7a9aff; }
- 
+
     /* ════════════════════════════════════
        ПАНЕЛЬ ТОКЕНА
     ════════════════════════════════════ */
@@ -401,17 +401,17 @@
     #token-submit:hover:not(:disabled) { background: #3a5aef; }
     #token-submit:disabled { opacity: 0.5; cursor: default; }
     #token-error { font-size: 11px; color: #e84a3a; display: none; }
- 
+
     /* Позиции встроенных контролов карты */
     .maplibregl-ctrl-top-left  { top: 16px; left: 288px; }
     .maplibregl-ctrl-bottom-left { bottom: 110px; left: 16px; }
   </style>
 </head>
 <body>
- 
+
   <!-- КАРТА -->
   <div id="map"></div>
- 
+
   <!-- ЛЕВАЯ ПАНЕЛЬ -->
   <div id="sidebar" class="glass">
     <div id="sidebar-header">
@@ -419,7 +419,7 @@
       <div class="subtitle">интерактивная карта истории</div>
     </div>
     <div id="sidebar-body">
- 
+
       <!-- Поиск -->
       <div>
         <div class="section-label">Поиск</div>
@@ -429,13 +429,13 @@
         </div>
         <div id="search-results"></div>
       </div>
- 
+
       <!-- Слои -->
       <div id="layers-section">
         <div class="section-label">Слои</div>
         <div id="layers-list"></div>
       </div>
- 
+
       <!-- Стиль карты -->
       <div>
         <div class="section-label">Стиль карты</div>
@@ -445,13 +445,13 @@
           <button class="style-btn" data-style="voyager">Классика</button>
         </div>
       </div>
- 
+
       <!-- Статус -->
       <div id="status-line">Введите токен…</div>
- 
+
     </div>
   </div>
- 
+
   <!-- ШКАЛА ВРЕМЕНИ -->
   <div id="timeline-wrap">
     <div id="timeline-bar">
@@ -477,7 +477,7 @@
       </div>
     </div>
   </div>
- 
+
   <!-- ПАНЕЛЬ ТОКЕНА -->
   <div id="token-overlay"></div>
   <div id="token-panel">
@@ -488,27 +488,27 @@
     <div id="token-error"></div>
     <button id="token-submit">Загрузить карту</button>
   </div>
- 
+
 <script>
   // ── КОНФИГУРАЦИЯ ──────────────────────────────────────────
   const BASE_ID  = 'appHmf8ubeUF9nfkO';
   const TABLE_ID = 'tblNGMtwZuLlhrZNe';
   const API_URL  = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`;
- 
+
   // Слои — цвет и подпись
   const LAYERS = [
     { id: 'romanesque',  ru: 'Романский',  hex: '#e8a838' },
     { id: 'gothic',      ru: 'Готика',     hex: '#7a5af0' },
     { id: 'renaissance', ru: 'Ренессанс',  hex: '#3ab87a' },
   ];
- 
+
   // Стили карты
   const MAP_STYLES = {
     dark:    'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
     light:   'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
     voyager: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
   };
- 
+
   // ── СОСТОЯНИЕ ─────────────────────────────────────────────
   const state = {
     year:      1200,
@@ -520,7 +520,7 @@
     features:  [],
     markers:   [],
   };
- 
+
   // ── ИНИЦИАЛИЗАЦИЯ КАРТЫ ───────────────────────────────────
   const map = new maplibregl.Map({
     container: 'map',
@@ -530,7 +530,7 @@
   });
   map.addControl(new maplibregl.NavigationControl(), 'top-left');
   map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
- 
+
   // ── СМЕНА СТИЛЯ КАРТЫ ─────────────────────────────────────
   document.querySelectorAll('.style-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -541,7 +541,7 @@
       map.once('style.load', () => renderCircles());
     });
   });
- 
+
   // ── ЗАГРУЗКА ДАННЫХ ИЗ AIRTABLE ──────────────────────────
   async function loadFeatures(token) {
     let all = [], offset = null;
@@ -555,7 +555,7 @@
     } while (offset);
     return all;
   }
- 
+
   // ── КОНВЕРТАЦИЯ ЗАПИСЕЙ ───────────────────────────────────
   function parse(records) {
     return records
@@ -580,7 +580,7 @@
         };
       });
   }
- 
+
   // ── ОБРАБОТКА ВВОДА ТОКЕНА ───────────────────────────────
   async function submit() {
     const token = document.getElementById('token-input').value.trim();
@@ -609,7 +609,7 @@
   }
   document.getElementById('token-submit').addEventListener('click', submit);
   document.getElementById('token-input').addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
- 
+
   // ── ВИДИМОСТЬ ОБЪЕКТА ВО ВРЕМЕНИ ─────────────────────────
   // Здание показывается если: уже построено И ещё не разрушено.
   // Если date_end отсутствует — здание стоит до сих пор (всегда visible после постройки).
@@ -626,23 +626,23 @@
       return true;
     }
   }
- 
+
   // ── ГЛАВНАЯ ОТРИСОВКА ─────────────────────────────────────
   function renderAll() { renderMarkers(); renderCircles(); updateStatus(); }
- 
+
   // ── МАРКЕРЫ ───────────────────────────────────────────────
   function renderMarkers() {
     state.markers.forEach(m => m.remove());
     state.markers = [];
- 
+
     state.features.forEach(f => {
       if (!state.active.has(f.layer_id)) return;
       if (!visible(f))                   return;
       if (f.lon == null || f.lat == null) return;
- 
+
       const layer = LAYERS.find(l => l.id === f.layer_id);
       const color = layer ? layer.hex : '#fff';
- 
+
       // DOM-элемент маркера
       const el = document.createElement('div');
       el.style.cssText = `
@@ -659,18 +659,18 @@
         el.style.transform  = 'scale(1)';
         el.style.boxShadow  = `0 0 8px ${color}99`;
       });
- 
+
       // Данные для попапа
       const styleName  = layer ? layer.ru : f.layer_id;
       const builtStr   = f.date_start || '—';
       const destroyStr = f.date_end   || null;
       const archStr    = f.architect  || null;
- 
+
       // Изображение: referrerpolicy="no-referrer" решает проблему с блокировкой Wikimedia
       const imgTag = f.img
         ? `<img class="popup-img" src="${f.img}" alt="${f.name_ru}" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display='none'">`
         : '';
- 
+
       // Метаданные в попапе (только непустые строки)
       const metaRows = [
         ['Построен',   builtStr],
@@ -680,7 +680,7 @@
       ].filter(Boolean).map(([k,v]) =>
         `<span class="pm-k">${k}</span><span class="pm-v">${v}</span>`
       ).join('');
- 
+
       const popup = new maplibregl.Popup({ offset: 14, closeButton: true, maxWidth: '295px' })
         .setHTML(`
           ${imgTag}
@@ -692,7 +692,7 @@
             ${f.src  ? `<a class="popup-link" href="${f.src}" target="_blank" rel="noopener">→ источник</a>` : ''}
           </div>
         `);
- 
+
       state.markers.push(
         new maplibregl.Marker({ element: el })
           .setLngLat([f.lon, f.lat])
@@ -701,14 +701,14 @@
       );
     });
   }
- 
+
   // ── КРУГИ ВЛИЯНИЯ ─────────────────────────────────────────
   // Используется для объектов с заполненным influence_radius_km.
   // Перекрывающиеся круги дают визуальный эффект "накопления" за счёт аддитивной непрозрачности.
   function renderCircles() {
     ['circles-fill','circles-stroke'].forEach(id => { if (map.getLayer(id)) map.removeLayer(id); });
     if (map.getSource('circles')) map.removeSource('circles');
- 
+
     const feats = state.features
       .filter(f => state.active.has(f.layer_id) && visible(f) && f.lon != null && f.radius != null)
       .map(f => {
@@ -719,13 +719,13 @@
           properties: { color },
         };
       });
- 
+
     if (!feats.length) return;
     map.addSource('circles', { type: 'geojson', data: { type: 'FeatureCollection', features: feats } });
     map.addLayer({ id: 'circles-fill',   type: 'fill', source: 'circles', paint: { 'fill-color': ['get','color'], 'fill-opacity': 0.07 } });
     map.addLayer({ id: 'circles-stroke', type: 'line', source: 'circles', paint: { 'line-color': ['get','color'], 'line-width': 1, 'line-opacity': 0.28 } });
   }
- 
+
   // Генерация GeoJSON-полигона окружности
   function circlePoly(lng, lat, km, n = 64) {
     const pts = [];
@@ -738,7 +738,7 @@
     }
     return pts;
   }
- 
+
   // ── СПИСОК СЛОЁВ В САЙДБАРЕ ──────────────────────────────
   function renderLayers() {
     const list = document.getElementById('layers-list');
@@ -761,7 +761,7 @@
       list.appendChild(row);
     });
   }
- 
+
   // ── ПОИСК ─────────────────────────────────────────────────
   function initSearch() {
     const inp = document.getElementById('search-input');
@@ -774,7 +774,7 @@
     inp.addEventListener('keydown', e => { if (e.key === 'Escape') clearSearch(); });
     clr.addEventListener('click', clearSearch);
   }
- 
+
   function showSearchResults(q) {
     const box = document.getElementById('search-results');
     box.innerHTML = '';
@@ -812,7 +812,7 @@
     });
     box.classList.add('visible');
   }
- 
+
   function clearSearch() {
     document.getElementById('search-input').value = '';
     document.getElementById('search-clear').classList.remove('visible');
@@ -821,7 +821,7 @@
     box.innerHTML = '';
     state.query = '';
   }
- 
+
   // ── ШКАЛА — ОДИНОЧНЫЙ ГОД ────────────────────────────────
   const sliderEl   = document.getElementById('timeline-slider');
   const yearDispEl = document.getElementById('year-display');
@@ -830,7 +830,7 @@
     yearDispEl.textContent = fy(state.year);
     renderAll();
   });
- 
+
   // ── ШКАЛА — ДИАПАЗОН ─────────────────────────────────────
   const chk      = document.getElementById('range-checkbox');
   const rfEl     = document.getElementById('range-from');
@@ -838,40 +838,40 @@
   const rfValEl  = document.getElementById('rfrom-val');
   const rtValEl  = document.getElementById('rto-val');
   const rsEl     = document.getElementById('range-sliders');
- 
+
   chk.addEventListener('change', () => {
     state.range = chk.checked;
     rsEl.classList.toggle('open', state.range);
     renderAll();
   });
- 
+
   rfEl.addEventListener('input', () => {
     state.from = parseInt(rfEl.value);
     if (state.from > state.to) { state.to = state.from; rtEl.value = state.to; rtValEl.textContent = fy(state.to); }
     rfValEl.textContent = fy(state.from);
     renderAll();
   });
- 
+
   rtEl.addEventListener('input', () => {
     state.to = parseInt(rtEl.value);
     if (state.to < state.from) { state.from = state.to; rfEl.value = state.from; rfValEl.textContent = fy(state.from); }
     rtValEl.textContent = fy(state.to);
     renderAll();
   });
- 
+
   // ── УТИЛИТЫ ───────────────────────────────────────────────
   // Форматирование года: отрицательные — до н.э.
   function fy(y) { return y < 0 ? `${Math.abs(y)} до н.э.` : String(y); }
- 
+
   function setStatus(msg) { document.getElementById('status-line').textContent = msg; }
- 
+
   function updateStatus() {
     const vis   = state.markers.length;
     const total = state.features.filter(f => state.active.has(f.layer_id)).length;
     const time  = state.range ? `${fy(state.from)} — ${fy(state.to)}` : fy(state.year);
     setStatus(`Показано: ${vis} / ${total} · ${time}`);
   }
- 
+
   // ── ЗАПУСК ────────────────────────────────────────────────
   map.on('load', () => {
     renderLayers();
