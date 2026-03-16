@@ -1,92 +1,99 @@
-const fs = require("fs");
-const axios = require("axios");
+const fs = require('fs');
+const path = require('path');
+const axios = require('axios');
 
-const TOKEN = process.env.AIRTABLE_TOKEN;
-const BASE = process.env.AIRTABLE_BASE;
+const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
+const AIRTABLE_BASE = process.env.AIRTABLE_BASE;
+const API_BASE_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE}`;
 
-async function fetchTable(table) {
+if (!AIRTABLE_TOKEN || !AIRTABLE_BASE) {
+  console.error('Missing AIRTABLE_TOKEN or AIRTABLE_BASE environment variables');
+  process.exit(1);
+}
 
-  let records = [];
-  let offset = null;
+async function fetchTable(tableName) {
+  const records = [];
+  let offset;
 
-  while (true) {
-
-    const url = `https://api.airtable.com/v0/${BASE}/${table}`;
-
-    const res = await axios.get(url, {
+  do {
+    const response = await axios.get(`${API_BASE_URL}/${encodeURIComponent(tableName)}`, {
       headers: {
-        Authorization: `Bearer ${TOKEN}`
+        Authorization: `Bearer ${AIRTABLE_TOKEN}`,
       },
-      params: { offset }
+      params: {
+        pageSize: 100,
+        ...(offset ? { offset } : {}),
+      },
+      timeout: 30000,
     });
 
-    records = records.concat(res.data.records);
-
-    if (!res.data.offset) break;
-
-    offset = res.data.offset;
-  }
+    records.push(...response.data.records);
+    offset = response.data.offset;
+  } while (offset);
 
   return records;
 }
 
-function featuresToGeoJSON(records) {
+function toGeoJSON(featuresRecords) {
+  const features = featuresRecords
+    .map((record) => {
+      const fields = record.fields || {};
+      const latitude = Number(fields.latitude);
+      const longitude = Number(fields.longitude);
 
-  const features = [];
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        return null;
+      }
 
-  for (const r of records) {
-
-    const f = r.fields;
-
-    if (!f.latitude || !f.longitude) continue;
-
-    features.push({
-
-      type: "Feature",
-
-      geometry: {
-        type: "Point",
-        coordinates: [
-          parseFloat(f.longitude),
-          parseFloat(f.latitude)
-        ]
-      },
-
-      properties: f
-    });
-  }
+      return {
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [longitude, latitude],
+        },
+        properties: {
+          ...fields,
+        },
+      };
+    })
+    .filter(Boolean);
 
   return {
-    type: "FeatureCollection",
-    features
+    type: 'FeatureCollection',
+    features,
   };
 }
 
-async function run() {
-
-  const features = await fetchTable("Features");
-  const layers = await fetchTable("Layers");
-
-  const geojson = featuresToGeoJSON(features);
-
-  if (!fs.existsSync("data")) fs.mkdirSync("data");
-
-  fs.writeFileSync(
-    "data/features.json",
-    JSON.stringify(features, null, 2)
-  );
-
-  fs.writeFileSync(
-    "data/features.geojson",
-    JSON.stringify(geojson, null, 2)
-  );
-
-  fs.writeFileSync(
-    "data/layers.json",
-    JSON.stringify(layers, null, 2)
-  );
-
-  console.log("Export complete");
+function ensureDataDirectory() {
+  const dataDir = path.resolve('data');
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
 }
 
-run();
+function writeJson(filePath, payload) {
+  fs.writeFileSync(filePath, JSON.stringify(payload, null, 2));
+}
+
+async function main() {
+  const [featuresRecords, layersRecords] = await Promise.all([
+    fetchTable('Features'),
+    fetchTable('Layers'),
+  ]);
+
+  const featuresGeoJSON = toGeoJSON(featuresRecords);
+
+  ensureDataDirectory();
+  writeJson('data/features.json', featuresRecords);
+  writeJson('data/features.geojson', featuresGeoJSON);
+  writeJson('data/layers.json', layersRecords);
+
+  console.log(
+    `Export completed: ${featuresRecords.length} features records, ${layersRecords.length} layers records.`
+  );
+}
+
+main().catch((error) => {
+  console.error('Airtable export failed:', error.message);
+  process.exit(1);
+});
