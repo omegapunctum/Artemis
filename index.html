@@ -371,51 +371,7 @@
       text-decoration: none;
     }
     .popup-link:hover { color: #7a9aff; }
-
-    /* ════════════════════════════════════
-       ПАНЕЛЬ ТОКЕНА
-    ════════════════════════════════════ */
-    #token-overlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.82);
-      z-index: 998;
-      backdrop-filter: blur(6px);
-    }
-    #token-panel {
-      position: fixed; top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 999;
-      background: rgba(12, 12, 28, 0.98);
-      border: 1px solid rgba(74,106,255,0.2);
-      border-radius: 14px;
-      padding: 28px 24px;
-      display: flex; flex-direction: column; gap: 13px;
-      width: 340px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.7);
-    }
-    #token-panel h2 {
-      font-size: 12px; color: #a0b4ff;
-      letter-spacing: 2.5px; text-transform: uppercase;
-    }
-    #token-panel p { font-size: 11px; color: #556; line-height: 1.65; }
-    #token-input {
-      width: 100%; padding: 9px 10px;
-      background: rgba(0,0,0,0.4);
-      border: 1px solid rgba(255,255,255,0.09);
-      border-radius: 7px; color: #dde;
-      font-size: 12px; font-family: monospace; outline: none;
-    }
-    #token-input:focus { border-color: rgba(74,106,255,0.45); }
-    #token-submit {
-      padding: 10px; background: #4a6aff; color: #fff;
-      border: none; border-radius: 7px; cursor: pointer;
-      font-size: 13px; font-weight: 500;
-      transition: background 0.18s;
-    }
-    #token-submit:hover:not(:disabled) { background: #3a5aef; }
-    #token-submit:disabled { opacity: 0.5; cursor: default; }
-    #token-error { font-size: 11px; color: #e84a3a; display: none; }
-
+    
     /* ── Категории ── */
     .cat-row {
       display: flex; align-items: center; gap: 9px;
@@ -531,7 +487,7 @@
       </div>
 
       <!-- Статус -->
-      <div id="status-line">Введите токен…</div>
+      <div id="status-line">Загрузка данных…</div>
 
     </div>
   </div>
@@ -561,23 +517,10 @@
       </div>
     </div>
   </div>
-
-  <!-- ПАНЕЛЬ ТОКЕНА -->
-  <div id="token-overlay"></div>
-  <div id="token-panel">
-    <h2>ARTEMIS — Доступ</h2>
-    <p>Введите Airtable Personal Access Token.<br>
-    Токен не сохраняется и не передаётся никуда, кроме Airtable API.</p>
-    <input id="token-input" type="password" placeholder="patXXXXXXXXXXXXXXXX…" autocomplete="off" />
-    <div id="token-error"></div>
-    <button id="token-submit">Загрузить карту</button>
-  </div>
-
+  
 <script>
   // ── КОНФИГУРАЦИЯ ──────────────────────────────────────────
-  const BASE_ID  = 'appHmf8ubeUF9nfkO';
-  const TABLE_ID = 'tblNGMtwZuLlhrZNe';
-  const API_URL  = `https://api.airtable.com/v0/${BASE_ID}/${TABLE_ID}`;
+  const DATA_URL = 'data/features.geojson';
 
   // Слои — цвет и подпись
   const LAYERS = [
@@ -667,79 +610,49 @@
       list.appendChild(row);
     });
   }
-  async function loadFeatures(token) {
-    let all = [], offset = null;
-    do {
-      const url = offset ? `${API_URL}?offset=${offset}` : API_URL;
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) throw new Error(res.status === 401 || res.status === 403 ? 'auth' : `HTTP ${res.status}`);
-      const data = await res.json();
-      all    = all.concat(data.records);
-      offset = data.offset;
-    } while (offset);
-    return all;
-  }
+async function loadData() {
+    setStatus('Загрузка данных…');
+    try {
+      const res = await fetch(DATA_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-  // ── КОНВЕРТАЦИЯ ЗАПИСЕЙ ───────────────────────────────────
-  // Семантика дат:
-  //   date_start            = год начала строительства
-  //   date_construction_end = год завершения строительства (только для отображения)
-  //   date_end              = год разрушения/утраты (ПУСТО = объект существует до сих пор)
-  function parse(records) {
-    return records
-      .filter(r => String(r.fields.is_active || '').toLowerCase() === 'true')
-      .map(r => {
-        const f = r.fields;
-        // date_end: пустая строка, null, undefined → объект существует, null в состоянии
-        const rawDestroyed = f.date_end && String(f.date_end).trim() !== '' ? String(f.date_end).trim() : null;
+      const geo = await res.json();
+      state.features = (geo.features || []).map(f => {
+        const p = f.properties || {};
+        const coords = (f.geometry && f.geometry.coordinates) || [];
+        const rawTags = p.tags;
+        const tags = Array.isArray(rawTags)
+          ? rawTags
+          : String(rawTags || '').split(',').map(t => t.trim()).filter(Boolean);
+
         return {
-          id:                    r.id,
-          layer_id:              f.layer_id     || '',
-          name_ru:               f.name_ru      || '',
-          date_start:            f.date_start   || null,
-          date_construction_end: f.date_construction_end || null, // год завершения стройки (для попапа)
-          date_end:              rawDestroyed,                    // год разрушения или null
-          lon:      f.longitude != null ? parseFloat(f.longitude) : null,
-          lat:      f.latitude  != null ? parseFloat(f.latitude)  : null,
-          radius:   f.influence_radius_km ? parseInt(f.influence_radius_km) : null,
-          desc:     f.title_short   || '',
-          architect:f.architect     || null,
-          img:      f.image_url     || null,
-          src:      f.source_url    || '',
-          tags:     f.tags ? f.tags.split(',').map(t => t.trim().toLowerCase()) : [],
+                   id: p.id || '',
+          name_ru: p.name || '',
+          layer_id: p.layer || '',
+          layer_type: p.layer_type || 'architecture',
+          date_start: p.start || null,
+          date_end: p.end && String(p.end).trim() !== '' ? String(p.end).trim() : null,
+          date_construction_end: p.date_construction_end || null,
+          radius: p.radius != null && String(p.radius).trim() !== '' ? parseInt(p.radius, 10) : null,
+          desc: p.desc || '',
+          architect: p.architect || null,
+          img: p.img || null,
+          src: p.src || '',
+          tags: tags.map(t => String(t).toLowerCase()),
+          lon: coords[0] != null ? parseFloat(coords[0]) : null,
+          lat: coords[1] != null ? parseFloat(coords[1]) : null,
         };
       });
-  }
 
-  // ── ОБРАБОТКА ВВОДА ТОКЕНА ───────────────────────────────
-  async function submit() {
-    const token = document.getElementById('token-input').value.trim();
-    const errEl = document.getElementById('token-error');
-    const btn   = document.getElementById('token-submit');
-    errEl.style.display = 'none';
-    if (!token) return;
-    btn.textContent = 'Загружаю…';
-    btn.disabled    = true;
-    setStatus('Загрузка из Airtable…');
-    try {
-      const records  = await loadFeatures(token);
-      state.features = parse(records);
-      document.getElementById('token-panel').style.display   = 'none';
-      document.getElementById('token-overlay').style.display = 'none';
-      renderLayers();
+       renderLayers();
       renderCategories();
       initSearch();
       renderAll();
-    } catch(e) {
-      errEl.style.display = 'block';
-      errEl.textContent   = e.message === 'auth' ? 'Ошибка авторизации — проверьте токен.' : `Ошибка: ${e.message}`;
-      btn.textContent = 'Загрузить карту';
-      btn.disabled    = false;
-      setStatus('Ошибка загрузки.');
+       } catch (e) {
+      console.error('Ошибка загрузки GeoJSON:', e);
+      setStatus('Ошибка загрузки данных.');
     }
   }
-  document.getElementById('token-submit').addEventListener('click', submit);
-  document.getElementById('token-input').addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
 
   // ── ВИДИМОСТЬ ОБЪЕКТА ВО ВРЕМЕНИ ─────────────────────────
   // Здание показывается если: уже построено И ещё не разрушено.
@@ -1033,10 +946,7 @@
   }
 
   // ── ЗАПУСК ────────────────────────────────────────────────
-  map.on('load', () => {
-    renderLayers();
-    setStatus('Введите токен для загрузки данных…');
-  });
+map.on('load', loadData);
 </script>
 </body>
 </html>
