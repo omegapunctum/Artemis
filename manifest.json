@@ -1,1 +1,9 @@
-
+{
+  "name": "ARTEMIS GIS",
+  "short_name": "ARTEMIS",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1d4ed8",
+  "icons": []
+}
