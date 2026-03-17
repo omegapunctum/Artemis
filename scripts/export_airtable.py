@@ -44,6 +44,7 @@ else:
     requests = None  # type: ignore[assignment]
 
 DATE_RE = re.compile(r"^-?\d{4}(?:-\d{2}-\d{2})?$")
+HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 TRUE_SET = {True, 1, "1", "true", "yes", "y", "да"}
 FALSE_SET = {False, 0, "0", "false", "no", "n", "нет"}
 
@@ -55,6 +56,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out-dir", default="data", help="Каталог для выходных файлов (по умолчанию: data)")
     parser.add_argument("--dry-run", action="store_true", help="Не ходить в сеть, читать локальный sample JSON")
     parser.add_argument("--max-records", type=int, default=None, help="Ограничить число записей (для тестирования)")
+    parser.add_argument(
+        "--exclude-without-geometry",
+        action="store_true",
+        help="Исключить из GeoJSON записи без координат (по умолчанию такие записи остаются)",
+    )
     parser.add_argument("--commit", action="store_true", help="После экспорта выполнить git add/commit")
     parser.add_argument("--self-test", action="store_true", help="Запустить минимальную самопроверку и выйти")
     return parser.parse_args()
@@ -76,7 +82,7 @@ def to_date_or_none(value: Any, record_id: str, field: str, errors: List[Dict[st
     value_str = str(value).strip()
     if DATE_RE.match(value_str):
         return value_str
-    errors.append({"record_id": record_id, "field": field, "error": f"invalid date: {value}"})
+    errors.append({"record_id": record_id, "field": field, "error": f"invalid date: {value}", "value": value})
     return None
 
 
@@ -86,7 +92,7 @@ def to_float_or_none(value: Any, record_id: str, field: str, errors: List[Dict[s
     try:
         return float(value)
     except (TypeError, ValueError):
-        errors.append({"record_id": record_id, "field": field, "error": f"invalid float: {value}"})
+        errors.append({"record_id": record_id, "field": field, "error": f"invalid float: {value}", "value": value})
         return None
 
 
@@ -96,7 +102,7 @@ def to_int_or_none(value: Any, record_id: str, field: str, errors: List[Dict[str
     try:
         return int(value)
     except (TypeError, ValueError):
-        errors.append({"record_id": record_id, "field": field, "error": f"invalid int: {value}"})
+        errors.append({"record_id": record_id, "field": field, "error": f"invalid int: {value}", "value": value})
         return None
 
 
@@ -108,7 +114,31 @@ def to_bool_or_none(value: Any, record_id: str, field: str, errors: List[Dict[st
         return True
     if normalized in FALSE_SET:
         return False
-    errors.append({"record_id": record_id, "field": field, "error": f"invalid bool: {value}"})
+    errors.append({"record_id": record_id, "field": field, "error": f"invalid bool: {value}", "value": value})
+    return None
+
+
+def validate_coordinate_range(
+    value: Optional[float],
+    minimum: float,
+    maximum: float,
+    record_id: str,
+    field: str,
+    errors: List[Dict[str, Any]],
+) -> Optional[float]:
+    """Проверяем диапазон координаты, иначе логируем ошибку и возвращаем None."""
+    if value is None:
+        return None
+    if minimum <= value <= maximum:
+        return value
+    errors.append(
+        {
+            "record_id": record_id,
+            "field": field,
+            "error": f"out of range [{minimum}, {maximum}]",
+            "value": value,
+        }
+    )
     return None
 
 
@@ -135,6 +165,9 @@ def map_record(record: Dict[str, Any], errors: List[Dict[str, Any]]) -> Dict[str
     record_id = record.get("id", "")
     fields = record.get("fields", {}) or {}
 
+    longitude = to_float_or_none(fields.get("longitude"), record_id, "longitude", errors)
+    latitude = to_float_or_none(fields.get("latitude"), record_id, "latitude", errors)
+
     mapped = {
         "id": record_id,
         "layer_id": safe_str(fields.get("layer_id")),
@@ -146,8 +179,8 @@ def map_record(record: Dict[str, Any], errors: List[Dict[str, Any]]) -> Dict[str
             fields.get("date_construction_end"), record_id, "date_construction_end", errors
         ),
         "date_end": to_date_or_none(fields.get("date_end"), record_id, "date_end", errors),
-        "longitude": to_float_or_none(fields.get("longitude"), record_id, "longitude", errors),
-        "latitude": to_float_or_none(fields.get("latitude"), record_id, "latitude", errors),
+        "longitude": validate_coordinate_range(longitude, -180.0, 180.0, record_id, "longitude", errors),
+        "latitude": validate_coordinate_range(latitude, -90.0, 90.0, record_id, "latitude", errors),
         "influence_radius_km": to_int_or_none(
             fields.get("influence_radius_km"), record_id, "influence_radius_km", errors
         ),
@@ -279,7 +312,7 @@ def build_geojson_features(mapped_records: Iterable[Dict[str, Any]]) -> Dict[str
                     "date_end": m.get("date_end"),
                     "longitude": m.get("longitude"),
                     "latitude": m.get("latitude"),
-                    "radius_km": m.get("influence_radius_km"),
+                    "influence_radius_km": m.get("influence_radius_km"),
                     "title_short": m.get("title_short"),
                     "description": m.get("description"),
                     "image_url": m.get("image_url"),
@@ -287,23 +320,46 @@ def build_geojson_features(mapped_records: Iterable[Dict[str, Any]]) -> Dict[str
                     "source_license": m.get("source_license"),
                     "tags": m.get("tags"),
                     "is_active": m.get("is_active"),
+                    "has_geometry": geometry is not None,
                 },
             }
         )
     return {"type": "FeatureCollection", "features": features}
 
 
-def build_layers(mapped_records: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def normalize_hex_color(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    cleaned = value.strip().lower()
+    if HEX_COLOR_RE.match(cleaned):
+        return cleaned
+    return None
+
+
+def build_layers(mapped_records: Iterable[Dict[str, Any]], errors: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     by_layer: Dict[str, Dict[str, Any]] = {}
     for m in mapped_records:
         lid = m.get("layer_id")
         if not lid:
             continue
+        raw_color = m.get("layer_color_hex")
+        normalized_color = normalize_hex_color(raw_color)
+        if raw_color is None:
+            normalized_color = "#999999"
+        elif normalized_color is None:
+            errors.append(
+                {
+                    "record_id": m.get("id"),
+                    "field": "layer_color_hex",
+                    "error": "invalid hex color, set to null",
+                    "value": raw_color,
+                }
+            )
         if lid not in by_layer:
             by_layer[lid] = {
                 "id": lid,
                 "name_ru": m.get("layer_name_ru") or lid,
-                "color_hex": m.get("layer_color_hex"),
+                "color_hex": normalized_color,
                 "icon": m.get("layer_icon"),
                 "is_enabled": True,
             }
@@ -326,6 +382,15 @@ def maybe_commit(paths: List[Path], records_count: int) -> None:
     if not existing:
         return
     try:
+        status = subprocess.run(
+            ["git", "status", "--porcelain", "--", *existing],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        if not status.stdout.strip():
+            print("Флаг --commit указан, но изменений в экспортных файлах нет — commit пропущен.")
+            return
         subprocess.run(["git", "add", *existing], check=True)
         subprocess.run(["git", "commit", "-m", message], check=True)
         print(f"Создан git commit: {message}")
@@ -345,6 +410,7 @@ def run_self_test() -> int:
             "longitude": "37.6173",
             "latitude": "55.7558",
             "influence_radius_km": "12",
+            "layer_color_hex": "#ABCDEF",
             "tags": "A, b ,C",
             "is_active": "true",
         },
@@ -354,12 +420,32 @@ def run_self_test() -> int:
     assert m["tags"] == ["a", "b", "c"]
     assert m["is_active"] is True
     assert m["influence_radius_km"] == 12
+    assert m["longitude"] == 37.6173
+    assert m["latitude"] == 55.7558
+    assert normalize_hex_color(m["layer_color_hex"]) == "#abcdef"
     assert not errors
     print("Self-test OK")
     return 0
 
 
+def sort_mapped_records(mapped_records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Детерминированная сортировка для стабильных diff/commit."""
+    def key(item: Dict[str, Any]) -> Tuple[Any, ...]:
+        layer = item.get("layer_id")
+        date_start = item.get("date_start")
+        return (
+            layer is None,
+            layer or "",
+            date_start is None,
+            date_start or "",
+            item.get("id") or "",
+        )
+
+    return sorted(mapped_records, key=key)
+
+
 def main() -> int:
+    started_at = time.time()
     args = parse_args()
 
     if args.self_test:
@@ -386,6 +472,7 @@ def main() -> int:
     raw_path = out_dir / f"{prefix}features.json"
     geojson_path = out_dir / f"{prefix}features.geojson"
     layers_path = out_dir / f"{prefix}layers.json"
+    export_meta_path = out_dir / f"{prefix}export_meta.json"
     error_log_path = out_dir / f"{prefix}export_errors.log"
 
     records: List[Dict[str, Any]]
@@ -409,29 +496,61 @@ def main() -> int:
         return 1
 
     errors: List[Dict[str, Any]] = []
-    mapped_records = [map_record(r, errors) for r in records]
+    mapped_records: List[Dict[str, Any]] = []
+    skipped_inactive = 0
+    for record in records:
+        mapped = map_record(record, errors)
+        if mapped.get("is_active") is False:
+            skipped_inactive += 1
+            continue
+        mapped_records.append(mapped)
+
+    errors.append(
+        {
+            "record_id": "__summary__",
+            "field": "is_active",
+            "error": "skipped records with is_active=False",
+            "value": skipped_inactive,
+        }
+    )
+
+    mapped_records = sort_mapped_records(mapped_records)
+    if args.exclude_without_geometry:
+        mapped_records = [m for m in mapped_records if m.get("longitude") is not None and m.get("latitude") is not None]
 
     geojson = build_geojson_features(mapped_records)
-    layers = build_layers(mapped_records)
+    layers = build_layers(mapped_records, errors)
+
+    export_meta = {
+        "timestamp": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "source": "dry-run" if dry_run else "airtable",
+        "records_requested": len(records),
+        "records_exported": len(mapped_records),
+        "errors": len(errors),
+        "duration_seconds": round(time.time() - started_at, 3),
+    }
 
     try:
         write_json(raw_path, records)
         write_json(geojson_path, geojson)
         write_json(layers_path, layers)
+        write_json(export_meta_path, export_meta)
 
         # Перезаписываем лог ошибок на каждый запуск
         if error_log_path.exists():
             error_log_path.unlink()
+        error_log_path.parent.mkdir(parents=True, exist_ok=True)
+        error_log_path.touch()
         for err in errors:
             log_error(error_log_path, err)
     except Exception as exc:  # noqa: BLE001
         print(f"Критическая ошибка сериализации/записи: {exc}", file=sys.stderr)
         return 1
 
-    print(f"Успешно: {len(mapped_records)} | Ошибок: {len(errors)}")
+    print(f"Успешно: {len(mapped_records)} | Ошибок: {len(errors)} | Пропущено по is_active: {skipped_inactive}")
 
     if args.commit:
-        maybe_commit([raw_path, geojson_path, layers_path, error_log_path], len(mapped_records))
+        maybe_commit([raw_path, geojson_path, layers_path, export_meta_path, error_log_path], len(mapped_records))
 
     return 0
 
@@ -444,10 +563,10 @@ if __name__ == "__main__":
 # python3 scripts/export_airtable.py --dry-run --out-dir data --max-records 20
 #
 # --- Чеклист после запуска ---
-# 1) Созданы файлы data/features.json, data/features.geojson, data/layers.json (или data/_test_* в dry-run).
-# 2) В data/*export_errors.log есть JSON Lines с ошибками валидации (если были).
-# 3) features.geojson имеет type=FeatureCollection и корректный массив features.
-# 4) Количество записей в features.json совпадает с количеством features в features.geojson.
+# 1) Созданы data/features.json, data/features.geojson, data/layers.json, data/export_meta.json (или data/_test_* в dry-run).
+# 2) В data/*export_errors.log есть JSON Lines с ключами record_id/field/error/value.
+# 3) features.geojson имеет influence_radius_km и has_geometry в properties.
+# 4) В выводе есть строка: Успешно: N | Ошибок: M | Пропущено по is_active: K.
 #
 # Пример строки вывода:
 # Успешно: N | Ошибок: M
