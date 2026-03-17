@@ -1,0 +1,56 @@
+name: ETL Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  etl-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      - name: Run dry-run export
+        run: |
+          python scripts/export_airtable.py --dry-run --out-dir data --max-records 10
+
+      - name: Validate outputs exist
+        run: |
+          test -f data/_test_features.geojson
+          test -f data/_test_layers.json
+          test -f data/_test_export_meta.json
+
+      - name: Validate GeoJSON structure
+        run: |
+          python - <<EOF
+          import json
+          with open("data/_test_features.geojson") as f:
+              data = json.load(f)
+          assert data["type"] == "FeatureCollection"
+          assert isinstance(data["features"], list)
+          print("GeoJSON OK")
+          EOF
+
+      - name: Validate export_meta
+        run: |
+          python - <<EOF
+          import json
+          with open("data/_test_export_meta.json") as f:
+              data = json.load(f)
+          assert "records_total_source" in data
+          assert "records_exported" in data
+          assert "errors" in data
+          print("Meta OK")
+          EOF
