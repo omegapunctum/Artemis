@@ -1,9 +1,12 @@
 import { loadLayers } from './data.js';
-import { updateMapData } from './map.js';
+import { updateMapData, setLayerLookup, focusFeatureOnMap, getMapFeatureCount } from './map.js';
 
-// Инициализация UI: фильтры, поиск, список и синхронизация с картой.
+// Инициализирует фильтры, единое состояние и синхронизацию списка с картой.
 export async function initUI(map, features) {
-  const allFeatures = features?.features || [];
+  const allFeatures = Array.isArray(features?.features) ? features.features.filter(isFeatureLike) : [];
+  const layers = await loadLayers().catch(() => []);
+  const layerLookup = buildLayerLookup(layers, allFeatures);
+  setLayerLookup(map, layers);
 
   const elements = {
     searchInput: document.getElementById('search-input'),
@@ -12,107 +15,202 @@ export async function initUI(map, features) {
     dateTo: document.getElementById('date-to'),
     objectList: document.getElementById('object-list'),
     sidebar: document.getElementById('sidebar'),
-    sidebarToggle: document.getElementById('sidebar-toggle')
+    sidebarToggle: document.getElementById('sidebar-toggle'),
+    resultsCount: document.getElementById('results-count'),
+    mapCount: document.getElementById('map-count'),
+    activeFiltersCount: document.getElementById('active-filters-count'),
+    statusMessage: document.getElementById('status-message')
   };
 
-  const layers = await loadLayers().catch(() => []);
-  hydrateLayerFilter(elements.layerFilter, layers, allFeatures);
+  const state = {
+    filters: {
+      search: '',
+      layerId: '',
+      dateFrom: '',
+      dateTo: ''
+    },
+    allFeatures,
+    filteredFeatures: allFeatures,
+    mapFeatureCollection: { type: 'FeatureCollection', features: [] },
+    layerLookup
+  };
 
-  let filteredFeatures = allFeatures;
-  renderList(elements.objectList, filteredFeatures, map);
+  hydrateLayerFilter(elements.layerFilter, layerLookup);
 
-  const applyFilters = () => {
-    const searchValue = elements.searchInput.value.trim().toLowerCase();
-    const layerValue = elements.layerFilter.value;
-    const from = parseInt(elements.dateFrom.value, 10);
-    const to = parseInt(elements.dateTo.value, 10);
-
-    filteredFeatures = allFeatures.filter((feature) => {
-      const properties = feature.properties || {};
-      const name = String(properties.name_ru || '').toLowerCase();
-      const layerId = String(properties.layer_id || '');
-      const dateStart = parseInt(properties.date_start, 10);
-      const dateEnd = parseInt(properties.date_end, 10);
-
-      if (searchValue && !name.includes(searchValue)) return false;
-      if (layerValue && layerId !== layerValue) return false;
-
-      if (!Number.isNaN(from)) {
-        const endValue = Number.isNaN(dateEnd) ? dateStart : dateEnd;
-        if (Number.isNaN(endValue) || endValue < from) return false;
-      }
-
-      if (!Number.isNaN(to)) {
-        const startValue = Number.isNaN(dateStart) ? dateEnd : dateStart;
-        if (Number.isNaN(startValue) || startValue > to) return false;
-      }
-
-      return true;
-    });
-
-    updateMapData(map, {
+  // Применяет единое состояние фильтров к списку и карте.
+  const applyState = ({ fitBounds = false } = {}) => {
+    state.filteredFeatures = filterFeatures(state.allFeatures, state.filters);
+    state.mapFeatureCollection = updateMapData(map, {
       type: 'FeatureCollection',
-      features: filteredFeatures
-    });
+      features: state.filteredFeatures
+    }, { fitBounds });
 
-    renderList(elements.objectList, filteredFeatures, map);
+    renderList(elements.objectList, state.filteredFeatures, state.layerLookup, map);
+    updateCounters(elements, state, map);
+    updateStatus(elements, state, map);
+  };
+
+  const syncStateFromInputs = () => {
+    state.filters.search = elements.searchInput.value.trim();
+    state.filters.layerId = elements.layerFilter.value;
+    state.filters.dateFrom = elements.dateFrom.value.trim();
+    state.filters.dateTo = elements.dateTo.value.trim();
+    applyState();
   };
 
   [elements.searchInput, elements.layerFilter, elements.dateFrom, elements.dateTo].forEach((node) => {
-    node.addEventListener('input', applyFilters);
-    node.addEventListener('change', applyFilters);
+    node.addEventListener('input', syncStateFromInputs);
+    node.addEventListener('change', syncStateFromInputs);
+  });
+
+  // Позволяет быстро очистить поиск клавишей Escape.
+  elements.searchInput.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    if (!elements.searchInput.value) return;
+    elements.searchInput.value = '';
+    syncStateFromInputs();
+    elements.searchInput.blur();
   });
 
   elements.sidebarToggle.addEventListener('click', () => {
-    elements.sidebar.classList.toggle('collapsed');
+    const collapsed = elements.sidebar.classList.toggle('collapsed');
+    elements.sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
   });
+
+  applyState({ fitBounds: true });
+
+  return {
+    getVisibleCounts() {
+      return {
+        listCount: state.filteredFeatures.length,
+        mapCount: getMapFeatureCount(map)
+      };
+    }
+  };
 }
 
-function hydrateLayerFilter(select, layers, allFeatures) {
-  const seen = new Set();
+function isFeatureLike(feature) {
+  return feature && typeof feature === 'object' && (feature.type === 'Feature' || feature.properties || feature.geometry);
+}
 
-  layers.forEach((layer) => {
-    const id = String(layer.id || '').trim();
-    if (!id || seen.has(id)) return;
-    seen.add(id);
-    select.appendChild(new Option(layer.name_ru || id, id));
+// Собирает человекочитаемые названия слоёв с fallback на layer_id.
+function buildLayerLookup(layers, allFeatures) {
+  const lookup = new Map();
+  (Array.isArray(layers) ? layers : []).forEach((layer) => {
+    const id = String(layer?.id || '').trim();
+    if (!id) return;
+    lookup.set(id, String(layer?.name_ru || layer?.label || id));
   });
 
   allFeatures.forEach((feature) => {
     const id = String(feature?.properties?.layer_id || '').trim();
-    if (!id || seen.has(id)) return;
-    seen.add(id);
-    select.appendChild(new Option(id, id));
+    if (!id || lookup.has(id)) return;
+    lookup.set(id, id);
+  });
+
+  return lookup;
+}
+
+function hydrateLayerFilter(select, layerLookup) {
+  select.innerHTML = '<option value="">Все слои</option>';
+  [...layerLookup.entries()]
+    .sort((a, b) => a[1].localeCompare(b[1], 'ru'))
+    .forEach(([id, label]) => {
+      select.appendChild(new Option(label, id));
+    });
+}
+
+// Фильтрует массив по названию, слою и диапазону дат.
+function filterFeatures(features, filters) {
+  const searchValue = String(filters.search || '').trim().toLowerCase();
+  const layerValue = String(filters.layerId || '').trim();
+  const from = parseYear(filters.dateFrom);
+  const to = parseYear(filters.dateTo);
+
+  return features.filter((feature) => {
+    const properties = feature?.properties && typeof feature.properties === 'object' ? feature.properties : {};
+    const name = String(properties.name_ru || '').toLowerCase();
+    const layerId = String(properties.layer_id || '').trim();
+    const dateStart = parseYear(properties.date_start);
+    const dateEnd = parseYear(properties.date_end);
+    const effectiveStart = Number.isFinite(dateStart) ? dateStart : dateEnd;
+    const effectiveEnd = Number.isFinite(dateEnd) ? dateEnd : dateStart;
+
+    if (searchValue && !name.includes(searchValue)) return false;
+    if (layerValue && layerId !== layerValue) return false;
+    if (Number.isFinite(from) && (!Number.isFinite(effectiveEnd) || effectiveEnd < from)) return false;
+    if (Number.isFinite(to) && (!Number.isFinite(effectiveStart) || effectiveStart > to)) return false;
+
+    return true;
   });
 }
 
-function renderList(container, features, map) {
+function parseYear(value) {
+  if (value === null || value === undefined || value === '') return NaN;
+  const normalized = String(value).trim();
+  if (!/^-?\d+$/.test(normalized)) return NaN;
+  return Number.parseInt(normalized, 10);
+}
+
+// Рендерит максимум 50 элементов списка и не ломается на объектах без геометрии.
+function renderList(container, features, layerLookup, map) {
   container.innerHTML = '';
 
   if (!features.length) {
     const empty = document.createElement('li');
+    empty.className = 'object-list-empty';
     empty.textContent = 'Ничего не найдено';
     container.appendChild(empty);
     return;
   }
 
   features.slice(0, 50).forEach((feature) => {
-    const properties = feature.properties || {};
-    const coords = feature?.geometry?.coordinates || [];
+    const properties = feature?.properties && typeof feature.properties === 'object' ? feature.properties : {};
+    const layerId = String(properties.layer_id || '').trim();
+    const layerLabel = layerLookup.get(layerId) || layerId || 'Слой не указан';
+    const year = [properties.date_start, properties.date_end].find((value) => value !== null && value !== undefined && value !== '') || 'Год не указан';
+    const hasGeometry = feature?.geometry?.type === 'Point' && Array.isArray(feature?.geometry?.coordinates);
 
     const item = document.createElement('li');
-    item.textContent = properties.name_ru || 'Без названия';
+    item.className = 'object-list-item';
+    if (!hasGeometry) item.classList.add('is-static');
+    item.innerHTML = `
+      <strong>${escapeHtml(properties.name_ru || 'Без названия')}</strong>
+      <span>${escapeHtml(layerLabel)}</span>
+      <span>${escapeHtml(String(year))}</span>
+    `;
 
     item.addEventListener('click', () => {
-      if (coords.length < 2) return;
-
-      map.flyTo({
-        center: coords,
-        zoom: 10,
-        essential: true
-      });
+      if (!focusFeatureOnMap(map, feature)) {
+        item.classList.add('is-static-pulse');
+        window.setTimeout(() => item.classList.remove('is-static-pulse'), 800);
+      }
     });
 
     container.appendChild(item);
   });
+}
+
+function updateCounters(elements, state, map) {
+  elements.resultsCount.textContent = String(state.filteredFeatures.length);
+  elements.mapCount.textContent = String(getMapFeatureCount(map));
+  elements.activeFiltersCount.textContent = String(countActiveFilters(state.filters));
+}
+
+function updateStatus(elements, state, map) {
+  const activeFilters = countActiveFilters(state.filters);
+  elements.statusMessage.textContent = `Карта готова. Найдено ${state.filteredFeatures.length}, на карте ${getMapFeatureCount(map)}, активных фильтров ${activeFilters}.`;
+}
+
+function countActiveFilters(filters) {
+  return ['search', 'layerId', 'dateFrom', 'dateTo'].reduce((count, key) => count + (String(filters[key] || '').trim() ? 1 : 0), 0);
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }

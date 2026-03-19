@@ -8,8 +8,8 @@
   <link rel="stylesheet" href="./css/style.css" />
 </head>
 <body>
-  <aside id="sidebar">
-    <button id="sidebar-toggle" type="button" aria-label="Свернуть или развернуть панель">☰</button>
+  <aside id="sidebar" aria-label="Панель фильтров и списка объектов">
+    <button id="sidebar-toggle" type="button" aria-label="Свернуть или развернуть панель" aria-expanded="true">☰</button>
     <h1>ARTEMIS</h1>
 
     <div id="auth-buttons" class="top-controls">
@@ -27,24 +27,32 @@
       <ul id="drafts-list"></ul>
     </section>
 
-    <label for="search-input">Поиск по названию</label>
-    <input id="search-input" type="search" placeholder="Введите название" />
+    <section class="filters-panel" aria-label="Фильтры">
+      <label for="search-input">Поиск по названию</label>
+      <input id="search-input" type="search" placeholder="Введите название" autocomplete="off" />
 
-    <label for="layer-filter">Фильтр по слою</label>
-    <select id="layer-filter">
-      <option value="">Все слои</option>
-    </select>
+      <label for="layer-filter">Фильтр по слою</label>
+      <select id="layer-filter">
+        <option value="">Все слои</option>
+      </select>
 
-    <div class="date-filters">
-      <div>
-        <label for="date-from">Дата от</label>
-        <input id="date-from" type="number" placeholder="Напр. 1800" />
+      <div class="date-filters">
+        <div>
+          <label for="date-from">Дата от</label>
+          <input id="date-from" type="number" placeholder="Напр. -300" />
+        </div>
+        <div>
+          <label for="date-to">Дата до</label>
+          <input id="date-to" type="number" placeholder="Напр. 1950" />
+        </div>
       </div>
-      <div>
-        <label for="date-to">Дата до</label>
-        <input id="date-to" type="number" placeholder="Напр. 1950" />
-      </div>
-    </div>
+    </section>
+
+    <section class="results-summary" aria-label="Сводка результатов">
+      <div><strong>Найдено:</strong> <span id="results-count">0</span></div>
+      <div><strong>На карте:</strong> <span id="map-count">0</span></div>
+      <div><strong>Активных фильтров:</strong> <span id="active-filters-count">0</span></div>
+    </section>
 
     <section>
       <h2>Объекты</h2>
@@ -52,14 +60,19 @@
     </section>
   </aside>
 
-  <main id="map"></main>
-  <div id="status">Загрузка данных...</div>
+  <main id="map" aria-label="Карта объектов"></main>
+
+  <div id="status" class="status-panel" role="status" aria-live="polite">
+    <div id="status-loading" class="status-loading">Инициализация приложения…</div>
+    <div id="status-message">Ожидание загрузки…</div>
+    <div id="status-error" class="status-error" hidden></div>
+  </div>
 
   <div id="login-modal" class="modal" hidden>
     <div class="modal-content">
-      <button type="button" data-close-modal>×</button>
+      <button type="button" class="modal-close" data-close-modal aria-label="Закрыть">×</button>
       <h3>Вход / Регистрация</h3>
-      <form id="login-form" data-mode="login">
+      <form id="login-form" data-mode="login" novalidate>
         <label>Email <input type="email" name="email" required /></label>
         <label>Пароль <input type="password" name="password" minlength="8" required /></label>
         <button type="submit">Продолжить</button>
@@ -69,9 +82,9 @@
 
   <div id="draft-modal" class="modal" hidden>
     <div class="modal-content draft-modal-content">
-      <button type="button" data-close-modal>×</button>
+      <button type="button" class="modal-close" data-close-modal aria-label="Закрыть">×</button>
       <h3>Редактор черновика</h3>
-      <form id="draft-form">
+      <form id="draft-form" novalidate>
         <label>name_ru <input name="name_ru" required /></label>
         <label>name_en <input name="name_en" /></label>
         <label>layer_id
@@ -82,8 +95,8 @@
         <label>date_start <input name="date_start" inputmode="numeric" /></label>
         <label>date_construction_end <input name="date_construction_end" inputmode="numeric" /></label>
         <label>date_end <input name="date_end" inputmode="numeric" /></label>
-        <label>longitude <input name="longitude" required /></label>
-        <label>latitude <input name="latitude" required /></label>
+        <label>longitude <input name="longitude" /></label>
+        <label>latitude <input name="latitude" /></label>
         <label>influence_radius_km <input name="influence_radius_km" /></label>
         <label>title_short <input name="title_short" /></label>
         <label>description <textarea name="description"></textarea></label>
@@ -105,23 +118,42 @@
     import { refreshToken } from './js/auth.js';
     import { initUGCUI } from './js/ui.ugc.js';
 
-    const status = document.getElementById('status');
+    const statusMessage = document.getElementById('status-message');
+    const statusError = document.getElementById('status-error');
+    const statusLoading = document.getElementById('status-loading');
+
+    // Обновляет строку состояния приложения без лишнего шума.
+    function setStatus(message, { error = false, loading = true } = {}) {
+      statusMessage.textContent = message;
+      statusLoading.hidden = !loading;
+      statusError.hidden = !error;
+      statusError.textContent = error ? message : '';
+    }
 
     try {
+      setStatus('Загрузка токена…', { loading: true });
       try {
         await refreshToken();
       } catch (error) {
         console.info('Сессия не восстановлена:', error.message);
       }
 
+      setStatus('Загрузка данных…', { loading: true });
       const features = await loadFeatures();
+
+      setStatus('Инициализация карты…', { loading: true });
       const map = initMap('map', features);
-      initUI(map, features);
+
+      setStatus('Инициализация интерфейса…', { loading: true });
+      const uiState = await initUI(map, features);
       await initUGCUI();
-      status.textContent = `Загружено объектов: ${features.features?.length ?? 0}`;
+
+      const foundCount = uiState?.getVisibleCounts?.().listCount ?? features.features?.length ?? 0;
+      const mapCount = uiState?.getVisibleCounts?.().mapCount ?? 0;
+      setStatus(`Карта готова. Найдено: ${foundCount}, на карте: ${mapCount}.`, { loading: false });
     } catch (error) {
       console.error('Ошибка инициализации:', error);
-      status.textContent = 'Ошибка загрузки данных. Проверьте консоль.';
+      setStatus('Ошибка загрузки данных. Проверьте доступность /data/features.geojson и /data/layers.json.', { error: true, loading: false });
     }
   </script>
 </body>

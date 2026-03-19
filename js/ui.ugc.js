@@ -1,13 +1,14 @@
-// Файл: js/ui.ugc.js
-// Назначение: UI-компоненты UGC: login/register, профиль с черновиками, редактор черновика и toast-ошибки.
-// Интеграция: вызвать initUGCUI() после refreshToken() в index.html.
-
 import { login, register, logout, getCurrentUser } from './auth.js';
 import { createDraft, updateDraft, deleteDraft, getDraftsForUser, submitForModeration, validateDraftPayload } from './ugc.js';
 import { uploadFile } from './uploads.js';
 import { loadLayers } from './data.js';
 
+let ugcInitialized = false;
+
 export async function initUGCUI() {
+  if (ugcInitialized) return;
+  ugcInitialized = true;
+
   const els = {
     authButtons: document.getElementById('auth-buttons'),
     loginBtn: document.getElementById('login-btn'),
@@ -27,10 +28,12 @@ export async function initUGCUI() {
   const state = {
     activeDraftId: null,
     pendingAfterLogin: null,
-    layers: await loadLayers().catch(() => [])
+    layers: await loadLayers().catch(() => []),
+    isRefreshingDrafts: false
   };
 
   hydrateLayerSelect(state.layers);
+  bindModalClosers(els);
   bindAuth(els, state);
   bindDraftEditor(els, state);
   syncAuthUI(els);
@@ -39,7 +42,10 @@ export async function initUGCUI() {
     await refreshDraftsList(els, state);
   }
 
-  window.addEventListener('artemis:auth-required', () => openModal(els.loginModal));
+  window.addEventListener('artemis:auth-required', () => {
+    state.pendingAfterLogin = state.pendingAfterLogin || 'restore-session';
+    openModal(els.loginModal);
+  }, { passive: true });
 }
 
 function bindAuth(els, state) {
@@ -51,10 +57,6 @@ function bindAuth(els, state) {
   els.registerBtn.addEventListener('click', () => {
     els.loginForm.dataset.mode = 'register';
     openModal(els.loginModal);
-  });
-
-  els.loginModal.addEventListener('click', (event) => {
-    if (event.target.matches('[data-close-modal]')) closeModal(els.loginModal);
   });
 
   els.loginForm.addEventListener('submit', async (event) => {
@@ -75,6 +77,8 @@ function bindAuth(els, state) {
       if (state.pendingAfterLogin === 'open-editor') {
         state.pendingAfterLogin = null;
         openDraftEditor(els, state, null);
+      } else {
+        state.pendingAfterLogin = null;
       }
     } catch (error) {
       console.error('Ошибка авторизации:', error);
@@ -88,6 +92,8 @@ function bindAuth(els, state) {
     await logout();
     syncAuthUI(els);
     els.draftsList.innerHTML = '';
+    state.activeDraftId = null;
+    closeModal(els.draftModal);
     showToast('Вы вышли из аккаунта.');
   });
 }
@@ -104,14 +110,14 @@ function bindDraftEditor(els, state) {
   });
 
   els.refreshDraftsBtn.addEventListener('click', async () => {
-    if (!getCurrentUser()) return;
+    if (!getCurrentUser()) {
+      openModal(els.loginModal);
+      return;
+    }
     await refreshDraftsList(els, state);
   });
 
-  els.draftModal.addEventListener('click', (event) => {
-    if (event.target.matches('[data-close-modal]')) closeModal(els.draftModal);
-  });
-
+  // Загружает файл отдельно и не блокирует форму при предупреждениях по лицензии.
   els.draftForm.image_file.addEventListener('change', async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -119,12 +125,16 @@ function bindDraftEditor(els, state) {
     try {
       setLoading(els.draftForm, true);
       const upload = await uploadFile(file);
-      els.draftForm.source_media_url.value = upload.url;
+      els.draftForm.source_media_url.value = upload.url || '';
       els.draftForm.source_license.value = upload.license || '';
-      if (!upload.license) showToast('Изображение загружено, но поле лицензии пустое.');
+      if (!upload.license) showToast('Изображение загружено, но лицензия не указана. Проверьте поле source_license.');
       else showToast('Изображение загружено.');
     } catch (error) {
       console.error('Ошибка загрузки изображения:', error);
+      if (String(error.message || '').includes('Требуется повторный вход')) {
+        state.pendingAfterLogin = 'open-editor';
+        openModal(els.loginModal);
+      }
       showToast(error.message || 'Не удалось загрузить изображение.');
     } finally {
       setLoading(els.draftForm, false);
@@ -137,12 +147,12 @@ function bindDraftEditor(els, state) {
     const payload = collectDraftPayload(els.draftForm);
     const check = validateDraftPayload(payload);
     if (!check.valid) {
-      renderFieldErrors(els.draftErrors, check.errors);
+      renderFieldErrors(els.draftForm, els.draftErrors, check.errors);
       return;
     }
 
     setLoading(els.draftForm, true);
-    renderFieldErrors(els.draftErrors, {});
+    renderFieldErrors(els.draftForm, els.draftErrors, {});
     try {
       if (state.activeDraftId) {
         await updateDraft(state.activeDraftId, payload);
@@ -156,8 +166,9 @@ function bindDraftEditor(els, state) {
     } catch (error) {
       console.error('Ошибка сохранения черновика:', error);
       if (error.type === 'validation') {
-        renderFieldErrors(els.draftErrors, error.fields || {});
-      } else if (error.type === 'auth') {
+        renderFieldErrors(els.draftForm, els.draftErrors, error.fields || {});
+      } else if (error.type === 'auth' || String(error.message || '').includes('Требуется повторный вход')) {
+        state.pendingAfterLogin = 'open-editor';
         showToast('Нужна авторизация.');
         openModal(els.loginModal);
       } else {
@@ -169,7 +180,10 @@ function bindDraftEditor(els, state) {
   });
 }
 
+// Обновляет список черновиков без перезагрузки страницы.
 async function refreshDraftsList(els, state) {
+  if (state.isRefreshingDrafts) return;
+  state.isRefreshingDrafts = true;
   try {
     const drafts = await getDraftsForUser();
     els.draftsList.innerHTML = '';
@@ -181,9 +195,9 @@ async function refreshDraftsList(els, state) {
         <strong>${escapeHtml(draft.name_ru || 'Без названия')}</strong>
         <span class="status-label">${humanStatus(draft.status)}</span>
         <div class="draft-actions">
-          <button data-action="edit">Edit</button>
-          <button data-action="delete">Delete</button>
-          <button data-action="submit">Submit for moderation</button>
+          <button type="button" data-action="edit">Edit</button>
+          <button type="button" data-action="delete">Delete</button>
+          <button type="button" data-action="submit">Submit for moderation</button>
         </div>
       `;
 
@@ -195,6 +209,7 @@ async function refreshDraftsList(els, state) {
           await refreshDraftsList(els, state);
         } catch (error) {
           console.error('Ошибка удаления:', error);
+          handlePossiblyUnauthorized(error, state, els);
           showToast(error.message || 'Не удалось удалить черновик.');
         }
       });
@@ -205,6 +220,7 @@ async function refreshDraftsList(els, state) {
           await refreshDraftsList(els, state);
         } catch (error) {
           console.error('Ошибка отправки на модерацию:', error);
+          handlePossiblyUnauthorized(error, state, els);
           showToast(error.message || 'Не удалось отправить на модерацию.');
         }
       });
@@ -213,14 +229,17 @@ async function refreshDraftsList(els, state) {
     });
   } catch (error) {
     console.error('Ошибка загрузки черновиков:', error);
+    handlePossiblyUnauthorized(error, state, els);
     showToast(error.message || 'Не удалось загрузить черновики.');
+  } finally {
+    state.isRefreshingDrafts = false;
   }
 }
 
 function openDraftEditor(els, state, draft) {
   state.activeDraftId = draft?.id || null;
   els.draftForm.reset();
-  renderFieldErrors(els.draftErrors, {});
+  renderFieldErrors(els.draftForm, els.draftErrors, {});
 
   if (draft) {
     for (const [key, value] of Object.entries(draft)) {
@@ -256,22 +275,36 @@ function collectDraftPayload(form) {
   };
 }
 
-function renderFieldErrors(container, errors) {
+// Показывает ошибки рядом с соответствующими полями формы.
+function renderFieldErrors(form, container, errors) {
   container.innerHTML = '';
+  form.querySelectorAll('.field-error-message').forEach((node) => node.remove());
+  form.querySelectorAll('.is-invalid').forEach((node) => node.classList.remove('is-invalid'));
+
   Object.entries(errors).forEach(([field, message]) => {
     const row = document.createElement('div');
     row.className = 'field-error';
     row.textContent = `${field}: ${message}`;
     container.appendChild(row);
+
+    const input = form[field];
+    if (!input) return;
+    input.classList.add('is-invalid');
+    const inline = document.createElement('div');
+    inline.className = 'field-error-message';
+    inline.textContent = message;
+    input.insertAdjacentElement('afterend', inline);
   });
 }
 
 function hydrateLayerSelect(layers) {
   const select = document.querySelector('#draft-form select[name="layer_id"]');
   if (!select) return;
-  layers.forEach((layer) => {
-    const id = String(layer.id || '').trim();
-    if (!id) return;
+  const known = new Set([...select.options].map((option) => option.value));
+  (Array.isArray(layers) ? layers : []).forEach((layer) => {
+    const id = String(layer?.id || '').trim();
+    if (!id || known.has(id)) return;
+    known.add(id);
     select.appendChild(new Option(layer.name_ru || id, id));
   });
 }
@@ -282,17 +315,36 @@ function syncAuthUI(els) {
   els.profilePanel.hidden = !loggedIn;
 }
 
+function bindModalClosers(els) {
+  [els.loginModal, els.draftModal].forEach((modal) => {
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal || event.target.matches('[data-close-modal]')) {
+        closeModal(modal);
+      }
+    });
+  });
+}
+
 function openModal(node) {
+  if (!node || !node.hidden) return;
   node.hidden = false;
+  document.body.classList.add('modal-open');
 }
 
 function closeModal(node) {
+  if (!node || node.hidden) return;
   node.hidden = true;
+  const hasVisibleModal = [...document.querySelectorAll('.modal')].some((modal) => !modal.hidden);
+  if (!hasVisibleModal) document.body.classList.remove('modal-open');
 }
 
 function setLoading(form, loading) {
-  form.querySelectorAll('button').forEach((btn) => {
-    btn.disabled = loading;
+  form.querySelectorAll('button, input, select, textarea').forEach((node) => {
+    if (node.type === 'file') {
+      node.disabled = loading;
+      return;
+    }
+    if (node.tagName === 'BUTTON') node.disabled = loading;
   });
 }
 
@@ -312,7 +364,15 @@ function showToast(message) {
   }
   toast.textContent = message;
   toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 2500);
+  window.clearTimeout(showToast.timerId);
+  showToast.timerId = window.setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+function handlePossiblyUnauthorized(error, state, els) {
+  if (error?.type === 'auth' || String(error?.message || '').includes('Требуется повторный вход')) {
+    state.pendingAfterLogin = 'open-editor';
+    openModal(els.loginModal);
+  }
 }
 
 function escapeHtml(value) {
@@ -323,9 +383,3 @@ function escapeHtml(value) {
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
 }
-
-// Чеклист:
-// - [ ] аноним при открытии редактора видит login modal, после входа возвращается в editor
-// - [ ] «Мои черновики» показывает status и действия Edit/Delete/Submit
-// - [ ] ошибки валидации отображаются рядом с формой
-// - [ ] сетевые ошибки показываются в toast, детали пишутся в console
