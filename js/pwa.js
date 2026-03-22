@@ -1,53 +1,88 @@
-import { showError } from './ux.js';
+import { showError, clearError } from './ux.js';
 
-const INSTALL_BUTTON_ID = 'install-app-btn';
+const INSTALL_BUTTON_ID = 'install-btn';
 let deferredPrompt = null;
 
 export function initPWA() {
   setupInstallPrompt();
+  setupConnectivityHandlers();
   registerServiceWorker();
 }
 
+export async function installApp() {
+  if (!deferredPrompt) return;
+
+  const promptEvent = deferredPrompt;
+  deferredPrompt = null;
+
+  hideInstallButton();
+  promptEvent.prompt();
+  await promptEvent.userChoice;
+}
+
 function setupInstallPrompt() {
-  const installButton = document.getElementById(INSTALL_BUTTON_ID);
-  if (!installButton) return;
-
-  const resetInstallButton = () => {
-    installButton.hidden = true;
-    installButton.disabled = true;
-  };
-
-  resetInstallButton();
+  hideInstallButton();
 
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
     deferredPrompt = event;
-    installButton.hidden = false;
-    installButton.disabled = false;
+    showInstallButton();
   });
 
-  installButton.addEventListener('click', async () => {
-    if (!deferredPrompt) return;
+  const installButton = document.getElementById(INSTALL_BUTTON_ID);
+  if (!installButton) return;
 
+  installButton.addEventListener('click', async () => {
     installButton.disabled = true;
 
     try {
-      await deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
+      await installApp();
     } catch (error) {
       console.info('PWA install prompt was not completed:', error?.message || error);
-      installButton.disabled = false;
+      if (deferredPrompt) {
+        showInstallButton();
+      }
       return;
+    } finally {
+      installButton.disabled = false;
     }
-
-    deferredPrompt = null;
-    resetInstallButton();
   });
 
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
-    resetInstallButton();
+    hideInstallButton();
   });
+}
+
+function setupConnectivityHandlers() {
+  window.addEventListener('online', handleOnline);
+  window.addEventListener('offline', handleOffline);
+
+  if (!navigator.onLine) {
+    handleOffline();
+  }
+}
+
+function handleOffline() {
+  showError('Нет интернета. Используются кэшированные данные.');
+}
+
+function handleOnline() {
+  clearError();
+}
+
+function showInstallButton() {
+  const installButton = document.getElementById(INSTALL_BUTTON_ID);
+  if (!installButton) return;
+  installButton.hidden = false;
+  installButton.disabled = false;
+}
+
+function hideInstallButton() {
+  const installButton = document.getElementById(INSTALL_BUTTON_ID);
+  if (!installButton) return;
+  installButton.hidden = true;
+  installButton.disabled = true;
 }
 
 async function registerServiceWorker() {
@@ -57,7 +92,7 @@ async function registerServiceWorker() {
     const registration = await navigator.serviceWorker.register('/sw.js');
 
     if (registration.waiting) {
-      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      console.log('New version available');
     }
 
     registration.addEventListener('updatefound', () => {
@@ -66,7 +101,7 @@ async function registerServiceWorker() {
 
       nextWorker.addEventListener('statechange', () => {
         if (nextWorker.state === 'installed' && navigator.serviceWorker.controller) {
-          nextWorker.postMessage({ type: 'SKIP_WAITING' });
+          console.log('New version available');
         }
       });
     });
