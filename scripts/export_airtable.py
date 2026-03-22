@@ -102,6 +102,13 @@ def to_float_or_none(value: Any, record_id: str, field: str, errors: List[Dict[s
         return None
 
 
+def parse_float(value: Any) -> Optional[float]:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def to_int_or_none(value: Any, record_id: str, field: str, errors: List[Dict[str, Any]]) -> Optional[int]:
     if value in (None, ""):
         return None
@@ -124,6 +131,12 @@ def to_bool_or_none(value: Any, record_id: str, field: str, errors: List[Dict[st
     return None
 
 
+def parse_bool(value: Any) -> bool:
+    if value in [True, "true", "1", 1]:
+        return True
+    return False
+
+
 def validate_coordinate_range(
     value: Optional[float],
     minimum: float,
@@ -142,6 +155,7 @@ def validate_coordinate_range(
             "record_id": record_id,
             "field": field,
             "error": f"out of range [{minimum}, {maximum}]",
+            "warning": "invalid coordinates",
             "value": value,
         }
     )
@@ -171,8 +185,64 @@ def map_record(record: Dict[str, Any], errors: List[Dict[str, Any]]) -> Dict[str
     record_id = record.get("id", "")
     fields = record.get("fields", {}) or {}
 
-    longitude = to_float_or_none(fields.get("longitude"), record_id, "longitude", errors)
-    latitude = to_float_or_none(fields.get("latitude"), record_id, "latitude", errors)
+    longitude = fields.get("longitude_num")
+    if longitude in (None, ""):
+        legacy_longitude = fields.get("longitude")
+        if legacy_longitude not in (None, ""):
+            errors.append(
+                {"record_id": record_id, "field": "longitude", "warning": "using legacy fallback field", "value": legacy_longitude}
+            )
+        longitude = parse_float(legacy_longitude)
+
+    latitude = fields.get("latitude_num")
+    if latitude in (None, ""):
+        legacy_latitude = fields.get("latitude")
+        if legacy_latitude not in (None, ""):
+            errors.append(
+                {"record_id": record_id, "field": "latitude", "warning": "using legacy fallback field", "value": legacy_latitude}
+            )
+        latitude = parse_float(legacy_latitude)
+
+    is_active = fields.get("is_active_bool")
+    if is_active in (None, ""):
+        legacy_is_active = fields.get("is_active")
+        if legacy_is_active not in (None, ""):
+            errors.append(
+                {"record_id": record_id, "field": "is_active", "warning": "using legacy fallback field", "value": legacy_is_active}
+            )
+        is_active = parse_bool(legacy_is_active)
+
+    source_license = safe_str(fields.get("source_license_enum"))
+    if source_license is None:
+        source_license = safe_str(fields.get("source_license"))
+        if source_license is not None:
+            errors.append(
+                {
+                    "record_id": record_id,
+                    "field": "source_license",
+                    "warning": "using legacy fallback field",
+                    "value": source_license,
+                }
+            )
+
+    coordinates_confidence = safe_str(fields.get("coordinates_confidence_enum"))
+    if coordinates_confidence is None:
+        coordinates_confidence = safe_str(fields.get("coordinates_confidence"))
+        if coordinates_confidence is not None:
+            errors.append(
+                {
+                    "record_id": record_id,
+                    "field": "coordinates_confidence",
+                    "warning": "using legacy fallback field",
+                    "value": coordinates_confidence,
+                }
+            )
+
+    longitude = validate_coordinate_range(longitude, -180.0, 180.0, record_id, "longitude", errors)
+    latitude = validate_coordinate_range(latitude, -90.0, 90.0, record_id, "latitude", errors)
+    source_url = safe_str(fields.get("source_url"))
+    if source_url is None:
+        errors.append({"record_id": record_id, "field": "source_url", "warning": "missing source_url", "value": None})
 
     mapped = {
         "id": record_id,
@@ -185,18 +255,19 @@ def map_record(record: Dict[str, Any], errors: List[Dict[str, Any]]) -> Dict[str
             fields.get("date_construction_end"), record_id, "date_construction_end", errors
         ),
         "date_end": to_date_or_none(fields.get("date_end"), record_id, "date_end", errors),
-        "longitude": validate_coordinate_range(longitude, -180.0, 180.0, record_id, "longitude", errors),
-        "latitude": validate_coordinate_range(latitude, -90.0, 90.0, record_id, "latitude", errors),
+        "longitude": longitude,
+        "latitude": latitude,
         "influence_radius_km": to_int_or_none(
             fields.get("influence_radius_km"), record_id, "influence_radius_km", errors
         ),
         "title_short": safe_str(fields.get("title_short")),
         "description": safe_str(fields.get("description")),
         "image_url": safe_str(fields.get("image_url")),
-        "source_url": safe_str(fields.get("source_url")),
-        "source_license": safe_str(fields.get("source_license")),
+        "source_url": source_url,
+        "source_license": source_license,
+        "coordinates_confidence": coordinates_confidence,
         "tags": to_tags(fields.get("tags")),
-        "is_active": to_bool_or_none(fields.get("is_active"), record_id, "is_active", errors),
+        "is_active": is_active,
         # Доп. поля для слоёв (если в таблице присутствуют)
         "layer_name_ru": safe_str(fields.get("layer_name_ru") or fields.get("layer_name")),
         "layer_color_hex": safe_str(fields.get("layer_color_hex") or fields.get("color_hex")),
@@ -300,7 +371,13 @@ def build_geojson_features(mapped_records: Iterable[Dict[str, Any]]) -> Dict[str
     for m in mapped_records:
         lon = m.get("longitude")
         lat = m.get("latitude")
-        geometry = {"type": "Point", "coordinates": [lon, lat]} if lon is not None and lat is not None else None
+        if lat is None or lon is None:
+            geometry = None
+        else:
+            if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+                geometry = None
+            else:
+                geometry = {"type": "Point", "coordinates": [lon, lat]}
 
         features.append(
             {
@@ -324,6 +401,7 @@ def build_geojson_features(mapped_records: Iterable[Dict[str, Any]]) -> Dict[str
                     "image_url": m.get("image_url"),
                     "source_url": m.get("source_url"),
                     "source_license": m.get("source_license"),
+                    "coordinates_confidence": m.get("coordinates_confidence"),
                     "tags": m.get("tags"),
                     "is_active": m.get("is_active"),
                     "has_geometry": geometry is not None,
@@ -413,12 +491,15 @@ def run_self_test() -> int:
             "layer_type": "timeline",
             "name_ru": "Тест",
             "date_start": "-0753",
-            "longitude": "37.6173",
-            "latitude": "55.7558",
+            "longitude_num": 37.6173,
+            "latitude_num": 55.7558,
             "influence_radius_km": "12",
             "layer_color_hex": "#ABCDEF",
             "tags": "A, b ,C",
-            "is_active": "true",
+            "is_active_bool": True,
+            "source_license_enum": "cc-by",
+            "coordinates_confidence_enum": "high",
+            "source_url": "https://example.com/source",
         },
     }
     m = map_record(sample, errors)
@@ -506,7 +587,7 @@ def main() -> int:
     skipped_inactive = 0
     for record in records:
         mapped = map_record(record, errors)
-        if mapped.get("is_active") is False and not args.include_inactive:
+        if not mapped.get("is_active") and not args.include_inactive:
             skipped_inactive += 1
             continue
         mapped_records.append(mapped)
