@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">ARTEMIS icon</title>
+  <desc id="desc">Placeholder ARTEMIS application icon.</desc>
+  <rect width="512" height="512" rx="112" fill="#2563eb"/>
+  <circle cx="256" cy="256" r="156" fill="#eff6ff"/>
+  <path d="M256 126 320 352h-34l-16-56h-79l-16 56h-34l64-226Zm2 58-33 92h66Z" fill="#1d4ed8"/>
+</svg>

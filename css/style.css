@@ -101,6 +101,10 @@ button:disabled {
   flex-wrap: wrap;
 }
 
+#install-app-btn[hidden] {
+  display: none;
+}
+
 .filters-panel,
 .results-summary {
   margin-top: 12px;
