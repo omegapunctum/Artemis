@@ -16,6 +16,7 @@ class Draft(Base):
     description = Column(String, nullable=False)
     geometry = Column(JSON, nullable=True)
     image_url = Column(String, nullable=True)
+    status = Column(String, nullable=False, default="draft")
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
@@ -27,6 +28,8 @@ def init_db() -> None:
         columns = {row[1] for row in connection.execute(text("PRAGMA table_info(drafts)"))}
         if "image_url" not in columns:
             connection.execute(text("ALTER TABLE drafts ADD COLUMN image_url VARCHAR"))
+        if "status" not in columns:
+            connection.execute(text("ALTER TABLE drafts ADD COLUMN status VARCHAR DEFAULT 'draft'"))
 
 
 def list_drafts(db: Session, user: User) -> list[Draft]:
@@ -34,7 +37,7 @@ def list_drafts(db: Session, user: User) -> list[Draft]:
 
 
 def create_draft(db: Session, user: User, title: str, description: str, geometry: dict | None) -> Draft:
-    draft = Draft(user_id=user.id, title=title, description=description, geometry=geometry)
+    draft = Draft(user_id=user.id, title=title, description=description, geometry=geometry, status="draft")
     db.add(draft)
     db.commit()
     db.refresh(draft)

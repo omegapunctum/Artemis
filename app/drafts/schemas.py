@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -40,6 +40,7 @@ class DraftResponse(BaseModel):
     description: str
     geometry: dict[str, Any] | None
     image_url: str | None
+    status: Literal["draft", "review", "approved", "rejected"]
     created_at: datetime
     updated_at: datetime
 

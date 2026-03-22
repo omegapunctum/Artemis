@@ -13,3 +13,4 @@ class AccessTokenResponse(BaseModel):
 class UserResponse(BaseModel):
     id: str
     email: EmailStr
+    is_admin: bool

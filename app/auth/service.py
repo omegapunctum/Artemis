@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from fastapi import Cookie, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy import Column, String, create_engine
+from sqlalchemy import Boolean, Column, String, create_engine, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from .utils import (
@@ -28,10 +28,16 @@ class User(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid4()))
     email = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
+    is_admin = Column(Boolean, default=False, nullable=False)
 
 
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
+
+    with engine.begin() as connection:
+        columns = {row[1] for row in connection.execute(text("PRAGMA table_info(users)"))}
+        if "is_admin" not in columns:
+            connection.execute(text("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT 0"))
 
 
 def get_db():
