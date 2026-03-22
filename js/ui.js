@@ -1,6 +1,7 @@
 import { loadLayers } from './data.js';
 import { updateMapData, setLayerLookup, focusFeatureOnMap, getMapFeatureCount } from './map.js';
 import { debounce } from './ux.js';
+import { createTextElement } from './safe-dom.js';
 
 // Инициализирует фильтры, единое состояние и синхронизацию списка с картой.
 export async function initUI(map, features) {
@@ -116,7 +117,7 @@ function buildLayerLookup(layers, allFeatures) {
 }
 
 function hydrateLayerFilter(select, layerLookup) {
-  select.innerHTML = '<option value="">Все слои</option>';
+  select.replaceChildren(new Option('Все слои', ''));
   [...layerLookup.entries()]
     .sort((a, b) => a[1].localeCompare(b[1], 'ru'))
     .forEach(([id, label]) => {
@@ -158,7 +159,7 @@ function parseYear(value) {
 
 // Рендерит максимум 50 элементов списка и не ломается на объектах без геометрии.
 function renderList(container, features, layerLookup, map) {
-  container.innerHTML = '';
+  container.replaceChildren();
 
   if (!features.length) {
     const empty = document.createElement('li');
@@ -178,11 +179,9 @@ function renderList(container, features, layerLookup, map) {
     const item = document.createElement('li');
     item.className = 'object-list-item';
     if (!hasGeometry) item.classList.add('is-static');
-    item.innerHTML = `
-      <strong>${escapeHtml(properties.name_ru || 'Без названия')}</strong>
-      <span>${escapeHtml(layerLabel)}</span>
-      <span>${escapeHtml(String(year))}</span>
-    `;
+    item.appendChild(createTextElement('strong', properties.name_ru, { fallback: 'Без названия' }));
+    item.appendChild(createTextElement('span', layerLabel, { fallback: 'Слой не указан' }));
+    item.appendChild(createTextElement('span', year, { fallback: 'Год не указан' }));
 
     item.addEventListener('click', () => {
       if (!focusFeatureOnMap(map, feature)) {
@@ -210,11 +209,3 @@ function countActiveFilters(filters) {
   return ['search', 'layerId', 'dateFrom', 'dateTo'].reduce((count, key) => count + (String(filters[key] || '').trim() ? 1 : 0), 0);
 }
 
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}

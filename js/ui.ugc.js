@@ -2,6 +2,7 @@ import { login, register, logout, getCurrentUser, fetchWithAuth } from './auth.j
 import { submitForModeration, validateDraftPayload } from './ugc.js';
 import { loadLayers } from './data.js';
 import { showError, clearError, showLoading, hideLoading } from './ux.js';
+import { normalizeSafeUrl, setSafeLink, setText, toSafeText } from './safe-dom.js';
 
 let ugcInitialized = false;
 
@@ -254,7 +255,7 @@ function bindAuth(els, state) {
   els.logoutBtn.addEventListener('click', async () => {
     await logout();
     syncAuthUI(els);
-    els.draftsList.innerHTML = '';
+    els.draftsList.replaceChildren();
     draftState.drafts = [];
     state.activeDraftId = null;
     closeModal(els.draftModal);
@@ -361,7 +362,7 @@ async function refreshDraftsList(els, state) {
   state.isRefreshingDrafts = true;
   try {
     const drafts = await loadDrafts();
-    els.draftsList.innerHTML = '';
+    els.draftsList.replaceChildren();
 
     drafts.forEach((draft) => {
       const item = document.createElement('li');
@@ -376,13 +377,12 @@ async function refreshDraftsList(els, state) {
       status.textContent = humanStatus(draft?.status);
       item.appendChild(status);
 
-      if (draft?.image_url) {
+      const safeImageUrl = normalizeSafeUrl(draft?.image_url, { allowRelative: true });
+      if (safeImageUrl) {
         const link = document.createElement('a');
         link.className = 'draft-image-link';
-        link.href = String(draft.image_url);
-        link.target = '_blank';
-        link.rel = 'noreferrer';
-        link.textContent = 'Image attached';
+        setSafeLink(link, safeImageUrl, { allowRelative: true });
+        setText(link, 'Image attached');
         item.appendChild(link);
       }
 
@@ -479,14 +479,14 @@ function collectDraftPayload(form) {
 
 // Показывает ошибки рядом с соответствующими полями формы.
 function renderFieldErrors(form, container, errors) {
-  container.innerHTML = '';
+  container.replaceChildren();
   form.querySelectorAll('.field-error-message').forEach((node) => node.remove());
   form.querySelectorAll('.is-invalid').forEach((node) => node.classList.remove('is-invalid'));
 
   Object.entries(errors).forEach(([field, message]) => {
     const row = document.createElement('div');
     row.className = 'field-error';
-    row.textContent = `${field}: ${message}`;
+    setText(row, `${toSafeText(field)}: ${toSafeText(message)}`);
     container.appendChild(row);
 
     const input = form[field];
@@ -494,7 +494,7 @@ function renderFieldErrors(form, container, errors) {
     input.classList.add('is-invalid');
     const inline = document.createElement('div');
     inline.className = 'field-error-message';
-    inline.textContent = message;
+    setText(inline, message);
     input.insertAdjacentElement('afterend', inline);
   });
 }
@@ -507,7 +507,7 @@ function hydrateLayerSelect(layers) {
     const id = String(layer?.id || '').trim();
     if (!id || known.has(id)) return;
     known.add(id);
-    select.appendChild(new Option(layer.name_ru || id, id));
+    select.appendChild(new Option(toSafeText(layer.name_ru, id), id));
   });
 }
 
@@ -564,7 +564,7 @@ function showToast(message) {
     toast.id = 'toast';
     document.body.appendChild(toast);
   }
-  toast.textContent = message;
+  setText(toast, message);
   toast.classList.add('show');
   window.clearTimeout(showToast.timerId);
   showToast.timerId = window.setTimeout(() => toast.classList.remove('show'), 2800);
@@ -577,11 +577,3 @@ function handlePossiblyUnauthorized(error, state, els) {
   }
 }
 
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
