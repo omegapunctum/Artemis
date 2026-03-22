@@ -39,6 +39,7 @@ class DraftResponse(BaseModel):
     title: str
     description: str
     geometry: dict[str, Any] | None
+    image_url: str | None
     created_at: datetime
     updated_at: datetime
 

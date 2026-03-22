@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from fastapi import HTTPException, status
-from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, text
 from sqlalchemy.orm import Session
 
 from app.auth.service import Base, User, engine
@@ -15,12 +15,18 @@ class Draft(Base):
     title = Column(String, nullable=False)
     description = Column(String, nullable=False)
     geometry = Column(JSON, nullable=True)
+    image_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
 
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
+
+    with engine.begin() as connection:
+        columns = {row[1] for row in connection.execute(text("PRAGMA table_info(drafts)"))}
+        if "image_url" not in columns:
+            connection.execute(text("ALTER TABLE drafts ADD COLUMN image_url VARCHAR"))
 
 
 def list_drafts(db: Session, user: User) -> list[Draft]:
