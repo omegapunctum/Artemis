@@ -1,9 +1,101 @@
-import { login, register, logout, getCurrentUser } from './auth.js';
-import { createDraft, updateDraft, deleteDraft, getDraftsForUser, submitForModeration, validateDraftPayload } from './ugc.js';
+import { login, register, logout, getCurrentUser, fetchWithAuth } from './auth.js';
+import { submitForModeration, validateDraftPayload } from './ugc.js';
 import { uploadFile } from './uploads.js';
 import { loadLayers } from './data.js';
 
 let ugcInitialized = false;
+
+const draftState = {
+  drafts: []
+};
+
+function cloneDrafts() {
+  return draftState.drafts.map((draft) => ({ ...draft }));
+}
+
+function normalizeDraft(draft) {
+  if (!draft || typeof draft !== 'object') return null;
+
+  const coords = Array.isArray(draft.coords)
+    ? draft.coords
+    : (draft.geometry?.type === 'Point' && Array.isArray(draft.geometry.coordinates) ? draft.geometry.coordinates : null);
+
+  return {
+    ...draft,
+    coords: Array.isArray(coords) ? coords : null
+  };
+}
+
+async function parseDraftResponse(response, fallbackMessage) {
+  let data = null;
+
+  try {
+    data = await response.json();
+  } catch (_error) {
+    data = null;
+  }
+
+  if (response.ok) return data;
+  if (response.status >= 500) console.error(fallbackMessage, data || response.statusText);
+  throw new Error(data?.message || fallbackMessage);
+}
+
+export async function loadDrafts() {
+  const response = await fetchWithAuth('/drafts', { method: 'GET' });
+  const data = await parseDraftResponse(response, 'Не удалось загрузить черновики.');
+  draftState.drafts = Array.isArray(data) ? data.map(normalizeDraft).filter(Boolean) : [];
+  return cloneDrafts();
+}
+
+export async function createDraft(data) {
+  const check = validateDraftPayload(data);
+  if (!check.valid) {
+    const error = new Error('Ошибка валидации.');
+    error.type = 'validation';
+    error.fields = check.errors;
+    throw error;
+  }
+
+  const response = await fetchWithAuth('/drafts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(check.data)
+  });
+  const createdDraft = normalizeDraft(await parseDraftResponse(response, 'Не удалось создать черновик.'));
+  if (createdDraft) draftState.drafts = [createdDraft, ...draftState.drafts.filter((draft) => draft.id !== createdDraft.id)];
+  return createdDraft;
+}
+
+export async function updateDraft(id, data) {
+  const check = validateDraftPayload(data);
+  if (!check.valid) {
+    const error = new Error('Ошибка валидации.');
+    error.type = 'validation';
+    error.fields = check.errors;
+    throw error;
+  }
+
+  const response = await fetchWithAuth(`/drafts/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(check.data)
+  });
+  const updatedDraft = normalizeDraft(await parseDraftResponse(response, 'Не удалось обновить черновик.'));
+  if (updatedDraft) {
+    const hasDraft = draftState.drafts.some((draft) => draft.id === updatedDraft.id);
+    draftState.drafts = hasDraft
+      ? draftState.drafts.map((draft) => (draft.id === updatedDraft.id ? updatedDraft : draft))
+      : [updatedDraft, ...draftState.drafts];
+  }
+  return updatedDraft;
+}
+
+export async function deleteDraft(id) {
+  const response = await fetchWithAuth(`/drafts/${id}`, { method: 'DELETE' });
+  await parseDraftResponse(response, 'Не удалось удалить черновик.');
+  draftState.drafts = draftState.drafts.filter((draft) => String(draft.id) !== String(id));
+  return cloneDrafts();
+}
 
 export async function initUGCUI() {
   if (ugcInitialized) return;
@@ -92,6 +184,7 @@ function bindAuth(els, state) {
     await logout();
     syncAuthUI(els);
     els.draftsList.innerHTML = '';
+    draftState.drafts = [];
     state.activeDraftId = null;
     closeModal(els.draftModal);
     showToast('Вы вышли из аккаунта.');
@@ -185,7 +278,7 @@ async function refreshDraftsList(els, state) {
   if (state.isRefreshingDrafts) return;
   state.isRefreshingDrafts = true;
   try {
-    const drafts = await getDraftsForUser();
+    const drafts = await loadDrafts();
     els.draftsList.innerHTML = '';
 
     drafts.forEach((draft) => {
