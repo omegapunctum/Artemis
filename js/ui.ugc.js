@@ -1,6 +1,5 @@
 import { login, register, logout, getCurrentUser, fetchWithAuth } from './auth.js';
 import { submitForModeration, validateDraftPayload } from './ugc.js';
-import { uploadFile } from './uploads.js';
 import { loadLayers } from './data.js';
 
 let ugcInitialized = false;
@@ -8,6 +7,32 @@ let ugcInitialized = false;
 const draftState = {
   drafts: []
 };
+
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+
+export async function uploadImage(file, draftId) {
+  if (!file) throw new Error('Файл не выбран.');
+  if (!draftId) throw new Error('Сначала сохраните черновик, затем загрузите изображение.');
+
+  if (file.size > MAX_IMAGE_SIZE_BYTES) {
+    const error = new Error('Размер файла превышает 5 MB.');
+    console.error(error.message);
+    if (typeof window !== 'undefined' && typeof window.alert === 'function') window.alert(error.message);
+    throw error;
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('draft_id', String(draftId));
+
+  const response = await fetchWithAuth('/uploads/image', {
+    method: 'POST',
+    body: formData
+  });
+
+  const data = await parseDraftResponse(response, 'Не удалось загрузить изображение.');
+  return String(data?.url || '').trim();
+}
 
 function cloneDrafts() {
   return draftState.drafts.map((draft) => ({ ...draft }));
@@ -210,26 +235,37 @@ function bindDraftEditor(els, state) {
     await refreshDraftsList(els, state);
   });
 
-  // Загружает файл отдельно и не блокирует форму при предупреждениях по лицензии.
   els.draftForm.image_file.addEventListener('change', async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    if (!state.activeDraftId) {
+      const message = 'Сначала сохраните черновик, затем загрузите изображение.';
+      console.error(message);
+      window.alert?.(message);
+      event.target.value = '';
+      return;
+    }
+
     try {
       setLoading(els.draftForm, true);
-      const upload = await uploadFile(file);
-      els.draftForm.source_media_url.value = upload.url || '';
-      els.draftForm.source_license.value = upload.license || '';
-      if (!upload.license) showToast('Изображение загружено, но лицензия не указана. Проверьте поле source_license.');
-      else showToast('Изображение загружено.');
+      const imageUrl = await uploadImage(file, state.activeDraftId);
+      draftState.drafts = draftState.drafts.map((draft) => (
+        String(draft.id) === String(state.activeDraftId)
+          ? { ...draft, image_url: imageUrl, source_media_url: imageUrl }
+          : draft
+      ));
+      els.draftForm.source_media_url.value = imageUrl;
+      await refreshDraftsList(els, state);
+      const refreshedDraft = draftState.drafts.find((draft) => String(draft.id) === String(state.activeDraftId));
+      if (refreshedDraft) openDraftEditor(els, state, { ...refreshedDraft, source_media_url: imageUrl });
+      showToast('Изображение прикреплено к черновику.');
     } catch (error) {
       console.error('Ошибка загрузки изображения:', error);
-      if (String(error.message || '').includes('Требуется повторный вход')) {
-        state.pendingAfterLogin = 'open-editor';
-        openModal(els.loginModal);
-      }
+      handlePossiblyUnauthorized(error, state, els);
       showToast(error.message || 'Не удалось загрузить изображение.');
     } finally {
+      event.target.value = '';
       setLoading(els.draftForm, false);
     }
   });
@@ -287,6 +323,7 @@ async function refreshDraftsList(els, state) {
       item.innerHTML = `
         <strong>${escapeHtml(draft.name_ru || 'Без названия')}</strong>
         <span class="status-label">${humanStatus(draft.status)}</span>
+        ${draft.image_url ? `<a class="draft-image-link" href="${escapeHtml(draft.image_url)}" target="_blank" rel="noreferrer">Image attached</a>` : ''}
         <div class="draft-actions">
           <button type="button" data-action="edit">Edit</button>
           <button type="button" data-action="delete">Delete</button>
