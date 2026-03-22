@@ -1,5 +1,10 @@
+import logging
+
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
+
+from app.observability import log_event
+from app.security.rate_limit import check_login_block, rate_limit, register_login_failure, reset_login_failures
 
 from .schemas import AccessTokenResponse, AuthCredentials
 from .service import (
@@ -12,7 +17,6 @@ from .service import (
     rotate_refresh_token,
 )
 from .utils import COOKIE_SECURE, REFRESH_TOKEN_EXPIRE_DAYS
-from app.security.rate_limit import check_login_block, rate_limit, register_login_failure, reset_login_failures
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -31,10 +35,19 @@ def set_refresh_cookie(response: Response, refresh_token: str) -> None:
 @router.post("/register", response_model=AccessTokenResponse, status_code=status.HTTP_201_CREATED)
 def register(
     payload: AuthCredentials,
+    request: Request,
     _: None = Depends(rate_limit(3, 5 * 60, prefix="register")),
     db: Session = Depends(get_db),
 ):
-    return {"access_token": register_user(db, payload.email, payload.password)}
+    access_token = register_user(db, payload.email, payload.password)
+    log_event(
+        logging.INFO,
+        'auth.register.success',
+        route=request.url.path,
+        request_id=request.state.request_id,
+        email=payload.email,
+    )
+    return {"access_token": access_token}
 
 
 @router.post("/login", response_model=AccessTokenResponse)
@@ -51,31 +64,59 @@ def login(
     except HTTPException as exc:
         if exc.status_code == status.HTTP_401_UNAUTHORIZED:
             register_login_failure(request, limit=5, window_seconds=60, block_seconds=60)
+            log_event(
+                logging.WARNING,
+                'auth.login.fail',
+                route=request.url.path,
+                request_id=request.state.request_id,
+                email=payload.email,
+                status_code=exc.status_code,
+            )
         raise
 
     reset_login_failures(request)
     set_refresh_cookie(response, refresh_token)
+    log_event(
+        logging.INFO,
+        'auth.login.success',
+        route=request.url.path,
+        request_id=request.state.request_id,
+        user_id=request.state.user_id if hasattr(request.state, 'user_id') else None,
+        email=payload.email,
+    )
     return {"access_token": access_token}
 
 
 @router.post("/refresh", response_model=AccessTokenResponse)
 def refresh(
+    request: Request,
     response: Response,
     refresh_token: str = Depends(get_refresh_token),
     db: Session = Depends(get_db),
 ):
-    access_token, new_refresh_token = rotate_refresh_token(refresh_token, db)
+    try:
+        access_token, new_refresh_token = rotate_refresh_token(refresh_token, db)
+    except HTTPException as exc:
+        log_event(
+            logging.WARNING,
+            'auth.refresh.fail',
+            route=request.url.path,
+            request_id=request.state.request_id,
+            status_code=exc.status_code,
+        )
+        raise
     set_refresh_cookie(response, new_refresh_token)
+    log_event(logging.INFO, 'auth.refresh.success', route=request.url.path, request_id=request.state.request_id)
     return {"access_token": access_token}
 
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
 def logout(
+    request: Request,
     response: Response,
     refresh_token: str | None = Cookie(default=None, alias=REFRESH_COOKIE_NAME),
 ):
     logout_user(refresh_token)
     response.delete_cookie(key=REFRESH_COOKIE_NAME, httponly=True, secure=COOKIE_SECURE, samesite="strict")
+    log_event(logging.INFO, 'auth.logout', route=request.url.path, request_id=request.state.request_id)
     return {"message": "Logged out"}
-
-

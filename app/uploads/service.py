@@ -16,7 +16,7 @@ ALLOWED_CONTENT_TYPES = {
 UPLOADS_ROOT = Path("uploads")
 
 
-def save_draft_image(db: Session, draft: Draft, user: User, file: UploadFile) -> str:
+def save_draft_image(db: Session, draft: Draft, user: User, file: UploadFile, request=None) -> str:
     extension = ALLOWED_CONTENT_TYPES.get(file.content_type)
     if extension is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported image type")

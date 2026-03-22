@@ -9,10 +9,11 @@ from contextlib import contextmanager
 from datetime import datetime
 from typing import Any
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.auth.service import User
+from app.observability import log_event, metrics
 from app.drafts.service import Draft, update_draft
 
 try:
@@ -76,13 +77,13 @@ def submit_draft_for_review(db: Session, draft: Draft) -> Draft:
     return update_draft(db, draft, changes={"status": "review", "publish_status": PUBLISH_STATUS_PENDING})
 
 
-def approve_draft(db: Session, draft: Draft) -> Draft:
+def approve_draft(db: Session, draft: Draft, request: Request | None = None, moderator: User | None = None) -> Draft:
     with _draft_publish_lock(draft.id):
         db.refresh(draft)
 
         if draft.airtable_record_id and draft.publish_status == PUBLISH_STATUS_PUBLISHED:
             if draft.status != "approved":
-                return update_draft(
+                published = update_draft(
                     db,
                     draft,
                     changes={
@@ -90,6 +91,10 @@ def approve_draft(db: Session, draft: Draft) -> Draft:
                         "published_at": draft.published_at or datetime.utcnow(),
                     },
                 )
+                metrics.increment('publishes_success')
+                log_event(logging.INFO, 'moderation.approve', route=request.url.path if request else None, request_id=getattr(getattr(request, 'state', None), 'request_id', None), user_id=getattr(moderator, 'id', None), draft_id=published.id)
+                log_event(logging.INFO, 'moderation.publish.success', route=request.url.path if request else None, request_id=getattr(getattr(request, 'state', None), 'request_id', None), user_id=getattr(moderator, 'id', None), draft_id=published.id)
+                return published
             return draft
 
         if draft.status not in {"review", "approved"}:
@@ -97,23 +102,35 @@ def approve_draft(db: Session, draft: Draft) -> Draft:
 
         existing_record = find_existing_airtable_feature(draft)
         if existing_record:
-            return _mark_draft_as_published(db, draft, existing_record)
+            published = _mark_draft_as_published(db, draft, existing_record)
+            metrics.increment('publishes_success')
+            log_event(logging.INFO, 'moderation.approve', route=request.url.path if request else None, request_id=getattr(getattr(request, 'state', None), 'request_id', None), user_id=getattr(moderator, 'id', None), draft_id=published.id)
+            log_event(logging.INFO, 'moderation.publish.success', route=request.url.path if request else None, request_id=getattr(getattr(request, 'state', None), 'request_id', None), user_id=getattr(moderator, 'id', None), draft_id=published.id)
+            return published
 
         draft = update_draft(db, draft, changes={"publish_status": PUBLISH_STATUS_PENDING})
         try:
             created_record = create_airtable_feature(draft)
         except HTTPException as exc:
             logger.warning("Failed to publish draft %s to Airtable: %s", draft.id, exc.detail)
+            metrics.increment('publishes_fail')
+            log_event(logging.ERROR, 'moderation.publish.fail', route=request.url.path if request else None, request_id=getattr(getattr(request, 'state', None), 'request_id', None), user_id=getattr(moderator, 'id', None), draft_id=draft.id, status_code=exc.status_code)
             if draft.publish_status != PUBLISH_STATUS_FAILED:
                 draft = update_draft(db, draft, changes={"publish_status": PUBLISH_STATUS_FAILED})
             raise
         except Exception as exc:  # pragma: no cover - defensive fallback
             logger.exception("Unexpected publish failure for draft %s", draft.id)
+            metrics.increment('publishes_fail')
+            log_event(logging.ERROR, 'moderation.publish.fail', route=request.url.path if request else None, request_id=getattr(getattr(request, 'state', None), 'request_id', None), user_id=getattr(moderator, 'id', None), draft_id=draft.id)
             if draft.publish_status != PUBLISH_STATUS_FAILED:
                 update_draft(db, draft, changes={"publish_status": PUBLISH_STATUS_FAILED})
             raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="Airtable publish failed") from exc
 
-        return _mark_draft_as_published(db, draft, created_record)
+        published = _mark_draft_as_published(db, draft, created_record)
+        metrics.increment('publishes_success')
+        log_event(logging.INFO, 'moderation.approve', route=request.url.path if request else None, request_id=getattr(getattr(request, 'state', None), 'request_id', None), user_id=getattr(moderator, 'id', None), draft_id=published.id)
+        log_event(logging.INFO, 'moderation.publish.success', route=request.url.path if request else None, request_id=getattr(getattr(request, 'state', None), 'request_id', None), user_id=getattr(moderator, 'id', None), draft_id=published.id)
+        return published
 
 
 def reject_draft(db: Session, draft: Draft) -> Draft:

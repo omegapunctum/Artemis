@@ -1,4 +1,4 @@
-import { fetchWithAuth, getCurrentUser } from './auth.js';
+import { buildApiError, fetchWithAuth, getCurrentUser } from './auth.js';
 import { showError, clearError, showLoading, hideLoading } from './ux.js';
 import { createTextElement, toSafeText } from './safe-dom.js';
 
@@ -226,11 +226,8 @@ async function parseModerationResponse(response, fallbackMessage) {
 
   if (response.ok) return data;
   if (response.status >= 500) console.error(fallbackMessage, data || response.statusText);
-
-  const error = new Error(data?.message || fallbackMessage);
-  error.status = response.status;
-  error.responseStatus = response.status;
-  throw error;
+  response.json = async () => data;
+  throw await buildApiError(response, fallbackMessage);
 }
 
 

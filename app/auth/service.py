@@ -5,6 +5,8 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import Boolean, Column, String, create_engine, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
+from app.observability import set_user_context
+
 from .utils import (
     REFRESH_COOKIE_NAME,
     create_access_token,
@@ -107,6 +109,7 @@ def get_current_user(
     user = db.query(User).filter(User.id == payload["user_id"]).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token")
+    set_user_context(user.id)
     return user
 
 

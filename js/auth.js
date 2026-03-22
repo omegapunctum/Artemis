@@ -46,10 +46,38 @@ function buildAuthRequest(input, options = {}) {
   });
 }
 
-async function parseAccessToken(response) {
+export function formatRequestIdMessage(message, requestId) {
+  return requestId ? `${message} (Request ID: ${requestId})` : message;
+}
+
+export async function buildApiError(response, fallbackMessage) {
+  let data = null;
+  try {
+    data = await response.json();
+  } catch (_error) {
+    data = null;
+  }
+
+  const requestId = response.headers.get('X-Request-ID') || data?.error?.request_id || null;
+  const message = formatRequestIdMessage(data?.error?.message || data?.message || fallbackMessage, requestId);
+  const error = new Error(message);
+  error.status = response.status;
+  error.responseStatus = response.status;
+  error.requestId = requestId;
+  error.payload = data;
+  console.error('ARTEMIS API error', {
+    message: error.message,
+    status: response.status,
+    requestId,
+    url: response.url
+  });
+  return error;
+}
+
+async function parseAccessToken(response, fallbackMessage = 'Access token missing') {
   const data = await response.json();
   const token = data?.access_token ?? data?.accessToken ?? null;
-  if (!token) throw new Error('Access token missing');
+  if (!token) throw new Error(fallbackMessage);
   accessToken = token;
   notifyAuthChanged();
   return data;
@@ -95,7 +123,7 @@ export async function login(email, password) {
     body: JSON.stringify({ email, password })
   });
 
-  if (!response.ok) throw new Error('Login failed');
+  if (!response.ok) throw await buildApiError(response, 'Login failed');
   return parseAccessToken(response);
 }
 
@@ -107,7 +135,7 @@ export async function register(email, password) {
     body: JSON.stringify({ email, password })
   });
 
-  if (!response.ok) throw new Error('Register failed');
+  if (!response.ok) throw await buildApiError(response, 'Register failed');
   return parseAccessToken(response);
 }
 
@@ -118,7 +146,7 @@ export async function logout() {
       credentials: 'include'
     });
 
-    if (!response.ok) throw new Error('Logout failed');
+    if (!response.ok) throw await buildApiError(response, 'Logout failed');
   } finally {
     clearAuth();
   }
@@ -135,7 +163,7 @@ export async function refreshToken() {
 
     if (!response.ok) {
       clearAuth();
-      throw new Error('Refresh failed');
+      throw await buildApiError(response, 'Refresh failed');
     }
 
     return parseAccessToken(response);
@@ -152,7 +180,6 @@ export async function initAuth() {
   if (accessToken) return getCurrentUser();
   if (initPromise) return initPromise;
 
-  // Silent refresh при старте: без ошибок в UI и безопасно для повторного вызова.
   initPromise = (async () => {
     try {
       await refreshToken();
@@ -177,14 +204,12 @@ export async function fetchWithAuth(input, options = {}) {
   }
 
   try {
-    // Все параллельные 401 ждут один и тот же refresh lock.
     await refreshToken();
   } catch (error) {
     authRequired();
     throw error;
   }
 
-  // Ровно один retry после refresh, без бесконечного цикла.
   const retryRequest = buildAuthRequest(originalRequest.clone());
   return fetch(retryRequest);
 }

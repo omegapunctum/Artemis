@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import logging
 import threading
 from collections.abc import Callable
 from time import time
 
 from fastapi import HTTPException, Request, status
+
+from app.observability import log_event, metrics
 
 rate_limit_store: dict[str, list[float]] = {}
 rate_limit_lock = threading.Lock()
@@ -34,6 +37,21 @@ def _rate_limit_key(prefix: str, request: Request, include_path: bool) -> str:
     return f"{prefix}:{ip}"
 
 
+def _raise_rate_limited(request: Request) -> None:
+    ip = get_client_ip(request)
+    metrics.increment('rate_limited_requests')
+    log_event(
+        logging.WARNING,
+        'rate_limit.blocked_request',
+        route=request.url.path,
+        request_id=getattr(getattr(request, 'state', None), 'request_id', None),
+        endpoint=request.url.path,
+        ip=ip,
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+    )
+    raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many requests")
+
+
 def rate_limit(limit: int, window_seconds: int, *, prefix: str = "rl", include_path: bool = False) -> Callable[[Request], None]:
     def dependency(request: Request) -> None:
         now = time()
@@ -42,7 +60,7 @@ def rate_limit(limit: int, window_seconds: int, *, prefix: str = "rl", include_p
             timestamps = _prune_timestamps(rate_limit_store.get(key, []), window_seconds, now)
             if len(timestamps) >= limit:
                 rate_limit_store[key] = timestamps
-                raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many requests")
+                _raise_rate_limited(request)
             timestamps.append(now)
             rate_limit_store[key] = timestamps
 
@@ -55,7 +73,7 @@ def check_login_block(request: Request) -> None:
     with rate_limit_lock:
         blocked_until = login_block_store.get(key)
         if blocked_until and blocked_until > now:
-            raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many requests")
+            _raise_rate_limited(request)
         if blocked_until and blocked_until <= now:
             login_block_store.pop(key, None)
             login_failure_store.pop(key, None)

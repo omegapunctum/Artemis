@@ -1,4 +1,4 @@
-import { login, register, logout, getCurrentUser, fetchWithAuth } from './auth.js';
+import { buildApiError, login, register, logout, getCurrentUser, fetchWithAuth } from './auth.js';
 import { submitForModeration, validateDraftPayload } from './ugc.js';
 import { loadLayers } from './data.js';
 import { showError, clearError, showLoading, hideLoading } from './ux.js';
@@ -73,7 +73,8 @@ async function parseDraftResponse(response, fallbackMessage) {
 
   if (response.ok) return data;
   if (response.status >= 500) console.error(fallbackMessage, data || response.statusText);
-  throw new Error(data?.message || fallbackMessage);
+  response.json = async () => data;
+  throw await buildApiError(response, fallbackMessage);
 }
 
 export async function loadDrafts() {

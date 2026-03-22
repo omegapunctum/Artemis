@@ -1,9 +1,12 @@
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+import logging
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.auth.service import User, get_current_user, get_db
 from app.drafts.service import get_user_draft
+from app.observability import log_event
 from app.security.rate_limit import rate_limit
 from app.uploads.service import save_draft_image
 
@@ -16,15 +19,29 @@ class UploadImageResponse(BaseModel):
 
 @router.post("/image", response_model=UploadImageResponse, status_code=status.HTTP_201_CREATED)
 def upload_image(
+    request: Request,
     draft_id: str = Form(...),
     file: UploadFile = File(...),
     _: None = Depends(rate_limit(10, 60, prefix="upload-image", include_path=True)),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    request.state.user_id = current_user.id
     if not draft_id.isdigit():
+        log_event(logging.WARNING, 'upload.invalid_draft_id', route=request.url.path, request_id=request.state.request_id, user_id=current_user.id)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="draft_id must be a number")
 
     draft = get_user_draft(db, int(draft_id), current_user)
-    image_url = save_draft_image(db, draft, current_user, file)
+    try:
+        image_url = save_draft_image(db, draft, current_user, file, request=request)
+    except HTTPException as exc:
+        message = 'upload.fail'
+        if exc.detail == 'File too large':
+            message = 'upload.file_too_large'
+        elif exc.detail == 'Unsupported image type':
+            message = 'upload.invalid_type'
+        log_event(logging.WARNING, message, route=request.url.path, request_id=request.state.request_id, user_id=current_user.id, status_code=exc.status_code, draft_id=draft.id)
+        raise
+
+    log_event(logging.INFO, 'upload.success', route=request.url.path, request_id=request.state.request_id, user_id=current_user.id, draft_id=draft.id)
     return {"url": image_url}
