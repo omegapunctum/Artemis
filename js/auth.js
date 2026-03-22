@@ -1,10 +1,10 @@
 let accessToken = null;
 let refreshPromise = null;
+let initPromise = null;
 
 function notifyAuthChanged() {
   window.dispatchEvent(new CustomEvent('artemis:auth-changed', { detail: getCurrentUser() }));
 }
-
 
 function authRequired() {
   window.dispatchEvent(new CustomEvent('artemis:auth-required'));
@@ -36,6 +36,16 @@ function withAuthHeaders(headers = {}) {
   return result;
 }
 
+function buildAuthRequest(input, options = {}) {
+  const request = input instanceof Request ? input : new Request(input, options);
+  const headers = withAuthHeaders(request.headers);
+
+  return new Request(request, {
+    headers,
+    credentials: 'include'
+  });
+}
+
 async function parseAccessToken(response) {
   const data = await response.json();
   const token = data?.access_token ?? data?.accessToken ?? null;
@@ -56,6 +66,8 @@ export function getAccessToken() {
 
 export function clearAuth() {
   accessToken = null;
+  refreshPromise = null;
+  initPromise = null;
   notifyAuthChanged();
 }
 
@@ -105,6 +117,7 @@ export async function logout() {
       method: 'POST',
       credentials: 'include'
     });
+
     if (!response.ok) throw new Error('Logout failed');
   } finally {
     clearAuth();
@@ -135,26 +148,45 @@ export async function refreshToken() {
   }
 }
 
-export async function fetchWithAuth(url, options = {}, retried = false) {
-  const response = await fetch(url, {
-    ...options,
-    headers: withAuthHeaders(options.headers),
-    credentials: 'include'
-  });
+export async function initAuth() {
+  if (accessToken) return getCurrentUser();
+  if (initPromise) return initPromise;
 
-  if (response.status !== 401 || retried) {
+  // Silent refresh при старте: без ошибок в UI и безопасно для повторного вызова.
+  initPromise = (async () => {
+    try {
+      await refreshToken();
+      return getCurrentUser();
+    } catch (_error) {
+      return null;
+    } finally {
+      initPromise = null;
+    }
+  })();
+
+  return initPromise;
+}
+
+export async function fetchWithAuth(input, options = {}) {
+  const originalRequest = input instanceof Request ? input : new Request(input, options);
+  const firstAttempt = buildAuthRequest(originalRequest);
+  const response = await fetch(firstAttempt);
+
+  if (response.status !== 401) {
     return response;
   }
 
   try {
+    // Все параллельные 401 ждут один и тот же refresh lock.
     await refreshToken();
   } catch (error) {
-    clearAuth();
     authRequired();
     throw error;
   }
 
-  return fetchWithAuth(url, options, true);
+  // Ровно один retry после refresh, без бесконечного цикла.
+  const retryRequest = buildAuthRequest(originalRequest.clone());
+  return fetch(retryRequest);
 }
 
 export const apiFetch = fetchWithAuth;

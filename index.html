@@ -126,7 +126,7 @@
     import { loadFeatures } from './js/data.js';
     import { initMap } from './js/map.js';
     import { initUI } from './js/ui.js';
-    import { refreshToken } from './js/auth.js';
+    import { initAuth } from './js/auth.js';
     import { initUGCUI } from './js/ui.ugc.js';
     import { initModerationUI } from './js/ui.moderation.js';
     import { initPWA } from './js/pwa.js';
@@ -150,7 +150,7 @@
       setStatus('Загрузка токена…', { loading: true });
       showLoading();
       try {
-        await refreshToken();
+        await initAuth();
       } catch (error) {
         console.info('Сессия не восстановлена:', error.message);
       } finally {
