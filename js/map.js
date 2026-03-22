@@ -1,3 +1,4 @@
+import { appendText, createTextElement, normalizeSafeUrl, setSafeLink, setText, toSafeText } from './safe-dom.js';
 const SOURCE_ID = 'artemis-features';
 const LAYER_ID = 'artemis-points';
 const CLUSTER_LAYER_ID = 'artemis-clusters';
@@ -221,48 +222,44 @@ function buildPopupContent(feature, layerLookup = new Map()) {
   const article = document.createElement('article');
   article.className = 'popup-card';
 
-  const title = document.createElement('h3');
-  title.textContent = String(props.name_ru || 'Без названия');
+  const title = createTextElement('h3', props.name_ru, { fallback: 'Без названия' });
   article.appendChild(title);
 
-  const imageUrl = String(props.image_url || '').trim();
-  if (imageUrl) {
+  const safeImageUrl = normalizeSafeUrl(props.image_url, { allowRelative: true });
+  if (safeImageUrl) {
     const image = document.createElement('img');
     image.className = 'popup-image';
-    image.src = imageUrl;
-    image.alt = String(props.name_ru || 'Без названия');
+    image.src = safeImageUrl;
+    image.alt = toSafeText(props.name_ru, 'Без названия');
     image.loading = 'lazy';
+    image.referrerPolicy = 'no-referrer';
+    image.addEventListener('error', () => {
+      image.replaceWith(createImageFallback());
+    }, { once: true });
     article.appendChild(image);
   } else {
-    const placeholder = document.createElement('div');
-    placeholder.className = 'popup-image placeholder';
-    placeholder.textContent = 'Изображение отсутствует';
-    article.appendChild(placeholder);
+    article.appendChild(createImageFallback());
   }
 
-  const description = document.createElement('p');
-  description.textContent = String(props.description || 'Описание отсутствует');
-  article.appendChild(description);
+  article.appendChild(createTextElement('p', props.description, { fallback: 'Описание отсутствует' }));
 
   article.appendChild(buildPopupMeta('Слой:', String(layerLookup.get(String(props.layer_id || '').trim()) || props.layer_id || 'Слой не указан')));
   const dateText = [props?.date_start, props?.date_end].filter((value) => value !== null && value !== undefined && value !== '').join(' — ') || 'Даты не указаны';
   article.appendChild(buildPopupMeta('Даты:', String(dateText)));
 
   if (props?.source_license) {
-    article.appendChild(buildPopupMeta('Лицензия:', String(props.source_license)));
+    article.appendChild(buildPopupMeta('Лицензия:', props.source_license));
   }
 
-  const sourceUrl = String(props?.source_url || '').trim();
-  if (sourceUrl) {
+  const safeSourceUrl = normalizeSafeUrl(props?.source_url);
+  if (safeSourceUrl) {
     const row = document.createElement('p');
     const strong = document.createElement('strong');
     strong.textContent = 'Источник:';
     row.append(strong, ' ');
     const link = document.createElement('a');
-    link.href = sourceUrl;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.textContent = sourceUrl;
+    setSafeLink(link, safeSourceUrl);
+    setText(link, safeSourceUrl);
     row.appendChild(link);
     article.appendChild(row);
   }
@@ -272,10 +269,15 @@ function buildPopupContent(feature, layerLookup = new Map()) {
 
 function buildPopupMeta(label, value) {
   const row = document.createElement('p');
-  const strong = document.createElement('strong');
-  strong.textContent = label;
-  row.append(strong, ' ', String(value || ''));
+  const strong = createTextElement('strong', label);
+  row.appendChild(strong);
+  appendText(row, ' ');
+  appendText(row, value);
   return row;
+}
+
+function createImageFallback() {
+  return createTextElement('div', 'Изображение отсутствует', { className: 'popup-image placeholder' });
 }
 
 function fitToFeatures(map, geojson) {
@@ -295,15 +297,3 @@ function fitToFeatures(map, geojson) {
   }
 }
 
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
-
-function escapeAttribute(value) {
-  return escapeHtml(value);
-}

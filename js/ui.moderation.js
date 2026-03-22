@@ -1,5 +1,6 @@
 import { fetchWithAuth, getCurrentUser } from './auth.js';
 import { showError, clearError, showLoading, hideLoading } from './ux.js';
+import { createTextElement, toSafeText } from './safe-dom.js';
 
 let moderationInitialized = false;
 
@@ -163,7 +164,7 @@ function renderModerationList() {
   if (!panel || !list) return;
 
   panel.hidden = !moderationState.isAdmin;
-  list.innerHTML = '';
+  list.replaceChildren();
 
   if (!moderationState.isAdmin) return;
 
@@ -179,13 +180,10 @@ function renderModerationList() {
     const item = document.createElement('div');
     item.className = 'moderation-item';
 
-    const title = document.createElement('strong');
-    title.textContent = String(draft?.title || draft?.title_short || draft?.name_ru || 'Без названия');
+    const title = createTextElement('strong', draft?.title || draft?.title_short || draft?.name_ru, { fallback: 'Без названия' });
     item.appendChild(title);
 
-    const description = document.createElement('p');
-    description.textContent = shortenText(draft?.description || '');
-    item.appendChild(description);
+    item.appendChild(createTextElement('p', shortenText(draft?.description || '')));
 
     const actions = document.createElement('div');
     actions.className = 'moderation-actions';
@@ -210,7 +208,7 @@ function renderModerationList() {
 
 function hideModerationPanel(panel, list) {
   panel.hidden = true;
-  list.innerHTML = '';
+  list.replaceChildren();
 }
 
 function cloneQueue() {
@@ -237,16 +235,8 @@ async function parseModerationResponse(response, fallbackMessage) {
 
 
 function shortenText(value) {
-  const normalized = String(value || '').trim();
+  const normalized = toSafeText(value).trim();
   if (!normalized) return 'Без описания';
   return normalized.length > 140 ? `${normalized.slice(0, 137)}...` : normalized;
 }
 
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
