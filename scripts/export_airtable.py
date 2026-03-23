@@ -32,6 +32,7 @@ import os
 
 AIRTABLE_TOKEN = os.getenv("AIRTABLE_TOKEN")
 AIRTABLE_BASE = os.getenv("AIRTABLE_BASE")
+AIRTABLE_TABLE = os.getenv("AIRTABLE_TABLE")
 
 if not AIRTABLE_TOKEN or not AIRTABLE_BASE:
     raise Exception("Missing AIRTABLE_TOKEN or AIRTABLE_BASE")
@@ -362,7 +363,7 @@ def fetch_airtable_records(
     max_records: Optional[int],
 ) -> List[Dict[str, Any]]:
     """Чтение всех страниц Airtable по offset (pageSize=100)."""
-    url = f"https://api.airtable.com/v0/{BASE}/{TABLE}"
+    url = f"https://api.airtable.com/v0/{AIRTABLE_BASE}/{AIRTABLE_TABLE}"
     headers = {"Authorization": f"Bearer {token}"}
     records: List[Dict[str, Any]] = []
     offset: Optional[str] = None
