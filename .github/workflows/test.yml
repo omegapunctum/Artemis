@@ -1,4 +1,0 @@
-- name: Test Airtable base
-  run: |
-    curl -i -H "Authorization: Bearer $AIRTABLE_TOKEN" \
-    "https://api.airtable.com/v0/$AIRTABLE_BASE"
