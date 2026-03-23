@@ -662,7 +662,23 @@ def sort_mapped_records(mapped_records: List[Dict[str, Any]]) -> List[Dict[str, 
 
     return sorted(mapped_records, key=key)
 
+def fetch_table(table_name):
+    url = f"{BASE_URL}/{table_name}"
+    records = []
 
+    while url:
+        resp = requests.get(url, headers=HEADERS)
+        if resp.status_code != 200:
+            raise Exception(f"HTTP {resp.status_code}: {resp.text}")
+
+        data = resp.json()
+        records.extend(data.get("records", []))
+
+        offset = data.get("offset")
+        url = f"{BASE_URL}/{table_name}?offset={offset}" if offset else None
+
+    return records
+    
 def main() -> int:
     started_at = time.time()
     args = parse_args()
