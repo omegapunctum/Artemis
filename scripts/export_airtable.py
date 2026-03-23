@@ -31,6 +31,13 @@ import importlib.util
 import json
 import os
 import re
+
+AIRTABLE_TOKEN = os.getenv("AIRTABLE_TOKEN")
+AIRTABLE_BASE = os.getenv("AIRTABLE_BASE")
+
+if not AIRTABLE_TOKEN or not AIRTABLE_BASE:
+    raise Exception("Missing AIRTABLE_TOKEN or AIRTABLE_BASE")
+
 import subprocess
 import sys
 import time
@@ -350,14 +357,14 @@ def airtable_get_with_retry(
 
 
 def fetch_airtable_records(
-    token: str,
-    base: str,
     table: str,
     max_records: Optional[int],
 ) -> List[Dict[str, Any]]:
     """Чтение всех страниц Airtable по offset (pageSize=100)."""
-    url = f"https://api.airtable.com/v0/{BASE}/{TABLE}"
-    headers = {"Authorization": f"Bearer {token}"}
+    url = f"https://api.airtable.com/v0/{AIRTABLE_BASE}/{table}"
+    headers = {"Authorization": f"Bearer {AIRTABLE_TOKEN}"}
+    print("BASE:", AIRTABLE_BASE)
+    print("TABLE:", table)
     records: List[Dict[str, Any]] = []
     offset: Optional[str] = None
     page_no = 0
@@ -678,14 +685,12 @@ def main() -> int:
     if args.self_test:
         return run_self_test()
 
-    token = os.getenv("AIRTABLE_TOKEN")
-    base = args.base or os.getenv("AIRTABLE_BASE")
     table = args.table or os.getenv("AIRTABLE_TABLE")
 
     dry_run = bool(args.dry_run)
-    if not dry_run and (not token or not base or not table):
+    if not dry_run and not table:
         dry_run = True
-        print("Не заданы AIRTABLE_TOKEN/AIRTABLE_BASE/AIRTABLE_TABLE — включён dry-run.")
+        print("Не задан AIRTABLE_TABLE — включён dry-run.")
 
     if not dry_run and not REQUESTS_AVAILABLE:
         print("Не найден модуль 'requests'. Установите его: pip install requests", file=sys.stderr)
@@ -711,8 +716,8 @@ def main() -> int:
                 records = records[: args.max_records]
             print(f"Dry-run: загружено {len(records)} записей из локального sample.")
         else:
-            assert token is not None and base is not None and table is not None
-            records = fetch_airtable_records(token, base, table, args.max_records)
+            assert table is not None
+            records = fetch_airtable_records(table, args.max_records)
     except PermissionError as exc:
         print(str(exc), file=sys.stderr)
         return 2
