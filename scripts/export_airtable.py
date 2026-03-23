@@ -18,9 +18,8 @@
   - data/export_errors.log    : ошибки в формате JSON Lines
   - data/export_meta.json     : метаданные экспорта (timestamp, counts, source)
 
-Если нет обязательных переменных/параметров для API, скрипт автоматически переходит
-в dry-run режим: читает tests/sample_airtable_response.json (если существует) и пишет
-выход в data/_test_*.
+Если передан --dry-run или нет обязательных переменных/параметров для API, скрипт
+переходит в dry-run режим: не обращается к Airtable и пишет mock-выход в data/_test_*.
 """
 
 from __future__ import annotations
@@ -58,7 +57,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--base", help="Airtable base id (или AIRTABLE_BASE)")
     parser.add_argument("--table", help="Airtable table name (или AIRTABLE_TABLE)")
     parser.add_argument("--out-dir", default="data", help="Каталог для выходных файлов (по умолчанию: data)")
-    parser.add_argument("--dry-run", action="store_true", help="Не ходить в сеть, читать локальный sample JSON")
+    parser.add_argument("--dry-run", action="store_true", help="Не ходить в сеть и сгенерировать mock-данные")
     parser.add_argument("--max-records", type=int, default=None, help="Ограничить число записей (для тестирования)")
     parser.add_argument(
         "--exclude-without-geometry",
@@ -397,17 +396,9 @@ def fetch_airtable_records(
     return records
 
 
-def load_sample_records(sample_file: Path) -> List[Dict[str, Any]]:
-    if not sample_file.exists():
-        print(f"Dry-run: файл {sample_file} не найден, используем пустой набор.")
-        return []
-    with sample_file.open("r", encoding="utf-8") as f:
-        payload = json.load(f)
-    if isinstance(payload, dict) and "records" in payload:
-        return payload.get("records", [])
-    if isinstance(payload, list):
-        return payload
-    raise ValueError("Некорректный формат sample JSON: ожидается {records: [...]} или [...]")
+def generate_mock_records() -> List[Dict[str, Any]]:
+    """Dry-run для CI: не требует secrets и не ходит в Airtable."""
+    return []
 
 
 def build_geojson_features(mapped_records: Iterable[Dict[str, Any]], warnings: List[Dict[str, Any]], errors: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -692,8 +683,6 @@ def main() -> int:
         return 1
 
     out_dir = Path(args.out_dir)
-    sample_file = Path("tests/sample_airtable_response.json")
-
     # В dry-run пишем в _test_* файлы, чтобы не затирать рабочие данные.
     prefix = "_test_" if dry_run else ""
     raw_path = out_dir / f"{prefix}features.json"
@@ -706,10 +695,10 @@ def main() -> int:
     records: List[Dict[str, Any]]
     try:
         if dry_run:
-            records = load_sample_records(sample_file)
+            records = generate_mock_records()
             if args.max_records is not None:
                 records = records[: args.max_records]
-            print(f"Dry-run: загружено {len(records)} записей из локального sample.")
+            print("Dry-run: mock data generated")
         else:
             assert token is not None and base is not None and table is not None
             records = fetch_airtable_records(token, base, table, args.max_records)
