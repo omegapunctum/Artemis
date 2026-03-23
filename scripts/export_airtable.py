@@ -434,7 +434,7 @@ def build_geojson_features(mapped_records: Iterable[Dict[str, Any]], warnings: L
     for m in mapped_records:
         lon = m.get("longitude")
         lat = m.get("latitude")
-        if lon is None or lat is None:
+        if lat is None or lon is None:
             add_issue(warnings, "warning", m.get("id") or "<missing>", "missing coordinates, skipped in geojson", "geometry")
             continue
           else:
