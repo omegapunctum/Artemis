@@ -1603,6 +1603,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 85,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -1628,6 +1629,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -1653,6 +1655,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -1678,6 +1681,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 85,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -1703,6 +1707,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 90,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -1728,6 +1733,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -1754,6 +1760,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -1779,6 +1786,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -1805,6 +1813,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -1830,6 +1839,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -1855,6 +1865,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -1881,6 +1892,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -1906,6 +1918,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -1931,6 +1944,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -1956,6 +1970,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -1981,6 +1996,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -2006,6 +2022,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -2031,6 +2048,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -2056,6 +2074,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 90,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -2081,6 +2100,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 85,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -2106,6 +2126,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 85,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -2131,6 +2152,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -2156,6 +2178,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -2182,6 +2205,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 85,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -2207,6 +2231,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 90,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -2232,6 +2257,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 85,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -2257,6 +2283,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -2282,6 +2309,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -2308,6 +2336,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
@@ -2333,6 +2362,7 @@
       "is_active": true,
       "source_license": "CC BY-SA",
       "coordinates_confidence": "exact",
+      "quality_score": 80,
       "source_quality": "high",
       "semantic_type": "architecture"
     }
