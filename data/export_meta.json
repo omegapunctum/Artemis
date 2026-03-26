@@ -1,11 +1,11 @@
 {
-  "timestamp": "2026-03-26T07:25:54Z",
+  "timestamp": "2026-03-26T14:42:40Z",
   "source": "airtable",
   "records_total_source": 244,
-  "records_exported": 0,
-  "records_geojson": 0,
-  "errors": 244,
+  "records_exported": 240,
+  "records_geojson": 240,
+  "errors": 4,
   "warnings": 1434,
   "skipped_inactive": 0,
-  "duration_seconds": 2.829
+  "duration_seconds": 2.481
 }
