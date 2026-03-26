@@ -53,7 +53,7 @@ HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 TRUE_SET = {True, 1, "1", "true", "yes", "y", "да"}
 FALSE_SET = {False, 0, "0", "false", "no", "n", "нет"}
 ALLOWED_LICENSES = {"CC0", "CC BY", "CC BY-SA", "PD"}
-ALLOWED_COORDINATES_CONFIDENCE = {"EXACT", "APPROXIMATELY±Nkm", "CONDITIONAL"}
+ALLOWED_COORDINATES_CONFIDENCE = {"exact", "approximately±Nkm", "conditional"}
 ALLOWED_LAYER_TYPES = {"architecture", "route_point", "biogeography", "biography"}
 
 
@@ -410,7 +410,7 @@ def generate_mock_records() -> List[Dict[str, Any]]:
             "id": "recTEST",
             "fields": {
                 "layer_id": "test_layer",
-                "layer_type": "biography",
+                "layer_type_enum": "biography",
                 "name_ru": "Тестовая запись",
                 "date_start": "1348",
                 "longitude": 37.6173,
@@ -420,7 +420,7 @@ def generate_mock_records() -> List[Dict[str, Any]]:
                 "tags": "test",
                 "is_active_bool": True,
                 "source_license": "CC BY",
-                "coordinates_confidence": "EXACT",
+                "coordinates_confidence_enum": "exact",
                 "source_url": "https://example.com/source",
                 "coordinates_source": "Wikipedia",
                 "sequence_order": 1,
@@ -647,7 +647,7 @@ def run_self_test() -> int:
         "id": "recTEST",
         "fields": {
             "layer_id": "history",
-            "layer_type": "timeline",
+            "layer_type_enum": "architecture",
             "name_ru": "Тест",
             "date_start": "-0753",
             "longitude_num": 37.6173,
