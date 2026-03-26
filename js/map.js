@@ -148,6 +148,25 @@ function loadGeoJSON(map, featureCollection) {
     type: 'circle',
     source: SOURCE_ID,
     paint: {
+      'circle-radius': 8,
+      'circle-color': '#ef4444',
+      'circle-stroke-color': '#ffffff',
+      'circle-stroke-width': 2,
+      'circle-opacity': 0.95
+    }
+  };
+
+  if (shouldCluster) {
+    pointLayer.filter = ['!', ['has', 'point_count']];
+  }
+
+  map.addLayer(pointLayer);
+
+  const pointLayer = {
+    id: LAYER_ID,
+    type: 'circle',
+    source: SOURCE_ID,
+    paint: {
       'circle-radius': 7,
       'circle-color': '#2563eb',
       'circle-stroke-color': '#ffffff',
