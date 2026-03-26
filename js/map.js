@@ -151,7 +151,7 @@ function loadGeoJSON(map, featureCollection) {
     source: SOURCE_ID,
     paint: {
       'circle-radius': 8,
-      'circle-color': '#ef4444',        // ярко-красный — сразу видно
+      'circle-color': '#d9786d',        // ярко-красный — сразу видно
       'circle-stroke-color': '#ffffff',
       'circle-stroke-width': 2,
       'circle-opacity': 0.95
