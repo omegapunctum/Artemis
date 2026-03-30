@@ -59,7 +59,7 @@ class KeyValueFormatter(logging.Formatter):
             'user_id': getattr(record, 'user_id', None) or user_id_var.get(),
             'request_id': getattr(record, 'request_id', None) or request_id_var.get(),
             'status_code': getattr(record, 'status_code', None),
-            'latency_ms': getattr(record, 'latency_ms', None),
+            'duration_ms': getattr(record, 'duration_ms', None),
         }
         for key, value in getattr(record, 'event_data', {}).items():
             if value is not None:
@@ -133,8 +133,9 @@ def log_event(level: int, message: str, **event_data: Any) -> None:
     extra = {
         'event_data': event_data,
         'status_code': event_data.get('status_code'),
-        'latency_ms': event_data.get('latency_ms'),
+        'duration_ms': event_data.get('duration_ms'),
         'route': event_data.get('route'),
+        'path': event_data.get('path'),
         'user_id': event_data.get('user_id'),
         'request_id': event_data.get('request_id'),
     }
@@ -164,27 +165,27 @@ class ObservabilityMiddleware(BaseHTTPMiddleware):
         try:
             response = await call_next(request)
         except Exception:
-            latency_ms = round((time.perf_counter() - request.state.started_at) * 1000, 2)
+            duration_ms = round((time.perf_counter() - request.state.started_at) * 1000, 2)
             log_event(
                 logging.ERROR,
                 'request.unhandled_exception',
-                route=request.url.path,
+                path=request.url.path,
                 request_id=request_id,
-                latency_ms=latency_ms,
+                duration_ms=duration_ms,
             )
             raise
 
         response.headers['X-Request-ID'] = request_id
-        latency_ms = round((time.perf_counter() - request.state.started_at) * 1000, 2)
+        duration_ms = round((time.perf_counter() - request.state.started_at) * 1000, 2)
         level = logging.WARNING if response.status_code >= 400 else logging.INFO
         log_event(
             level,
             'request.completed',
             method=request.method,
-            route=request.url.path,
+            path=request.url.path,
             request_id=request_id,
             status_code=response.status_code,
-            latency_ms=latency_ms,
+            duration_ms=duration_ms,
         )
         return response
 
@@ -199,17 +200,15 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     log_event(
         level,
         'http_exception',
-        route=request.url.path,
+        path=request.url.path,
         request_id=getattr(request.state, 'request_id', None),
         status_code=status_code,
         detail=exc.detail,
     )
+    error_value = exc.detail if isinstance(exc.detail, str) and exc.detail else 'request_error'
     return JSONResponse(
         status_code=status_code,
-        content={
-            'ok': False,
-            'error': {'message': exc.detail, 'request_id': getattr(request.state, 'request_id', None)},
-        },
+        content={'error': error_value, 'request_id': getattr(request.state, 'request_id', None)},
         headers={'X-Request-ID': getattr(request.state, 'request_id', '')},
     )
 
@@ -219,16 +218,13 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     log_event(
         logging.ERROR,
         'unhandled_exception',
-        route=request.url.path,
+        path=request.url.path,
         request_id=getattr(request.state, 'request_id', None),
         error_type=type(exc).__name__,
     )
     return JSONResponse(
         status_code=500,
-        content={
-            'ok': False,
-            'error': {'message': 'Internal server error', 'request_id': getattr(request.state, 'request_id', None)},
-        },
+        content={'error': 'internal_error', 'request_id': getattr(request.state, 'request_id', None)},
         headers={'X-Request-ID': getattr(request.state, 'request_id', '')},
     )
 
@@ -241,3 +237,11 @@ def health_payload() -> dict[str, Any]:
         'uptime': snapshot['uptime_seconds'],
         'counts': counts,
     }
+
+
+def internal_error_response(request: Request) -> JSONResponse:
+    return JSONResponse(
+        status_code=500,
+        content={'error': 'internal_error', 'request_id': getattr(request.state, 'request_id', None)},
+        headers={'X-Request-ID': getattr(request.state, 'request_id', '')},
+    )

@@ -58,8 +58,9 @@ export async function buildApiError(response, fallbackMessage) {
     data = null;
   }
 
-  const requestId = response.headers.get('X-Request-ID') || data?.error?.request_id || null;
-  const message = formatRequestIdMessage(data?.error?.message || data?.message || fallbackMessage, requestId);
+  const requestId = response.headers.get('X-Request-ID') || data?.request_id || data?.error?.request_id || null;
+  const apiError = typeof data?.error === 'string' ? data.error : data?.error?.message;
+  const message = formatRequestIdMessage(apiError || data?.message || fallbackMessage, requestId);
   const error = new Error(message);
   error.status = response.status;
   error.responseStatus = response.status;

@@ -1,6 +1,7 @@
 from pathlib import Path
+import logging
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 
 from app.auth.routes import router as auth_router
@@ -14,6 +15,8 @@ from app.observability import (
     health_payload,
     http_exception_handler,
     setup_logging,
+    log_event,
+    internal_error_response,
     unhandled_exception_handler,
 )
 from app.uploads.routes import router as uploads_router
@@ -42,8 +45,12 @@ def healthcheck():
 
 
 @app.get("/health")
-def health():
-    return health_payload()
+def health(request: Request):
+    try:
+        return health_payload()
+    except Exception as exc:
+        log_event(logging.ERROR, 'health.error', path=request.url.path, request_id=getattr(request.state, 'request_id', None), error=str(exc))
+        return internal_error_response(request)
 
 
 @app.get("/me", response_model=UserResponse)

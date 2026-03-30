@@ -243,6 +243,7 @@ function bindAuth(els, state) {
     try {
       if (mode === 'register') await register(email, password);
       else await login(email, password);
+      clearError();
       closeModal(els.loginModal);
       syncAuthUI(els);
       await refreshDraftsList(els, state);
@@ -256,6 +257,7 @@ function bindAuth(els, state) {
       }
     } catch (error) {
       console.error('Ошибка авторизации:', error);
+      showError(error.message || 'Ошибка авторизации.');
       showToast(error.message || 'Ошибка авторизации.');
     } finally {
       setLoading(els.loginForm, false);
@@ -320,6 +322,7 @@ function bindDraftEditor(els, state) {
     } catch (error) {
       console.error('Ошибка загрузки изображения:', error);
       handlePossiblyUnauthorized(error, state, els);
+      showError(error.message || 'Не удалось загрузить изображение.');
       showToast(error.message || 'Не удалось загрузить изображение.');
     } finally {
       event.target.value = '';
@@ -355,9 +358,11 @@ function bindDraftEditor(els, state) {
         renderFieldErrors(els.draftForm, els.draftErrors, error.fields || {});
       } else if (error.type === 'auth' || String(error.message || '').includes('Требуется повторный вход')) {
         state.pendingAfterLogin = 'open-editor';
+        showError('Нужна авторизация.');
         showToast('Нужна авторизация.');
         openModal(els.loginModal);
       } else {
+        showError(error.message || 'Не удалось сохранить черновик.');
         showToast(error.message || 'Не удалось сохранить черновик.');
       }
     } finally {
@@ -422,6 +427,7 @@ async function refreshDraftsList(els, state) {
         } catch (error) {
           console.error('Ошибка удаления:', error);
           handlePossiblyUnauthorized(error, state, els);
+          showError(error.message || 'Не удалось удалить черновик.');
           showToast(error.message || 'Не удалось удалить черновик.');
         }
       });
@@ -433,6 +439,7 @@ async function refreshDraftsList(els, state) {
         } catch (error) {
           console.error('Ошибка отправки на модерацию:', error);
           handlePossiblyUnauthorized(error, state, els);
+          showError(error.message || 'Не удалось отправить на модерацию.');
           showToast(error.message || 'Не удалось отправить на модерацию.');
         }
       });
@@ -442,6 +449,7 @@ async function refreshDraftsList(els, state) {
   } catch (error) {
     console.error('Ошибка загрузки черновиков:', error);
     handlePossiblyUnauthorized(error, state, els);
+    showError(error.message || 'Не удалось загрузить черновики.');
     showToast(error.message || 'Не удалось загрузить черновики.');
   } finally {
     state.isRefreshingDrafts = false;

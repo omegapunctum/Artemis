@@ -6,9 +6,9 @@ from sqlalchemy.orm import Session
 
 from app.auth.service import User, get_current_user, get_db
 from app.drafts.service import get_user_draft
-from app.observability import log_event
+from app.observability import internal_error_response, log_event
 from app.security.rate_limit import rate_limit
-from app.uploads.service import save_draft_image
+from app.uploads.service import cleanup_orphan_uploads, save_draft_image
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 
@@ -27,12 +27,17 @@ def upload_image(
     current_user: User = Depends(get_current_user),
 ):
     request.state.user_id = current_user.id
-    if not draft_id.isdigit():
-        log_event(logging.WARNING, 'upload.invalid_draft_id', route=request.url.path, request_id=request.state.request_id, user_id=current_user.id)
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="draft_id must be a number")
-
-    draft = get_user_draft(db, int(draft_id), current_user)
+    draft = None
     try:
+        removed = cleanup_orphan_uploads(db)
+        if removed:
+            log_event(logging.INFO, 'upload.cleanup.orphans_removed', path=request.url.path, request_id=request.state.request_id, removed=removed)
+
+        if not draft_id.isdigit():
+            log_event(logging.WARNING, 'upload.invalid_draft_id', route=request.url.path, request_id=request.state.request_id, user_id=current_user.id)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="draft_id must be a number")
+
+        draft = get_user_draft(db, int(draft_id), current_user)
         image_url = save_draft_image(db, draft, current_user, file, request=request)
     except HTTPException as exc:
         message = 'upload.fail'
@@ -40,8 +45,19 @@ def upload_image(
             message = 'upload.file_too_large'
         elif exc.detail == 'Unsupported image type':
             message = 'upload.invalid_type'
-        log_event(logging.WARNING, message, route=request.url.path, request_id=request.state.request_id, user_id=current_user.id, status_code=exc.status_code, draft_id=draft.id)
+        log_event(
+            logging.WARNING,
+            message,
+            route=request.url.path,
+            request_id=request.state.request_id,
+            user_id=current_user.id,
+            status_code=exc.status_code,
+            draft_id=draft.id if draft else None,
+        )
         raise
+    except Exception as exc:
+        log_event(logging.ERROR, 'upload.error', path=request.url.path, request_id=request.state.request_id, user_id=current_user.id, error=str(exc))
+        return internal_error_response(request)
 
     log_event(logging.INFO, 'upload.success', route=request.url.path, request_id=request.state.request_id, user_id=current_user.id, draft_id=draft.id)
     return {"url": image_url}
