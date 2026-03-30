@@ -44,7 +44,7 @@ class RateLimitUnitTests(unittest.TestCase):
             with self.assertRaises(HTTPException) as exc:
                 dependency(request)
         self.assertEqual(exc.exception.status_code, 429)
-        self.assertEqual(exc.exception.detail, 'Too many requests')
+        self.assertEqual(exc.exception.detail, 'rate_limit_exceeded')
 
     def test_draft_limit_isolated_by_path(self):
         create_request = self.make_request(path='/drafts')

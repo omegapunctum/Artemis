@@ -49,7 +49,7 @@ def _raise_rate_limited(request: Request) -> None:
         ip=ip,
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
     )
-    raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many requests")
+    raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="rate_limit_exceeded")
 
 
 def rate_limit(limit: int, window_seconds: int, *, prefix: str = "rl", include_path: bool = False) -> Callable[[Request], None]:

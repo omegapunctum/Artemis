@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
-from app.observability import log_event
+from app.observability import internal_error_response, log_event
 from app.security.rate_limit import check_login_block, rate_limit, register_login_failure, reset_login_failures
 
 from .schemas import AccessTokenResponse, AuthCredentials
@@ -39,15 +39,21 @@ def register(
     _: None = Depends(rate_limit(3, 5 * 60, prefix="register")),
     db: Session = Depends(get_db),
 ):
-    access_token = register_user(db, payload.email, payload.password)
-    log_event(
-        logging.INFO,
-        'auth.register.success',
-        route=request.url.path,
-        request_id=request.state.request_id,
-        email=payload.email,
-    )
-    return {"access_token": access_token}
+    try:
+        access_token = register_user(db, payload.email, payload.password)
+        log_event(
+            logging.INFO,
+            'auth.register.success',
+            route=request.url.path,
+            request_id=request.state.request_id,
+            email=payload.email,
+        )
+        return {"access_token": access_token}
+    except HTTPException:
+        raise
+    except Exception as exc:
+        log_event(logging.ERROR, 'auth.register.error', path=request.url.path, request_id=request.state.request_id, error=str(exc))
+        return internal_error_response(request)
 
 
 @router.post("/login", response_model=AccessTokenResponse)
@@ -73,6 +79,9 @@ def login(
                 status_code=exc.status_code,
             )
         raise
+    except Exception as exc:
+        log_event(logging.ERROR, 'auth.login.error', path=request.url.path, request_id=request.state.request_id, error=str(exc))
+        return internal_error_response(request)
 
     reset_login_failures(request)
     set_refresh_cookie(response, refresh_token)
@@ -91,6 +100,7 @@ def login(
 def refresh(
     request: Request,
     response: Response,
+    _: None = Depends(rate_limit(10, 60, prefix="refresh")),
     refresh_token: str = Depends(get_refresh_token),
     db: Session = Depends(get_db),
 ):
@@ -105,6 +115,9 @@ def refresh(
             status_code=exc.status_code,
         )
         raise
+    except Exception as exc:
+        log_event(logging.ERROR, 'auth.refresh.error', path=request.url.path, request_id=request.state.request_id, error=str(exc))
+        return internal_error_response(request)
     set_refresh_cookie(response, new_refresh_token)
     log_event(logging.INFO, 'auth.refresh.success', route=request.url.path, request_id=request.state.request_id)
     return {"access_token": access_token}
