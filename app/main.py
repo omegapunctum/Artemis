@@ -49,16 +49,10 @@ app.add_middleware(
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(Exception, unhandled_exception_handler)
 
-# Русский комментарий: канонический backend runtime — только /api/*.
 for router in (auth_router, drafts_router, uploads_router, moderation_router):
     app.include_router(router, prefix="/api")
 
 app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
-
-
-@app.get("/")
-def healthcheck():
-    return {"status": "ok"}
 
 
 @app.get("/api/health")
