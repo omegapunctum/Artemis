@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const STATIC_CACHE = `artemis-static-${CACHE_VERSION}`;
 const DATA_CACHE = `artemis-data-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `artemis-runtime-${CACHE_VERSION}`;
@@ -69,10 +69,11 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     try {
+      const activeCaches = new Set([STATIC_CACHE, DATA_CACHE, RUNTIME_CACHE]);
       const keys = await caches.keys();
       await Promise.all(
         keys.map((key) => {
-          if (!key.includes(CACHE_VERSION)) {
+          if (!activeCaches.has(key)) {
             return caches.delete(key);
           }
           return undefined;
@@ -87,11 +88,26 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  if (request.method !== 'GET') return;
-
   const url = new URL(request.url);
+  const hasAuthHeader = request.headers.has('Authorization');
 
-  if (isPrivateRequest(url)) return;
+  if (request.method !== 'GET') {
+    console.debug('[SW] skip non-GET:', request.method, url.pathname);
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  if (hasAuthHeader || isPrivateRequest(url)) {
+    console.debug('[SW] skip private/auth request:', url.pathname);
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  if (url.origin !== self.location.origin && !isAllowedCrossOrigin(url)) {
+    console.debug('[SW] skip cross-origin:', url.origin);
+    event.respondWith(fetch(request));
+    return;
+  }
 
   if (request.mode === 'navigate') {
     event.respondWith(handleNavigationRequest(request));
@@ -99,7 +115,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isDataRequest(url)) {
-    event.respondWith(handleDataRequest(request, event));
+    event.respondWith(handleDataRequest(request));
     return;
   }
 
@@ -109,7 +125,23 @@ self.addEventListener('fetch', (event) => {
 });
 
 function isPrivateRequest(url) {
-  return ['/auth/', '/drafts/', '/moderation/', '/uploads/', '/ugc/', '/api/'].some((path) => url.pathname.startsWith(path));
+  return [
+    '/auth',
+    '/me',
+    '/profile',
+    '/drafts',
+    '/moderation',
+    '/uploads',
+    '/ugc',
+    '/api/private',
+    '/api/admin',
+    '/api/moderation',
+    '/api/drafts'
+  ].some((path) => url.pathname === path || url.pathname.startsWith(`${path}/`));
+}
+
+function isAllowedCrossOrigin(url) {
+  return url.href === MAPLIBRE_SCRIPT_URL || url.href === MAPLIBRE_STYLE_URL || url.href === MAP_STYLE_URL;
 }
 
 function isDataRequest(url) {
@@ -131,15 +163,19 @@ async function handleNavigationRequest(request) {
     const cachedResponse = await cache.match('/index.html');
 
     if (cachedResponse) {
+      console.debug('[SW] navigation cache hit');
       return cachedResponse;
     }
 
     const networkResponse = await fetch(request);
     await cache.put('/index.html', networkResponse.clone());
+    console.debug('[SW] navigation cache miss -> network');
     return networkResponse;
   } catch (error) {
-    console.warn('Navigation cache failed, falling back to network:', error);
-    return fetch(request);
+    console.debug('[SW] navigation network failed, fallback to cached shell');
+    const fallback = await caches.match('/index.html');
+    if (fallback) return fallback;
+    return Response.error();
   }
 }
 
@@ -147,13 +183,17 @@ async function handleStaticRequest(request) {
   try {
     const cache = await caches.open(RUNTIME_CACHE);
     const cachedResponse = await cache.match(request) || await caches.match(request);
-    if (cachedResponse) return cachedResponse;
+    if (cachedResponse) {
+      console.debug('[SW] static cache hit:', request.url);
+      return cachedResponse;
+    }
 
     const networkResponse = await fetch(request);
     await cache.put(request, networkResponse.clone());
+    console.debug('[SW] static cache miss -> network:', request.url);
     return networkResponse;
   } catch (error) {
-    console.warn('Static cache failed:', error);
+    console.debug('[SW] static fetch failed, fallback to cache:', request.url);
 
     if (request.url === MAP_STYLE_URL) {
       return new Response(JSON.stringify(OFFLINE_STYLE), {
@@ -169,34 +209,26 @@ async function handleStaticRequest(request) {
   }
 }
 
-async function handleDataRequest(request, event) {
+async function handleDataRequest(request) {
   try {
     const cache = await caches.open(DATA_CACHE);
-    const cachedResponse = await cache.match(request);
-
-    const networkPromise = fetch(request)
-      .then(async (response) => {
-        if (response.ok) {
-          await cache.put(request, response.clone());
-        }
-        return response;
-      })
-      .catch(() => null);
-
-    if (cachedResponse) {
-      event.waitUntil(networkPromise.catch(() => undefined));
-      return cachedResponse;
+    try {
+      const networkResponse = await fetch(request);
+      if (networkResponse.ok) {
+        await cache.put(request, networkResponse.clone());
+      }
+      console.debug('[SW] data network hit:', request.url);
+      return networkResponse;
+    } catch (networkError) {
+      const cachedResponse = await cache.match(request);
+      if (cachedResponse) {
+        console.debug('[SW] data network fail -> cache fallback:', request.url);
+        return cachedResponse;
+      }
+      throw networkError;
     }
-
-    const networkResponse = await networkPromise;
-    if (networkResponse) return networkResponse;
   } catch (error) {
-    console.warn('Data cache failed, falling back to network:', error);
-  }
-
-  try {
-    return await fetch(request);
-  } catch {
+    console.debug('[SW] data unavailable offline:', request.url);
     return new Response(JSON.stringify({
       error: 'offline',
       message: 'ARTEMIS offline cache is empty for this dataset.'
