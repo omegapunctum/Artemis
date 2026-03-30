@@ -24,7 +24,7 @@
       "longitude": 55.2741,
       "is_active": true,
       "source_license": "CC BY-SA",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   },
@@ -53,7 +53,7 @@
       "longitude": 2.0283,
       "is_active": true,
       "source_license": "CC BY-SA",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   },
@@ -82,7 +82,7 @@
       "longitude": 12.4533,
       "is_active": true,
       "source_license": "CC BY-SA",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   },
@@ -111,7 +111,7 @@
       "longitude": 1.4878,
       "is_active": true,
       "source_license": "CC BY-SA",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   },
@@ -140,7 +140,7 @@
       "longitude": 2.3522,
       "is_active": true,
       "source_license": "CC BY-SA",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   },
@@ -169,7 +169,7 @@
       "longitude": 2.3458,
       "is_active": true,
       "source_license": "CC BY-SA",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   },
@@ -198,7 +198,7 @@
       "longitude": 12.4769,
       "is_active": true,
       "source_license": "CC BY-SA",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   },
@@ -227,7 +227,7 @@
       "longitude": -8.5442,
       "is_active": true,
       "source_license": "CC BY-SA",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   },
@@ -256,7 +256,7 @@
       "longitude": -73.9755,
       "is_active": true,
       "source_license": "CC BY-SA",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   },
@@ -285,7 +285,7 @@
       "longitude": 2.1203,
       "is_active": true,
       "source_license": "CC BY-SA",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   },
@@ -314,7 +314,7 @@
       "longitude": -3.59,
       "is_active": true,
       "source_license": "CC BY-SA",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   },
@@ -343,7 +343,7 @@
       "longitude": 13.395,
       "is_active": true,
       "source_license": "CC BY-SA",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   },
@@ -372,7 +372,7 @@
       "longitude": 23.7266,
       "is_active": true,
       "source_license": "CC BY-SA",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   },
@@ -401,7 +401,7 @@
       "longitude": -1.8262,
       "is_active": true,
       "source_license": "PD",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   },
@@ -430,7 +430,7 @@
       "longitude": 31.1342,
       "is_active": true,
       "source_license": "CC BY-SA",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   },
@@ -459,7 +459,7 @@
       "longitude": 2.1649,
       "is_active": true,
       "source_license": "CC BY-SA",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   },
@@ -488,7 +488,7 @@
       "longitude": -0.1142,
       "is_active": true,
       "source_license": "CC BY-SA",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   },
@@ -517,7 +517,7 @@
       "longitude": 46.1031,
       "is_active": true,
       "source_license": "CC BY-SA",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   },
@@ -546,7 +546,7 @@
       "longitude": 28.9801,
       "is_active": true,
       "source_license": "CC BY-SA",
-      "coordinates_confidence": "EXACT",
+      "coordinates_confidence": "exact",
       "validated": true
     }
   }
