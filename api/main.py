@@ -1,6 +1,6 @@
 """Legacy compatibility shim for historical `api.main:app` runtime path.
 
-[TODO: legacy shim, will be removed]
+[TODO: legacy shim, remove after migration]
 """
 
-from app.main import app
+raise RuntimeError("Use app.main:app instead")

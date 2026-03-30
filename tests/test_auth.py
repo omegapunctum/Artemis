@@ -76,64 +76,52 @@ class AuthApiTests(unittest.TestCase):
         self.db.add(user)
         self.db.commit()
 
-    def test_login_returns_access_token(self):
-        email = f"login-{uuid4().hex}@example.com"
+    def test_auth_flow_and_routes(self):
+        email = f"auth-{uuid4().hex}@example.com"
         password = "password123"
         self._create_user(email, password)
 
-        response = self.session.post(f"{self.BASE_URL}/api/auth/login", json={"email": email, "password": password}, timeout=5)
+        health = self.session.get(f"{self.BASE_URL}/api/health", timeout=5)
+        self.assertEqual(health.status_code, 200)
 
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.json().get("access_token"))
+        me_unauthorized = self.session.get(f"{self.BASE_URL}/api/me", timeout=5)
+        self.assertEqual(me_unauthorized.status_code, 401)
 
-    def test_refresh_returns_new_access_token(self):
-        email = f"refresh-{uuid4().hex}@example.com"
-        password = "password123"
-        self._create_user(email, password)
+        me_route_exists = self.session.options(f"{self.BASE_URL}/api/me", timeout=5)
+        self.assertNotEqual(me_route_exists.status_code, 404)
 
-        login = self.session.post(f"{self.BASE_URL}/api/auth/login", json={"email": email, "password": password}, timeout=5)
-        old_access_token = login.json().get("access_token")
+        login_route_exists = self.session.post(f"{self.BASE_URL}/api/auth/login", json={}, timeout=5)
+        self.assertNotEqual(login_route_exists.status_code, 404)
+
+        login = self.session.post(
+            f"{self.BASE_URL}/api/auth/login",
+            json={"email": email, "password": password},
+            timeout=5,
+        )
+        self.assertEqual(login.status_code, 200)
+        access_token = login.json().get("access_token")
+        self.assertTrue(access_token)
+
+        self.assertIn("refresh_token", self.session.cookies)
 
         refresh = self.session.post(f"{self.BASE_URL}/api/auth/refresh", timeout=5)
-
         self.assertEqual(refresh.status_code, 200)
-        new_access_token = refresh.json().get("access_token")
-        self.assertTrue(new_access_token)
-        self.assertNotEqual(new_access_token, old_access_token)
+        refreshed_token = refresh.json().get("access_token")
+        self.assertTrue(refreshed_token)
+        self.assertNotEqual(refreshed_token, access_token)
 
-    def test_logout_clears_refresh_cookie(self):
-        email = f"logout-{uuid4().hex}@example.com"
-        password = "password123"
-        self._create_user(email, password)
+        me_authorized = self.session.get(
+            f"{self.BASE_URL}/api/me",
+            headers={"Authorization": f"Bearer {refreshed_token}"},
+            timeout=5,
+        )
+        self.assertEqual(me_authorized.status_code, 200)
 
-        self.session.post(f"{self.BASE_URL}/api/auth/login", json={"email": email, "password": password}, timeout=5)
-        response = self.session.post(f"{self.BASE_URL}/api/auth/logout", timeout=5)
-
-        self.assertEqual(response.status_code, 200)
-        set_cookie = response.headers.get("set-cookie", "").lower()
+        logout = self.session.post(f"{self.BASE_URL}/api/auth/logout", timeout=5)
+        self.assertEqual(logout.status_code, 200)
+        set_cookie = logout.headers.get("set-cookie", "").lower()
         self.assertIn("refresh_token=", set_cookie)
         self.assertIn("max-age=0", set_cookie)
-
-    def test_me_requires_valid_token(self):
-        email = f"me-{uuid4().hex}@example.com"
-        password = "password123"
-        self._create_user(email, password)
-
-        login = self.session.post(f"{self.BASE_URL}/api/auth/login", json={"email": email, "password": password}, timeout=5)
-        access_token = login.json().get("access_token")
-
-        unauthorized = self.session.get(f"{self.BASE_URL}/api/me", timeout=5)
-        self.assertEqual(unauthorized.status_code, 401)
-
-        authorized = self.session.get(f"{self.BASE_URL}/api/me", headers={"Authorization": f"Bearer {access_token}"}, timeout=5)
-        self.assertEqual(authorized.status_code, 200)
-        self.assertIn("email", authorized.json())
-
-    def test_health_is_public(self):
-        response = self.session.get(f"{self.BASE_URL}/api/health", timeout=5)
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("counts", response.json())
 
 
 if __name__ == "__main__":

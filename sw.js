@@ -95,7 +95,6 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
   const hasAuthHeader = request.headers.has('Authorization');
-  const includesCredentials = request.credentials === 'include';
 
   if (request.method !== 'GET') {
     console.debug('[SW] skip non-GET:', request.method, url.pathname);
@@ -103,8 +102,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Русский комментарий: запросы с credentials=include не кэшируем, чтобы не сохранять приватные ответы.
-  if (hasAuthHeader || includesCredentials || isPrivateRequest(url)) {
+  if (request.credentials === 'include') {
+    console.debug('[SW] skip credentialed request:', url.pathname);
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // Русский комментарий: приватные/auth-запросы не кэшируем, чтобы не сохранять приватные ответы.
+  if (hasAuthHeader || isPrivateRequest(url)) {
     console.debug('[SW] skip private/auth request:', url.pathname);
     event.respondWith(fetch(request));
     return;
