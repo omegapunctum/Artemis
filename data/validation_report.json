@@ -2,7 +2,7 @@
   "total_records": 244,
   "valid_records": 0,
   "skipped_records": 244,
-  "warnings_count": 1260,
+  "warnings_count": 1016,
   "errors_count": 488,
   "warnings": [
     {
@@ -16,12 +16,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 20.6843
-    },
-    {
-      "record_id": "rec0NKPnOP37pAzhn",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec0NKPnOP37pAzhn",
@@ -55,12 +49,6 @@
     },
     {
       "record_id": "rec0ROnkEtbnhvq5j",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec0ROnkEtbnhvq5j",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -82,12 +70,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 51.5138
-    },
-    {
-      "record_id": "rec0f7j6tjzOOFSSx",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec0f7j6tjzOOFSSx",
@@ -115,12 +97,6 @@
     },
     {
       "record_id": "rec0tThK5GUoUijbM",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec0tThK5GUoUijbM",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -142,12 +118,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 42.3408
-    },
-    {
-      "record_id": "rec0tbySJLPLUgM7D",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec0tbySJLPLUgM7D",
@@ -175,12 +145,6 @@
     },
     {
       "record_id": "rec18BV4mzvmfeHXH",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec18BV4mzvmfeHXH",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -202,12 +166,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 59.9398
-    },
-    {
-      "record_id": "rec1GrmHA5SeFTlHy",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec1GrmHA5SeFTlHy",
@@ -235,12 +193,6 @@
     },
     {
       "record_id": "rec1It3yUpd9oacQ2",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec1It3yUpd9oacQ2",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -262,12 +214,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.5819
-    },
-    {
-      "record_id": "rec1K7VBOKElfQBe5",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec1K7VBOKElfQBe5",
@@ -295,12 +241,6 @@
     },
     {
       "record_id": "rec1QS1km3J2sdqql",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec1QS1km3J2sdqql",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -322,12 +262,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 29.1169
-    },
-    {
-      "record_id": "rec1RQwUh3gm5QURN",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec1RQwUh3gm5QURN",
@@ -361,12 +295,6 @@
     },
     {
       "record_id": "rec1dT3ubwAwsh6Dq",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec1dT3ubwAwsh6Dq",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -388,12 +316,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 39.9035
-    },
-    {
-      "record_id": "rec2BrE7KvYE9e818",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec2BrE7KvYE9e818",
@@ -421,12 +343,6 @@
     },
     {
       "record_id": "rec2REHt1Bb1E1V46",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec2REHt1Bb1E1V46",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -448,12 +364,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 51.4978
-    },
-    {
-      "record_id": "rec2iHcqFui57lxcg",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec2iHcqFui57lxcg",
@@ -481,12 +391,6 @@
     },
     {
       "record_id": "rec3Ni4VSwSTOE6Tf",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec3Ni4VSwSTOE6Tf",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -508,12 +412,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 51.7517
-    },
-    {
-      "record_id": "rec3zu0PFJliyYSw3",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec3zu0PFJliyYSw3",
@@ -541,12 +439,6 @@
     },
     {
       "record_id": "rec4Sd5VbTPC3dC2b",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec4Sd5VbTPC3dC2b",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -568,12 +460,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 47.6161
-    },
-    {
-      "record_id": "rec4aKxckDkLNdJTc",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec4aKxckDkLNdJTc",
@@ -601,12 +487,6 @@
     },
     {
       "record_id": "rec4gbJ1YBUua60CR",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec4gbJ1YBUua60CR",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -628,12 +508,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 37.3861
-    },
-    {
-      "record_id": "rec4sbs6Wg8JO4Vzp",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec4sbs6Wg8JO4Vzp",
@@ -661,12 +535,6 @@
     },
     {
       "record_id": "rec55DNu9Gzo8tqM7",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec55DNu9Gzo8tqM7",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -688,12 +556,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 64.142
-    },
-    {
-      "record_id": "rec5HxHJVvS4AWLE0",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec5HxHJVvS4AWLE0",
@@ -721,12 +583,6 @@
     },
     {
       "record_id": "rec5IEqaHblvfyV0v",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec5IEqaHblvfyV0v",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -751,12 +607,6 @@
     },
     {
       "record_id": "rec5eLRQBYiR0Cr5W",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec5eLRQBYiR0Cr5W",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -778,12 +628,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 37.8789
-    },
-    {
-      "record_id": "rec5fhzye74VFo3QU",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec5fhzye74VFo3QU",
@@ -817,12 +661,6 @@
     },
     {
       "record_id": "rec6NLYM8A4VBLius",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec6NLYM8A4VBLius",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -844,12 +682,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 41.8902
-    },
-    {
-      "record_id": "rec6SX0uLvy3YuTCJ",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec6SX0uLvy3YuTCJ",
@@ -883,12 +715,6 @@
     },
     {
       "record_id": "rec6evqXlC5yjLshI",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec6evqXlC5yjLshI",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -910,12 +736,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 49.6328
-    },
-    {
-      "record_id": "rec6hFBIbqqEWUmY4",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec6hFBIbqqEWUmY4",
@@ -943,12 +763,6 @@
     },
     {
       "record_id": "rec6phbkzL0M7e16L",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec6phbkzL0M7e16L",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -970,12 +784,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 53.2348
-    },
-    {
-      "record_id": "rec7FPxnP6VbgpgJh",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec7FPxnP6VbgpgJh",
@@ -1003,12 +811,6 @@
     },
     {
       "record_id": "rec7NlPSpaEk2SYK8",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec7NlPSpaEk2SYK8",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -1030,12 +832,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 47.5072
-    },
-    {
-      "record_id": "rec7j9rx9dJq1QKQh",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec7j9rx9dJq1QKQh",
@@ -1063,12 +859,6 @@
     },
     {
       "record_id": "rec89ozpfE4FonQgM",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec89ozpfE4FonQgM",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -1090,12 +880,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 45.4338
-    },
-    {
-      "record_id": "rec8IEhudMIDVJFvF",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec8IEhudMIDVJFvF",
@@ -1123,12 +907,6 @@
     },
     {
       "record_id": "rec8d3SeZIeGrCfz9",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec8d3SeZIeGrCfz9",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -1150,12 +928,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 44.6458
-    },
-    {
-      "record_id": "rec8kKQuf7gAcB5wZ",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec8kKQuf7gAcB5wZ",
@@ -1183,12 +955,6 @@
     },
     {
       "record_id": "rec99jKFoZT1cIfpW",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec99jKFoZT1cIfpW",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -1210,12 +976,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 40.4253
-    },
-    {
-      "record_id": "rec9XzSznh8aKaTim",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rec9XzSznh8aKaTim",
@@ -1249,12 +1009,6 @@
     },
     {
       "record_id": "rec9aKp73EfutUXzi",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rec9aKp73EfutUXzi",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -1276,12 +1030,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 41.8989
-    },
-    {
-      "record_id": "recAKMDVbsB2AUoGn",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recAKMDVbsB2AUoGn",
@@ -1309,12 +1057,6 @@
     },
     {
       "record_id": "recAX7cpyzXGXSZvh",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recAX7cpyzXGXSZvh",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -1339,12 +1081,6 @@
     },
     {
       "record_id": "recAgIfrjVOVIh1tO",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recAgIfrjVOVIh1tO",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -1366,12 +1102,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 45.4345
-    },
-    {
-      "record_id": "recAh3gRsAV5mYUzm",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recAh3gRsAV5mYUzm",
@@ -1405,12 +1135,6 @@
     },
     {
       "record_id": "recB2b046YTc4DkN0",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recB2b046YTc4DkN0",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -1441,12 +1165,6 @@
     },
     {
       "record_id": "recBIlybZNYLE4dsj",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recBIlybZNYLE4dsj",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -1471,12 +1189,6 @@
     },
     {
       "record_id": "recCccSdJZyxDUFBP",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recCccSdJZyxDUFBP",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -1498,12 +1210,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 35.6817
-    },
-    {
-      "record_id": "recD3iR5R0aKzjDPT",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recD3iR5R0aKzjDPT",
@@ -1537,12 +1243,6 @@
     },
     {
       "record_id": "recDgK7v7TM1AALGX",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recDgK7v7TM1AALGX",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -1564,12 +1264,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 44.1
-    },
-    {
-      "record_id": "recDi3KaRVlFkM6cW",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recDi3KaRVlFkM6cW",
@@ -1597,12 +1291,6 @@
     },
     {
       "record_id": "recDtQggHC5cJsvlp",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recDtQggHC5cJsvlp",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -1624,12 +1312,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 25.1972
-    },
-    {
-      "record_id": "recEhyWGhRjiYHI8X",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recEhyWGhRjiYHI8X",
@@ -1657,12 +1339,6 @@
     },
     {
       "record_id": "recEkdprNYlGt7OPt",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recEkdprNYlGt7OPt",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -1684,12 +1360,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 23.1197
-    },
-    {
-      "record_id": "recEm3TXNoWXe3i8C",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recEm3TXNoWXe3i8C",
@@ -1717,12 +1387,6 @@
     },
     {
       "record_id": "recFNRfA6q5fKlMG1",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recFNRfA6q5fKlMG1",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -1744,12 +1408,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.8535
-    },
-    {
-      "record_id": "recFSSeGD6gPVvacD",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recFSSeGD6gPVvacD",
@@ -1777,12 +1435,6 @@
     },
     {
       "record_id": "recFhw9ZiGdJObqpR",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recFhw9ZiGdJObqpR",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -1804,12 +1456,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 41.37
-    },
-    {
-      "record_id": "recG9K0454H34bzxK",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recG9K0454H34bzxK",
@@ -1837,12 +1483,6 @@
     },
     {
       "record_id": "recGE0SIp7Qqp9Sw5",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recGE0SIp7Qqp9Sw5",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -1864,12 +1504,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 49.9986
-    },
-    {
-      "record_id": "recGMbn40gTGfCbW5",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recGMbn40gTGfCbW5",
@@ -1903,12 +1537,6 @@
     },
     {
       "record_id": "recGgWBTCZvyTv8QD",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recGgWBTCZvyTv8QD",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -1939,12 +1567,6 @@
     },
     {
       "record_id": "recGmnehn1iVhxezb",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recGmnehn1iVhxezb",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -1966,12 +1588,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 37.9715
-    },
-    {
-      "record_id": "recGo4rE1NXZFBMFA",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recGo4rE1NXZFBMFA",
@@ -2005,12 +1621,6 @@
     },
     {
       "record_id": "recGwVP4ebxEmLnHg",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recGwVP4ebxEmLnHg",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -2032,12 +1642,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 34.7611
-    },
-    {
-      "record_id": "recH5ygd7R04v9yuv",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recH5ygd7R04v9yuv",
@@ -2065,12 +1669,6 @@
     },
     {
       "record_id": "recH64UlBAO2Dbc8L",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recH64UlBAO2Dbc8L",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -2092,12 +1690,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.8606
-    },
-    {
-      "record_id": "recHFomYES6029HoC",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recHFomYES6029HoC",
@@ -2125,12 +1717,6 @@
     },
     {
       "record_id": "recHRG0jA2UQ47Zxh",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recHRG0jA2UQ47Zxh",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -2152,12 +1738,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 39.9063
-    },
-    {
-      "record_id": "recHxk0SARZN8QsGY",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recHxk0SARZN8QsGY",
@@ -2185,12 +1765,6 @@
     },
     {
       "record_id": "recI1H44C77J3JpX3",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recI1H44C77J3JpX3",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -2212,12 +1786,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 51.4994
-    },
-    {
-      "record_id": "recI1eRGCnZcujR03",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recI1eRGCnZcujR03",
@@ -2245,12 +1813,6 @@
     },
     {
       "record_id": "recIGds2FjClYGmoE",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recIGds2FjClYGmoE",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -2272,12 +1834,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 52.404
-    },
-    {
-      "record_id": "recIZXDNVRVxZeJpS",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recIZXDNVRVxZeJpS",
@@ -2305,12 +1861,6 @@
     },
     {
       "record_id": "recIvNFRTVpDW5Pkc",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recIvNFRTVpDW5Pkc",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -2332,12 +1882,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 37.5975
-    },
-    {
-      "record_id": "recJ50QI2wjG6biaq",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recJ50QI2wjG6biaq",
@@ -2371,12 +1915,6 @@
     },
     {
       "record_id": "recJOyWaVJmJOjqGC",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recJOyWaVJmJOjqGC",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -2398,12 +1936,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 51.5142
-    },
-    {
-      "record_id": "recJaOsnJOxAxfoNl",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recJaOsnJOxAxfoNl",
@@ -2431,12 +1963,6 @@
     },
     {
       "record_id": "recJdXTPO8JIiJ9g5",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recJdXTPO8JIiJ9g5",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -2458,12 +1984,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 43.7281
-    },
-    {
-      "record_id": "recJgC6tJzbNYwLux",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recJgC6tJzbNYwLux",
@@ -2497,12 +2017,6 @@
     },
     {
       "record_id": "recJvdQDL6FW8sFVX",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recJvdQDL6FW8sFVX",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -2533,12 +2047,6 @@
     },
     {
       "record_id": "recK7WR0dyxqSotab",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recK7WR0dyxqSotab",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -2560,12 +2068,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 31.7044
-    },
-    {
-      "record_id": "recKd8iqRCs8AFdfw",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recKd8iqRCs8AFdfw",
@@ -2599,12 +2101,6 @@
     },
     {
       "record_id": "recKshTFpZst7qOPp",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recKshTFpZst7qOPp",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -2626,12 +2122,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 32.8149
-    },
-    {
-      "record_id": "recL2AWcgmRuUmGBP",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recL2AWcgmRuUmGBP",
@@ -2659,12 +2149,6 @@
     },
     {
       "record_id": "recLHuXMxukl2BkqH",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recLHuXMxukl2BkqH",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -2689,12 +2173,6 @@
     },
     {
       "record_id": "recLaXOf9APVCka6q",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recLaXOf9APVCka6q",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -2716,12 +2194,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 23.4793
-    },
-    {
-      "record_id": "recM7Bo4QAexoUl3f",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recM7Bo4QAexoUl3f",
@@ -2755,12 +2227,6 @@
     },
     {
       "record_id": "recN5TtuAMWeR4EhN",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recN5TtuAMWeR4EhN",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -2782,12 +2248,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.2188
-    },
-    {
-      "record_id": "recNL2MmwDypGf7nd",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recNL2MmwDypGf7nd",
@@ -2815,12 +2275,6 @@
     },
     {
       "record_id": "recNSy46OK5vXNIYe",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recNSy46OK5vXNIYe",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -2842,12 +2296,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 52.5028
-    },
-    {
-      "record_id": "recNovzIVSUC6Gb7l",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recNovzIVSUC6Gb7l",
@@ -2875,12 +2323,6 @@
     },
     {
       "record_id": "recNtwKvvUHOYexVp",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recNtwKvvUHOYexVp",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -2902,12 +2344,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.1845
-    },
-    {
-      "record_id": "recO16RY3AHt0JWqW",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recO16RY3AHt0JWqW",
@@ -2935,12 +2371,6 @@
     },
     {
       "record_id": "recOBKVEfmZGsgMP9",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recOBKVEfmZGsgMP9",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -2965,12 +2395,6 @@
     },
     {
       "record_id": "recODJNFlBLqyAtNI",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recODJNFlBLqyAtNI",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -2992,12 +2416,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 38.4823
-    },
-    {
-      "record_id": "recObRHD37nkHrZp8",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recObRHD37nkHrZp8",
@@ -3031,12 +2449,6 @@
     },
     {
       "record_id": "recP2oek5TyZp1IWf",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recP2oek5TyZp1IWf",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -3058,12 +2470,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.8049
-    },
-    {
-      "record_id": "recPO0X6RiiGdjYrV",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recPO0X6RiiGdjYrV",
@@ -3091,12 +2497,6 @@
     },
     {
       "record_id": "recPeRauMU4ztWJ4l",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recPeRauMU4ztWJ4l",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -3118,12 +2518,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 59.9398
-    },
-    {
-      "record_id": "recPhrWdVgGOrUBBr",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recPhrWdVgGOrUBBr",
@@ -3151,12 +2545,6 @@
     },
     {
       "record_id": "recQK0cXeSfco3W5l",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recQK0cXeSfco3W5l",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -3181,12 +2569,6 @@
     },
     {
       "record_id": "recQQTMhowlLJjFLx",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recQQTMhowlLJjFLx",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -3208,12 +2590,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 31.7764
-    },
-    {
-      "record_id": "recQkppbwctfZt8zF",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recQkppbwctfZt8zF",
@@ -3247,12 +2623,6 @@
     },
     {
       "record_id": "recQnYHmOMzY39UpH",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recQnYHmOMzY39UpH",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -3277,12 +2647,6 @@
     },
     {
       "record_id": "recR6g7OjenCeYwLU",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recR6g7OjenCeYwLU",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -3304,12 +2668,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.6361
-    },
-    {
-      "record_id": "recRFMiArVAh4DrZ3",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recRFMiArVAh4DrZ3",
@@ -3343,12 +2701,6 @@
     },
     {
       "record_id": "recS8MJKf6DSYXQxj",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recS8MJKf6DSYXQxj",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -3370,12 +2722,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 42.8782
-    },
-    {
-      "record_id": "recSMAhIDAb50H4IT",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recSMAhIDAb50H4IT",
@@ -3403,12 +2749,6 @@
     },
     {
       "record_id": "recTGO5PU3ZS19SMN",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recTGO5PU3ZS19SMN",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -3430,12 +2770,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.8607
-    },
-    {
-      "record_id": "recTblAqT6nvQhz9W",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recTblAqT6nvQhz9W",
@@ -3463,12 +2797,6 @@
     },
     {
       "record_id": "recTwMjRZ4VgkkTXU",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recTwMjRZ4VgkkTXU",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -3490,12 +2818,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 13.4125
-    },
-    {
-      "record_id": "recU5jN0YwyxBAbUL",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recU5jN0YwyxBAbUL",
@@ -3523,12 +2845,6 @@
     },
     {
       "record_id": "recUc0H2Oz6sWMKDE",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recUc0H2Oz6sWMKDE",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -3550,12 +2866,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 37.9715
-    },
-    {
-      "record_id": "recUgB5IRDFciaABJ",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recUgB5IRDFciaABJ",
@@ -3589,12 +2899,6 @@
     },
     {
       "record_id": "recUq3kQ8E3RjuU8P",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recUq3kQ8E3RjuU8P",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -3616,12 +2920,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.8049
-    },
-    {
-      "record_id": "recV7fdeW22dzh3ua",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recV7fdeW22dzh3ua",
@@ -3649,12 +2947,6 @@
     },
     {
       "record_id": "recVMQXkB3q52Ps78",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recVMQXkB3q52Ps78",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -3676,12 +2968,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.853
-    },
-    {
-      "record_id": "recVq9JJw4BQmiBx7",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recVq9JJw4BQmiBx7",
@@ -3709,12 +2995,6 @@
     },
     {
       "record_id": "recVxsNtS8TMo9ZuT",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recVxsNtS8TMo9ZuT",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -3736,12 +3016,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 41.9667
-    },
-    {
-      "record_id": "recWHAVvk4VeKnZVE",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recWHAVvk4VeKnZVE",
@@ -3769,12 +3043,6 @@
     },
     {
       "record_id": "recWe9Ve8TkOpFHcq",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recWe9Ve8TkOpFHcq",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -3796,12 +3064,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 34.0642
-    },
-    {
-      "record_id": "recXJsg4idg71MLNx",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recXJsg4idg71MLNx",
@@ -3835,12 +3097,6 @@
     },
     {
       "record_id": "recXnJ04zsDszLCLi",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recXnJ04zsDszLCLi",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -3862,12 +3118,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 42.6407
-    },
-    {
-      "record_id": "recYN7TDIiDx8JsXU",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recYN7TDIiDx8JsXU",
@@ -3895,12 +3145,6 @@
     },
     {
       "record_id": "recYOEzmpMZrJpjJO",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recYOEzmpMZrJpjJO",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -3922,12 +3166,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 43.2688
-    },
-    {
-      "record_id": "recYRjk9iHEs5L4dR",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recYRjk9iHEs5L4dR",
@@ -3955,12 +3193,6 @@
     },
     {
       "record_id": "recYWieedUOhvgKB9",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recYWieedUOhvgKB9",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -3982,12 +3214,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 38.3961
-    },
-    {
-      "record_id": "recYZlsilWMInLG0D",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recYZlsilWMInLG0D",
@@ -4021,12 +3247,6 @@
     },
     {
       "record_id": "recZIrbK7pm4NuHJv",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recZIrbK7pm4NuHJv",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -4051,12 +3271,6 @@
     },
     {
       "record_id": "recZhYQiZqMRXmmOE",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recZhYQiZqMRXmmOE",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -4078,12 +3292,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 28.5569
-    },
-    {
-      "record_id": "recZj2xktIGORSK3a",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recZj2xktIGORSK3a",
@@ -4117,12 +3325,6 @@
     },
     {
       "record_id": "reca4PIX1HldYGIIn",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "reca4PIX1HldYGIIn",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -4144,12 +3346,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 40.6558
-    },
-    {
-      "record_id": "reca7q9oMYcmktSdv",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "reca7q9oMYcmktSdv",
@@ -4177,12 +3373,6 @@
     },
     {
       "record_id": "recaGT6agenbkaaTE",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recaGT6agenbkaaTE",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -4204,12 +3394,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 39.8567
-    },
-    {
-      "record_id": "recaOgT8yltifxyy6",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recaOgT8yltifxyy6",
@@ -4237,12 +3421,6 @@
     },
     {
       "record_id": "recaT6GLpRSS1mOw6",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recaT6GLpRSS1mOw6",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -4264,12 +3442,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 53.2803
-    },
-    {
-      "record_id": "recaVOr8W67UfOviE",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recaVOr8W67UfOviE",
@@ -4297,12 +3469,6 @@
     },
     {
       "record_id": "recb51c1257Nl4RfI",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recb51c1257Nl4RfI",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -4324,12 +3490,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.8551
-    },
-    {
-      "record_id": "recbf7md6uZP8eOME",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recbf7md6uZP8eOME",
@@ -4357,12 +3517,6 @@
     },
     {
       "record_id": "recbhJwtA10n9ACI8",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recbhJwtA10n9ACI8",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -4387,12 +3541,6 @@
     },
     {
       "record_id": "recbviReFrVuaJlsZ",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recbviReFrVuaJlsZ",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -4414,12 +3562,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 34.5519
-    },
-    {
-      "record_id": "recbwNEOU2Rwf5Zrz",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recbwNEOU2Rwf5Zrz",
@@ -4453,12 +3595,6 @@
     },
     {
       "record_id": "reccEEEwDPO0YtFDL",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "reccEEEwDPO0YtFDL",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -4480,12 +3616,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.8584
-    },
-    {
-      "record_id": "reccIqUAwsabrLQzG",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "reccIqUAwsabrLQzG",
@@ -4513,12 +3643,6 @@
     },
     {
       "record_id": "reccRqUsH7nOoWGAR",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "reccRqUsH7nOoWGAR",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -4540,12 +3664,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 40.6356
-    },
-    {
-      "record_id": "reccWbs49T02DRkBs",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "reccWbs49T02DRkBs",
@@ -4579,12 +3697,6 @@
     },
     {
       "record_id": "reccdWI8EiNSBF5Rg",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "reccdWI8EiNSBF5Rg",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -4615,12 +3727,6 @@
     },
     {
       "record_id": "reccuC9fzqkfxoGfi",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "reccuC9fzqkfxoGfi",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -4642,12 +3748,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 51.5045
-    },
-    {
-      "record_id": "reccv4NnoCryhPOvI",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "reccv4NnoCryhPOvI",
@@ -4675,12 +3775,6 @@
     },
     {
       "record_id": "recd7wPmmOtgSW5ip",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recd7wPmmOtgSW5ip",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -4702,12 +3796,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.9947
-    },
-    {
-      "record_id": "recdXcfPWTJbH1Ij1",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recdXcfPWTJbH1Ij1",
@@ -4735,12 +3823,6 @@
     },
     {
       "record_id": "recdz0JeO3ZAKDI1T",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recdz0JeO3ZAKDI1T",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -4762,12 +3844,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 50.9413
-    },
-    {
-      "record_id": "rece9TtkaPHpb7Fh9",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rece9TtkaPHpb7Fh9",
@@ -4795,12 +3871,6 @@
     },
     {
       "record_id": "receKSKIqFgVgfM7v",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "receKSKIqFgVgfM7v",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -4825,12 +3895,6 @@
     },
     {
       "record_id": "receUDhkfTyyew3Nk",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "receUDhkfTyyew3Nk",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -4852,12 +3916,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 30.0461
-    },
-    {
-      "record_id": "receWYgdhdouKOav2",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "receWYgdhdouKOav2",
@@ -4891,12 +3949,6 @@
     },
     {
       "record_id": "recen4kmdDkwvhF79",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recen4kmdDkwvhF79",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -4918,12 +3970,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 40.783
-    },
-    {
-      "record_id": "recev6hhPw0l6YKVJ",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recev6hhPw0l6YKVJ",
@@ -4951,12 +3997,6 @@
     },
     {
       "record_id": "recfE8fOBK3aaAqhj",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recfE8fOBK3aaAqhj",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -4978,12 +4018,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 22.3372
-    },
-    {
-      "record_id": "recfMGrT2IBdS4buM",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recfMGrT2IBdS4buM",
@@ -5011,12 +4045,6 @@
     },
     {
       "record_id": "recfc43H1j8EuThhC",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recfc43H1j8EuThhC",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -5038,12 +4066,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 40.4319
-    },
-    {
-      "record_id": "recfcHr6YKflHzPai",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recfcHr6YKflHzPai",
@@ -5077,12 +4099,6 @@
     },
     {
       "record_id": "recgNJpBYgOLvquee",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recgNJpBYgOLvquee",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -5104,12 +4120,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 31.7781
-    },
-    {
-      "record_id": "recgTvX9Rl3zOv0mQ",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recgTvX9Rl3zOv0mQ",
@@ -5143,12 +4153,6 @@
     },
     {
       "record_id": "recgWhrnz1ptd2Uoq",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recgWhrnz1ptd2Uoq",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -5170,12 +4174,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.8606
-    },
-    {
-      "record_id": "recgqiGTKNiaI7QLs",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recgqiGTKNiaI7QLs",
@@ -5203,12 +4201,6 @@
     },
     {
       "record_id": "rechclOcbQA2E1YLS",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rechclOcbQA2E1YLS",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -5233,12 +4225,6 @@
     },
     {
       "record_id": "rechks3UwphapTEdG",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rechks3UwphapTEdG",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -5260,12 +4246,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 33.5114
-    },
-    {
-      "record_id": "rechmTrlsFD3HoU83",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rechmTrlsFD3HoU83",
@@ -5299,12 +4279,6 @@
     },
     {
       "record_id": "reciJJW2Eqpx1H50x",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "reciJJW2Eqpx1H50x",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -5329,12 +4303,6 @@
     },
     {
       "record_id": "recipMfM0ZvcnoKZb",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recipMfM0ZvcnoKZb",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -5356,12 +4324,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 19.6925
-    },
-    {
-      "record_id": "recjDdMlPM6lfIfmw",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recjDdMlPM6lfIfmw",
@@ -5395,12 +4357,6 @@
     },
     {
       "record_id": "recjQb9IjcJiI6sx2",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recjQb9IjcJiI6sx2",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -5422,12 +4378,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 30.3285
-    },
-    {
-      "record_id": "reckAuerKU3A7JKWc",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "reckAuerKU3A7JKWc",
@@ -5461,12 +4411,6 @@
     },
     {
       "record_id": "reckbLVsxbURnKINw",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "reckbLVsxbURnKINw",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -5488,12 +4432,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 40.6425
-    },
-    {
-      "record_id": "reckplwCdLtqshhuu",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "reckplwCdLtqshhuu",
@@ -5527,12 +4465,6 @@
     },
     {
       "record_id": "reckqdGNnV76VSZ9h",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "reckqdGNnV76VSZ9h",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -5554,12 +4486,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 37.0683
-    },
-    {
-      "record_id": "recks5SwQhH08H3mB",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recks5SwQhH08H3mB",
@@ -5587,12 +4513,6 @@
     },
     {
       "record_id": "reckt4FwkKGKrwi7Z",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "reckt4FwkKGKrwi7Z",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -5614,12 +4534,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.1447
-    },
-    {
-      "record_id": "recktt0uo2g9o0qSI",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recktt0uo2g9o0qSI",
@@ -5647,12 +4561,6 @@
     },
     {
       "record_id": "recl80qjnxC6cD5pj",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recl80qjnxC6cD5pj",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -5674,12 +4582,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 54.7733
-    },
-    {
-      "record_id": "reclSjI5C9dw686jC",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "reclSjI5C9dw686jC",
@@ -5707,12 +4609,6 @@
     },
     {
       "record_id": "reclbRikjaywJvxCi",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "reclbRikjaywJvxCi",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -5734,12 +4630,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 29.6097
-    },
-    {
-      "record_id": "recliuO65W9brQXs9",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recliuO65W9brQXs9",
@@ -5767,12 +4657,6 @@
     },
     {
       "record_id": "recm62tzGXpmzUwNO",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recm62tzGXpmzUwNO",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -5794,12 +4678,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.4472
-    },
-    {
-      "record_id": "recmSuLaCe5luUsNo",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recmSuLaCe5luUsNo",
@@ -5827,12 +4705,6 @@
     },
     {
       "record_id": "recmclGJdidPUDXxV",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recmclGJdidPUDXxV",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -5854,12 +4726,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 50.0539
-    },
-    {
-      "record_id": "recmo6PazYR51d5Jy",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recmo6PazYR51d5Jy",
@@ -5887,12 +4753,6 @@
     },
     {
       "record_id": "reco7GtdQrKSIkYEA",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "reco7GtdQrKSIkYEA",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -5914,12 +4774,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 43.7731
-    },
-    {
-      "record_id": "recoGjUbTkOwI7FMb",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recoGjUbTkOwI7FMb",
@@ -5947,12 +4801,6 @@
     },
     {
       "record_id": "recoNxoBxJ7aZcDGp",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recoNxoBxJ7aZcDGp",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -5974,12 +4822,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 60.4519
-    },
-    {
-      "record_id": "recokYP5uUKJd0WVN",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recokYP5uUKJd0WVN",
@@ -6007,12 +4849,6 @@
     },
     {
       "record_id": "recotDjupTrmLLDOF",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recotDjupTrmLLDOF",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -6034,12 +4870,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 52.6308
-    },
-    {
-      "record_id": "recp73FfaCtMgFNMV",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recp73FfaCtMgFNMV",
@@ -6067,12 +4897,6 @@
     },
     {
       "record_id": "recpKPP8LMv7FDddh",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recpKPP8LMv7FDddh",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -6094,12 +4918,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 39.7217
-    },
-    {
-      "record_id": "recqgEl9ZVy1oT6BH",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recqgEl9ZVy1oT6BH",
@@ -6127,12 +4945,6 @@
     },
     {
       "record_id": "recqitXztZm8j5RdN",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recqitXztZm8j5RdN",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -6154,12 +4966,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 38.7097
-    },
-    {
-      "record_id": "recqkOR58iWGn6ylD",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recqkOR58iWGn6ylD",
@@ -6187,12 +4993,6 @@
     },
     {
       "record_id": "recqkSPGhdCHvgODl",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recqkSPGhdCHvgODl",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -6214,12 +5014,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.1486
-    },
-    {
-      "record_id": "recqlDtF6FYdA7axf",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recqlDtF6FYdA7axf",
@@ -6247,12 +5041,6 @@
     },
     {
       "record_id": "recqnfGiY0ulkfGhq",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recqnfGiY0ulkfGhq",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -6274,12 +5062,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 40.1572
-    },
-    {
-      "record_id": "recqs8qN2tqOxfe4x",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recqs8qN2tqOxfe4x",
@@ -6313,12 +5095,6 @@
     },
     {
       "record_id": "recqutsnyEC9ini6K",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recqutsnyEC9ini6K",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -6340,12 +5116,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 40.7579
-    },
-    {
-      "record_id": "recqzdKNo6b2ciSrA",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recqzdKNo6b2ciSrA",
@@ -6373,12 +5143,6 @@
     },
     {
       "record_id": "recrROssI0SI1TVmu",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recrROssI0SI1TVmu",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -6400,12 +5164,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 39.5567
-    },
-    {
-      "record_id": "recraNNg0uVXOZwJC",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recraNNg0uVXOZwJC",
@@ -6433,12 +5191,6 @@
     },
     {
       "record_id": "recsCdGoAQggbjxFG",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recsCdGoAQggbjxFG",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -6460,12 +5212,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 45.5467
-    },
-    {
-      "record_id": "recsE07ld9LaMHCYM",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recsE07ld9LaMHCYM",
@@ -6493,12 +5239,6 @@
     },
     {
       "record_id": "recsEv1bP8eAgIxrj",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recsEv1bP8eAgIxrj",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -6520,12 +5260,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 40.4153
-    },
-    {
-      "record_id": "recshRCkGSw13t3qh",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recshRCkGSw13t3qh",
@@ -6553,12 +5287,6 @@
     },
     {
       "record_id": "recshm95hmq82YCW9",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recshm95hmq82YCW9",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -6580,12 +5308,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 39.9929
-    },
-    {
-      "record_id": "rect7rs3kLYH4CjVa",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rect7rs3kLYH4CjVa",
@@ -6613,12 +5335,6 @@
     },
     {
       "record_id": "rectAR6xa0dosidOF",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rectAR6xa0dosidOF",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -6643,12 +5359,6 @@
     },
     {
       "record_id": "rectCka8y93ENc4jh",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rectCka8y93ENc4jh",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -6670,12 +5380,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 34.0036
-    },
-    {
-      "record_id": "rectbH4GIiIONUdK7",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rectbH4GIiIONUdK7",
@@ -6709,12 +5413,6 @@
     },
     {
       "record_id": "rectqCsDxSPeZ7EyE",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "rectqCsDxSPeZ7EyE",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -6736,12 +5434,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.6361
-    },
-    {
-      "record_id": "rectsGzcnmGhYTmVl",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "rectsGzcnmGhYTmVl",
@@ -6769,12 +5461,6 @@
     },
     {
       "record_id": "recu2STn8ovIjhzSL",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recu2STn8ovIjhzSL",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -6796,12 +5482,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 37.1761
-    },
-    {
-      "record_id": "recuPnk8qMbgZOKgT",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recuPnk8qMbgZOKgT",
@@ -6829,12 +5509,6 @@
     },
     {
       "record_id": "recuSMrkFSr3c9Rsk",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recuSMrkFSr3c9Rsk",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -6856,12 +5530,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 52.1136
-    },
-    {
-      "record_id": "recuVnS8iSJLnzV2M",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recuVnS8iSJLnzV2M",
@@ -6889,12 +5557,6 @@
     },
     {
       "record_id": "recudantcRwG63Ogf",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recudantcRwG63Ogf",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -6916,12 +5578,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 42.8805
-    },
-    {
-      "record_id": "recudzAb7ZARY3ZfK",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recudzAb7ZARY3ZfK",
@@ -6949,12 +5605,6 @@
     },
     {
       "record_id": "recus50ALLaU6aNIo",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recus50ALLaU6aNIo",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -6979,12 +5629,6 @@
     },
     {
       "record_id": "recvCAd0tNNZvEXDx",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recvCAd0tNNZvEXDx",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -7006,12 +5650,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 41.8986
-    },
-    {
-      "record_id": "recvJZ8tkUnkyixbT",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recvJZ8tkUnkyixbT",
@@ -7045,12 +5683,6 @@
     },
     {
       "record_id": "recvJrpkIzlbjVuOn",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recvJrpkIzlbjVuOn",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -7078,12 +5710,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 32.6697
-    },
-    {
-      "record_id": "recwEwZrmSYjzySel",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recwEwZrmSYjzySel",
@@ -7117,12 +5743,6 @@
     },
     {
       "record_id": "recwNogCWSpTEQ378",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recwNogCWSpTEQ378",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -7144,12 +5764,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 51.4894
-    },
-    {
-      "record_id": "recwQWzaQ3H7dgJwo",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recwQWzaQ3H7dgJwo",
@@ -7177,12 +5791,6 @@
     },
     {
       "record_id": "recwbY4WyRviRENt7",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recwbY4WyRviRENt7",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -7207,12 +5815,6 @@
     },
     {
       "record_id": "recwnw0nHTPsYWrYQ",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recwnw0nHTPsYWrYQ",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -7234,12 +5836,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 44.4217
-    },
-    {
-      "record_id": "recwx7j5M9gAMrrzf",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recwx7j5M9gAMrrzf",
@@ -7273,12 +5869,6 @@
     },
     {
       "record_id": "recxUZ4XorQ9YT4BS",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recxUZ4XorQ9YT4BS",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -7303,12 +5893,6 @@
     },
     {
       "record_id": "recxycsGkdNrhspBr",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recxycsGkdNrhspBr",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -7330,12 +5914,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 45.4608
-    },
-    {
-      "record_id": "recxz7nGL7QwWWga6",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recxz7nGL7QwWWga6",
@@ -7369,12 +5947,6 @@
     },
     {
       "record_id": "recy9uzjFtNWYkAt9",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recy9uzjFtNWYkAt9",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -7396,12 +5968,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 48.8133
-    },
-    {
-      "record_id": "recyDbDjsvg7mVOrm",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "recyDbDjsvg7mVOrm",
@@ -7429,12 +5995,6 @@
     },
     {
       "record_id": "recyx59jaSyoGd1vZ",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "recyx59jaSyoGd1vZ",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -7456,12 +6016,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 52.3994
-    },
-    {
-      "record_id": "reczLZAp2HVLJJaLo",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "reczLZAp2HVLJJaLo",
@@ -7489,12 +6043,6 @@
     },
     {
       "record_id": "reczOfB8lb6CYNV0b",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "reczOfB8lb6CYNV0b",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -7516,12 +6064,6 @@
       "field": "latitude",
       "warning": "using legacy fallback field",
       "value": 37.315
-    },
-    {
-      "record_id": "reczWOyr7n6AB1s6p",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
     },
     {
       "record_id": "reczWOyr7n6AB1s6p",
@@ -7549,12 +6091,6 @@
     },
     {
       "record_id": "reczkNmn6dNDL1OCT",
-      "field": "is_active",
-      "warning": "using legacy fallback field",
-      "value": true
-    },
-    {
-      "record_id": "reczkNmn6dNDL1OCT",
       "field": "source_license",
       "warning": "using legacy fallback field",
       "value": "CC BY-SA"
@@ -7569,9 +6105,9 @@
   "errors": [
     {
       "id": "rec0NKPnOP37pAzhn",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec0NKPnOP37pAzhn",
@@ -7581,9 +6117,9 @@
     },
     {
       "id": "rec0ROnkEtbnhvq5j",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec0ROnkEtbnhvq5j",
@@ -7593,9 +6129,9 @@
     },
     {
       "id": "rec0f7j6tjzOOFSSx",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec0f7j6tjzOOFSSx",
@@ -7605,9 +6141,9 @@
     },
     {
       "id": "rec0tThK5GUoUijbM",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec0tThK5GUoUijbM",
@@ -7617,9 +6153,9 @@
     },
     {
       "id": "rec0tbySJLPLUgM7D",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec0tbySJLPLUgM7D",
@@ -7629,9 +6165,9 @@
     },
     {
       "id": "rec18BV4mzvmfeHXH",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec18BV4mzvmfeHXH",
@@ -7641,9 +6177,9 @@
     },
     {
       "id": "rec1GrmHA5SeFTlHy",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec1GrmHA5SeFTlHy",
@@ -7653,9 +6189,9 @@
     },
     {
       "id": "rec1It3yUpd9oacQ2",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec1It3yUpd9oacQ2",
@@ -7665,9 +6201,9 @@
     },
     {
       "id": "rec1K7VBOKElfQBe5",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec1K7VBOKElfQBe5",
@@ -7677,9 +6213,9 @@
     },
     {
       "id": "rec1QS1km3J2sdqql",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec1QS1km3J2sdqql",
@@ -7689,9 +6225,9 @@
     },
     {
       "id": "rec1RQwUh3gm5QURN",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec1RQwUh3gm5QURN",
@@ -7701,9 +6237,9 @@
     },
     {
       "id": "rec1dT3ubwAwsh6Dq",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec1dT3ubwAwsh6Dq",
@@ -7713,9 +6249,9 @@
     },
     {
       "id": "rec2BrE7KvYE9e818",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec2BrE7KvYE9e818",
@@ -7725,9 +6261,9 @@
     },
     {
       "id": "rec2REHt1Bb1E1V46",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec2REHt1Bb1E1V46",
@@ -7737,9 +6273,9 @@
     },
     {
       "id": "rec2iHcqFui57lxcg",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec2iHcqFui57lxcg",
@@ -7749,9 +6285,9 @@
     },
     {
       "id": "rec3Ni4VSwSTOE6Tf",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec3Ni4VSwSTOE6Tf",
@@ -7761,9 +6297,9 @@
     },
     {
       "id": "rec3zu0PFJliyYSw3",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec3zu0PFJliyYSw3",
@@ -7773,9 +6309,9 @@
     },
     {
       "id": "rec4Sd5VbTPC3dC2b",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec4Sd5VbTPC3dC2b",
@@ -7785,9 +6321,9 @@
     },
     {
       "id": "rec4aKxckDkLNdJTc",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec4aKxckDkLNdJTc",
@@ -7797,9 +6333,9 @@
     },
     {
       "id": "rec4gbJ1YBUua60CR",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec4gbJ1YBUua60CR",
@@ -7809,9 +6345,9 @@
     },
     {
       "id": "rec4sbs6Wg8JO4Vzp",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec4sbs6Wg8JO4Vzp",
@@ -7821,9 +6357,9 @@
     },
     {
       "id": "rec55DNu9Gzo8tqM7",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec55DNu9Gzo8tqM7",
@@ -7833,9 +6369,9 @@
     },
     {
       "id": "rec5HxHJVvS4AWLE0",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec5HxHJVvS4AWLE0",
@@ -7845,9 +6381,9 @@
     },
     {
       "id": "rec5IEqaHblvfyV0v",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec5IEqaHblvfyV0v",
@@ -7857,9 +6393,9 @@
     },
     {
       "id": "rec5eLRQBYiR0Cr5W",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec5eLRQBYiR0Cr5W",
@@ -7869,9 +6405,9 @@
     },
     {
       "id": "rec5fhzye74VFo3QU",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec5fhzye74VFo3QU",
@@ -7881,9 +6417,9 @@
     },
     {
       "id": "rec6NLYM8A4VBLius",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec6NLYM8A4VBLius",
@@ -7893,9 +6429,9 @@
     },
     {
       "id": "rec6SX0uLvy3YuTCJ",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec6SX0uLvy3YuTCJ",
@@ -7905,9 +6441,9 @@
     },
     {
       "id": "rec6evqXlC5yjLshI",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec6evqXlC5yjLshI",
@@ -7917,9 +6453,9 @@
     },
     {
       "id": "rec6hFBIbqqEWUmY4",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec6hFBIbqqEWUmY4",
@@ -7929,9 +6465,9 @@
     },
     {
       "id": "rec6phbkzL0M7e16L",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec6phbkzL0M7e16L",
@@ -7941,9 +6477,9 @@
     },
     {
       "id": "rec7FPxnP6VbgpgJh",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec7FPxnP6VbgpgJh",
@@ -7953,9 +6489,9 @@
     },
     {
       "id": "rec7NlPSpaEk2SYK8",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec7NlPSpaEk2SYK8",
@@ -7965,9 +6501,9 @@
     },
     {
       "id": "rec7j9rx9dJq1QKQh",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec7j9rx9dJq1QKQh",
@@ -7977,9 +6513,9 @@
     },
     {
       "id": "rec89ozpfE4FonQgM",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec89ozpfE4FonQgM",
@@ -7989,9 +6525,9 @@
     },
     {
       "id": "rec8IEhudMIDVJFvF",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec8IEhudMIDVJFvF",
@@ -8001,9 +6537,9 @@
     },
     {
       "id": "rec8d3SeZIeGrCfz9",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec8d3SeZIeGrCfz9",
@@ -8013,9 +6549,9 @@
     },
     {
       "id": "rec8kKQuf7gAcB5wZ",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec8kKQuf7gAcB5wZ",
@@ -8025,9 +6561,9 @@
     },
     {
       "id": "rec99jKFoZT1cIfpW",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec99jKFoZT1cIfpW",
@@ -8037,9 +6573,9 @@
     },
     {
       "id": "rec9XzSznh8aKaTim",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec9XzSznh8aKaTim",
@@ -8049,9 +6585,9 @@
     },
     {
       "id": "rec9aKp73EfutUXzi",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rec9aKp73EfutUXzi",
@@ -8061,9 +6597,9 @@
     },
     {
       "id": "recAKMDVbsB2AUoGn",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recAKMDVbsB2AUoGn",
@@ -8073,9 +6609,9 @@
     },
     {
       "id": "recAX7cpyzXGXSZvh",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recAX7cpyzXGXSZvh",
@@ -8085,9 +6621,9 @@
     },
     {
       "id": "recAgIfrjVOVIh1tO",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recAgIfrjVOVIh1tO",
@@ -8097,9 +6633,9 @@
     },
     {
       "id": "recAh3gRsAV5mYUzm",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recAh3gRsAV5mYUzm",
@@ -8109,9 +6645,9 @@
     },
     {
       "id": "recB2b046YTc4DkN0",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recB2b046YTc4DkN0",
@@ -8121,9 +6657,9 @@
     },
     {
       "id": "recBIlybZNYLE4dsj",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recBIlybZNYLE4dsj",
@@ -8133,9 +6669,9 @@
     },
     {
       "id": "recCccSdJZyxDUFBP",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recCccSdJZyxDUFBP",
@@ -8145,9 +6681,9 @@
     },
     {
       "id": "recD3iR5R0aKzjDPT",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recD3iR5R0aKzjDPT",
@@ -8157,9 +6693,9 @@
     },
     {
       "id": "recDgK7v7TM1AALGX",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recDgK7v7TM1AALGX",
@@ -8169,9 +6705,9 @@
     },
     {
       "id": "recDi3KaRVlFkM6cW",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recDi3KaRVlFkM6cW",
@@ -8181,9 +6717,9 @@
     },
     {
       "id": "recDtQggHC5cJsvlp",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recDtQggHC5cJsvlp",
@@ -8193,9 +6729,9 @@
     },
     {
       "id": "recEhyWGhRjiYHI8X",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recEhyWGhRjiYHI8X",
@@ -8205,9 +6741,9 @@
     },
     {
       "id": "recEkdprNYlGt7OPt",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recEkdprNYlGt7OPt",
@@ -8217,9 +6753,9 @@
     },
     {
       "id": "recEm3TXNoWXe3i8C",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recEm3TXNoWXe3i8C",
@@ -8229,9 +6765,9 @@
     },
     {
       "id": "recFNRfA6q5fKlMG1",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recFNRfA6q5fKlMG1",
@@ -8241,9 +6777,9 @@
     },
     {
       "id": "recFSSeGD6gPVvacD",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recFSSeGD6gPVvacD",
@@ -8253,9 +6789,9 @@
     },
     {
       "id": "recFhw9ZiGdJObqpR",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recFhw9ZiGdJObqpR",
@@ -8265,9 +6801,9 @@
     },
     {
       "id": "recG9K0454H34bzxK",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recG9K0454H34bzxK",
@@ -8277,9 +6813,9 @@
     },
     {
       "id": "recGE0SIp7Qqp9Sw5",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recGE0SIp7Qqp9Sw5",
@@ -8289,9 +6825,9 @@
     },
     {
       "id": "recGMbn40gTGfCbW5",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recGMbn40gTGfCbW5",
@@ -8301,9 +6837,9 @@
     },
     {
       "id": "recGgWBTCZvyTv8QD",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recGgWBTCZvyTv8QD",
@@ -8313,9 +6849,9 @@
     },
     {
       "id": "recGmnehn1iVhxezb",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recGmnehn1iVhxezb",
@@ -8325,9 +6861,9 @@
     },
     {
       "id": "recGo4rE1NXZFBMFA",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recGo4rE1NXZFBMFA",
@@ -8337,9 +6873,9 @@
     },
     {
       "id": "recGwVP4ebxEmLnHg",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recGwVP4ebxEmLnHg",
@@ -8349,9 +6885,9 @@
     },
     {
       "id": "recH5ygd7R04v9yuv",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recH5ygd7R04v9yuv",
@@ -8361,9 +6897,9 @@
     },
     {
       "id": "recH64UlBAO2Dbc8L",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recH64UlBAO2Dbc8L",
@@ -8373,9 +6909,9 @@
     },
     {
       "id": "recHFomYES6029HoC",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recHFomYES6029HoC",
@@ -8385,9 +6921,9 @@
     },
     {
       "id": "recHRG0jA2UQ47Zxh",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recHRG0jA2UQ47Zxh",
@@ -8397,9 +6933,9 @@
     },
     {
       "id": "recHxk0SARZN8QsGY",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recHxk0SARZN8QsGY",
@@ -8409,9 +6945,9 @@
     },
     {
       "id": "recI1H44C77J3JpX3",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recI1H44C77J3JpX3",
@@ -8421,9 +6957,9 @@
     },
     {
       "id": "recI1eRGCnZcujR03",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recI1eRGCnZcujR03",
@@ -8433,9 +6969,9 @@
     },
     {
       "id": "recIGds2FjClYGmoE",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recIGds2FjClYGmoE",
@@ -8445,9 +6981,9 @@
     },
     {
       "id": "recIZXDNVRVxZeJpS",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recIZXDNVRVxZeJpS",
@@ -8457,9 +6993,9 @@
     },
     {
       "id": "recIvNFRTVpDW5Pkc",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recIvNFRTVpDW5Pkc",
@@ -8469,9 +7005,9 @@
     },
     {
       "id": "recJ50QI2wjG6biaq",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recJ50QI2wjG6biaq",
@@ -8481,9 +7017,9 @@
     },
     {
       "id": "recJOyWaVJmJOjqGC",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recJOyWaVJmJOjqGC",
@@ -8493,9 +7029,9 @@
     },
     {
       "id": "recJaOsnJOxAxfoNl",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recJaOsnJOxAxfoNl",
@@ -8505,9 +7041,9 @@
     },
     {
       "id": "recJdXTPO8JIiJ9g5",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recJdXTPO8JIiJ9g5",
@@ -8517,9 +7053,9 @@
     },
     {
       "id": "recJgC6tJzbNYwLux",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recJgC6tJzbNYwLux",
@@ -8529,9 +7065,9 @@
     },
     {
       "id": "recJvdQDL6FW8sFVX",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recJvdQDL6FW8sFVX",
@@ -8541,9 +7077,9 @@
     },
     {
       "id": "recK7WR0dyxqSotab",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recK7WR0dyxqSotab",
@@ -8553,9 +7089,9 @@
     },
     {
       "id": "recKd8iqRCs8AFdfw",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recKd8iqRCs8AFdfw",
@@ -8565,9 +7101,9 @@
     },
     {
       "id": "recKshTFpZst7qOPp",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recKshTFpZst7qOPp",
@@ -8577,9 +7113,9 @@
     },
     {
       "id": "recL2AWcgmRuUmGBP",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recL2AWcgmRuUmGBP",
@@ -8589,9 +7125,9 @@
     },
     {
       "id": "recLHuXMxukl2BkqH",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recLHuXMxukl2BkqH",
@@ -8601,9 +7137,9 @@
     },
     {
       "id": "recLaXOf9APVCka6q",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recLaXOf9APVCka6q",
@@ -8613,9 +7149,9 @@
     },
     {
       "id": "recM7Bo4QAexoUl3f",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recM7Bo4QAexoUl3f",
@@ -8625,9 +7161,9 @@
     },
     {
       "id": "recN5TtuAMWeR4EhN",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recN5TtuAMWeR4EhN",
@@ -8637,9 +7173,9 @@
     },
     {
       "id": "recNL2MmwDypGf7nd",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recNL2MmwDypGf7nd",
@@ -8649,9 +7185,9 @@
     },
     {
       "id": "recNSy46OK5vXNIYe",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recNSy46OK5vXNIYe",
@@ -8661,9 +7197,9 @@
     },
     {
       "id": "recNovzIVSUC6Gb7l",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recNovzIVSUC6Gb7l",
@@ -8673,9 +7209,9 @@
     },
     {
       "id": "recNtwKvvUHOYexVp",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recNtwKvvUHOYexVp",
@@ -8685,9 +7221,9 @@
     },
     {
       "id": "recO16RY3AHt0JWqW",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recO16RY3AHt0JWqW",
@@ -8697,9 +7233,9 @@
     },
     {
       "id": "recOBKVEfmZGsgMP9",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recOBKVEfmZGsgMP9",
@@ -8709,9 +7245,9 @@
     },
     {
       "id": "recODJNFlBLqyAtNI",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recODJNFlBLqyAtNI",
@@ -8721,9 +7257,9 @@
     },
     {
       "id": "recObRHD37nkHrZp8",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recObRHD37nkHrZp8",
@@ -8733,9 +7269,9 @@
     },
     {
       "id": "recP2oek5TyZp1IWf",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recP2oek5TyZp1IWf",
@@ -8745,9 +7281,9 @@
     },
     {
       "id": "recPO0X6RiiGdjYrV",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recPO0X6RiiGdjYrV",
@@ -8757,9 +7293,9 @@
     },
     {
       "id": "recPeRauMU4ztWJ4l",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recPeRauMU4ztWJ4l",
@@ -8769,9 +7305,9 @@
     },
     {
       "id": "recPhrWdVgGOrUBBr",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recPhrWdVgGOrUBBr",
@@ -8781,9 +7317,9 @@
     },
     {
       "id": "recQK0cXeSfco3W5l",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recQK0cXeSfco3W5l",
@@ -8793,9 +7329,9 @@
     },
     {
       "id": "recQQTMhowlLJjFLx",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recQQTMhowlLJjFLx",
@@ -8805,9 +7341,9 @@
     },
     {
       "id": "recQkppbwctfZt8zF",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recQkppbwctfZt8zF",
@@ -8817,9 +7353,9 @@
     },
     {
       "id": "recQnYHmOMzY39UpH",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recQnYHmOMzY39UpH",
@@ -8829,9 +7365,9 @@
     },
     {
       "id": "recR6g7OjenCeYwLU",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recR6g7OjenCeYwLU",
@@ -8841,9 +7377,9 @@
     },
     {
       "id": "recRFMiArVAh4DrZ3",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recRFMiArVAh4DrZ3",
@@ -8853,9 +7389,9 @@
     },
     {
       "id": "recS8MJKf6DSYXQxj",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recS8MJKf6DSYXQxj",
@@ -8865,9 +7401,9 @@
     },
     {
       "id": "recSMAhIDAb50H4IT",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recSMAhIDAb50H4IT",
@@ -8877,9 +7413,9 @@
     },
     {
       "id": "recTGO5PU3ZS19SMN",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recTGO5PU3ZS19SMN",
@@ -8889,9 +7425,9 @@
     },
     {
       "id": "recTblAqT6nvQhz9W",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recTblAqT6nvQhz9W",
@@ -8901,9 +7437,9 @@
     },
     {
       "id": "recTwMjRZ4VgkkTXU",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recTwMjRZ4VgkkTXU",
@@ -8913,9 +7449,9 @@
     },
     {
       "id": "recU5jN0YwyxBAbUL",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recU5jN0YwyxBAbUL",
@@ -8925,9 +7461,9 @@
     },
     {
       "id": "recUc0H2Oz6sWMKDE",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recUc0H2Oz6sWMKDE",
@@ -8937,9 +7473,9 @@
     },
     {
       "id": "recUgB5IRDFciaABJ",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recUgB5IRDFciaABJ",
@@ -8949,9 +7485,9 @@
     },
     {
       "id": "recUq3kQ8E3RjuU8P",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recUq3kQ8E3RjuU8P",
@@ -8961,9 +7497,9 @@
     },
     {
       "id": "recV7fdeW22dzh3ua",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recV7fdeW22dzh3ua",
@@ -8973,9 +7509,9 @@
     },
     {
       "id": "recVMQXkB3q52Ps78",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recVMQXkB3q52Ps78",
@@ -8985,9 +7521,9 @@
     },
     {
       "id": "recVq9JJw4BQmiBx7",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recVq9JJw4BQmiBx7",
@@ -8997,9 +7533,9 @@
     },
     {
       "id": "recVxsNtS8TMo9ZuT",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recVxsNtS8TMo9ZuT",
@@ -9009,9 +7545,9 @@
     },
     {
       "id": "recWHAVvk4VeKnZVE",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recWHAVvk4VeKnZVE",
@@ -9021,9 +7557,9 @@
     },
     {
       "id": "recWe9Ve8TkOpFHcq",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recWe9Ve8TkOpFHcq",
@@ -9033,9 +7569,9 @@
     },
     {
       "id": "recXJsg4idg71MLNx",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recXJsg4idg71MLNx",
@@ -9045,9 +7581,9 @@
     },
     {
       "id": "recXnJ04zsDszLCLi",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recXnJ04zsDszLCLi",
@@ -9057,9 +7593,9 @@
     },
     {
       "id": "recYN7TDIiDx8JsXU",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recYN7TDIiDx8JsXU",
@@ -9069,9 +7605,9 @@
     },
     {
       "id": "recYOEzmpMZrJpjJO",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recYOEzmpMZrJpjJO",
@@ -9081,9 +7617,9 @@
     },
     {
       "id": "recYRjk9iHEs5L4dR",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recYRjk9iHEs5L4dR",
@@ -9093,9 +7629,9 @@
     },
     {
       "id": "recYWieedUOhvgKB9",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recYWieedUOhvgKB9",
@@ -9105,9 +7641,9 @@
     },
     {
       "id": "recYZlsilWMInLG0D",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recYZlsilWMInLG0D",
@@ -9117,9 +7653,9 @@
     },
     {
       "id": "recZIrbK7pm4NuHJv",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recZIrbK7pm4NuHJv",
@@ -9129,9 +7665,9 @@
     },
     {
       "id": "recZhYQiZqMRXmmOE",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recZhYQiZqMRXmmOE",
@@ -9141,9 +7677,9 @@
     },
     {
       "id": "recZj2xktIGORSK3a",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recZj2xktIGORSK3a",
@@ -9153,9 +7689,9 @@
     },
     {
       "id": "reca4PIX1HldYGIIn",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reca4PIX1HldYGIIn",
@@ -9165,9 +7701,9 @@
     },
     {
       "id": "reca7q9oMYcmktSdv",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reca7q9oMYcmktSdv",
@@ -9177,9 +7713,9 @@
     },
     {
       "id": "recaGT6agenbkaaTE",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recaGT6agenbkaaTE",
@@ -9189,9 +7725,9 @@
     },
     {
       "id": "recaOgT8yltifxyy6",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recaOgT8yltifxyy6",
@@ -9201,9 +7737,9 @@
     },
     {
       "id": "recaT6GLpRSS1mOw6",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recaT6GLpRSS1mOw6",
@@ -9213,9 +7749,9 @@
     },
     {
       "id": "recaVOr8W67UfOviE",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recaVOr8W67UfOviE",
@@ -9225,9 +7761,9 @@
     },
     {
       "id": "recb51c1257Nl4RfI",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recb51c1257Nl4RfI",
@@ -9237,9 +7773,9 @@
     },
     {
       "id": "recbf7md6uZP8eOME",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recbf7md6uZP8eOME",
@@ -9249,9 +7785,9 @@
     },
     {
       "id": "recbhJwtA10n9ACI8",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recbhJwtA10n9ACI8",
@@ -9261,9 +7797,9 @@
     },
     {
       "id": "recbviReFrVuaJlsZ",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recbviReFrVuaJlsZ",
@@ -9273,9 +7809,9 @@
     },
     {
       "id": "recbwNEOU2Rwf5Zrz",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recbwNEOU2Rwf5Zrz",
@@ -9285,9 +7821,9 @@
     },
     {
       "id": "reccEEEwDPO0YtFDL",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reccEEEwDPO0YtFDL",
@@ -9297,9 +7833,9 @@
     },
     {
       "id": "reccIqUAwsabrLQzG",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reccIqUAwsabrLQzG",
@@ -9309,9 +7845,9 @@
     },
     {
       "id": "reccRqUsH7nOoWGAR",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reccRqUsH7nOoWGAR",
@@ -9321,9 +7857,9 @@
     },
     {
       "id": "reccWbs49T02DRkBs",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reccWbs49T02DRkBs",
@@ -9333,9 +7869,9 @@
     },
     {
       "id": "reccdWI8EiNSBF5Rg",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reccdWI8EiNSBF5Rg",
@@ -9345,9 +7881,9 @@
     },
     {
       "id": "reccuC9fzqkfxoGfi",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reccuC9fzqkfxoGfi",
@@ -9357,9 +7893,9 @@
     },
     {
       "id": "reccv4NnoCryhPOvI",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reccv4NnoCryhPOvI",
@@ -9369,9 +7905,9 @@
     },
     {
       "id": "recd7wPmmOtgSW5ip",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recd7wPmmOtgSW5ip",
@@ -9381,9 +7917,9 @@
     },
     {
       "id": "recdXcfPWTJbH1Ij1",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recdXcfPWTJbH1Ij1",
@@ -9393,9 +7929,9 @@
     },
     {
       "id": "recdz0JeO3ZAKDI1T",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recdz0JeO3ZAKDI1T",
@@ -9405,9 +7941,9 @@
     },
     {
       "id": "rece9TtkaPHpb7Fh9",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rece9TtkaPHpb7Fh9",
@@ -9417,9 +7953,9 @@
     },
     {
       "id": "receKSKIqFgVgfM7v",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "receKSKIqFgVgfM7v",
@@ -9429,9 +7965,9 @@
     },
     {
       "id": "receUDhkfTyyew3Nk",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "receUDhkfTyyew3Nk",
@@ -9441,9 +7977,9 @@
     },
     {
       "id": "receWYgdhdouKOav2",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "receWYgdhdouKOav2",
@@ -9453,9 +7989,9 @@
     },
     {
       "id": "recen4kmdDkwvhF79",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recen4kmdDkwvhF79",
@@ -9465,9 +8001,9 @@
     },
     {
       "id": "recev6hhPw0l6YKVJ",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recev6hhPw0l6YKVJ",
@@ -9477,9 +8013,9 @@
     },
     {
       "id": "recfE8fOBK3aaAqhj",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recfE8fOBK3aaAqhj",
@@ -9489,9 +8025,9 @@
     },
     {
       "id": "recfMGrT2IBdS4buM",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recfMGrT2IBdS4buM",
@@ -9501,9 +8037,9 @@
     },
     {
       "id": "recfc43H1j8EuThhC",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recfc43H1j8EuThhC",
@@ -9513,9 +8049,9 @@
     },
     {
       "id": "recfcHr6YKflHzPai",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recfcHr6YKflHzPai",
@@ -9525,9 +8061,9 @@
     },
     {
       "id": "recgNJpBYgOLvquee",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recgNJpBYgOLvquee",
@@ -9537,9 +8073,9 @@
     },
     {
       "id": "recgTvX9Rl3zOv0mQ",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recgTvX9Rl3zOv0mQ",
@@ -9549,9 +8085,9 @@
     },
     {
       "id": "recgWhrnz1ptd2Uoq",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recgWhrnz1ptd2Uoq",
@@ -9561,9 +8097,9 @@
     },
     {
       "id": "recgqiGTKNiaI7QLs",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recgqiGTKNiaI7QLs",
@@ -9573,9 +8109,9 @@
     },
     {
       "id": "rechclOcbQA2E1YLS",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rechclOcbQA2E1YLS",
@@ -9585,9 +8121,9 @@
     },
     {
       "id": "rechks3UwphapTEdG",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rechks3UwphapTEdG",
@@ -9597,9 +8133,9 @@
     },
     {
       "id": "rechmTrlsFD3HoU83",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rechmTrlsFD3HoU83",
@@ -9609,9 +8145,9 @@
     },
     {
       "id": "reciJJW2Eqpx1H50x",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reciJJW2Eqpx1H50x",
@@ -9621,9 +8157,9 @@
     },
     {
       "id": "recipMfM0ZvcnoKZb",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recipMfM0ZvcnoKZb",
@@ -9633,9 +8169,9 @@
     },
     {
       "id": "recjDdMlPM6lfIfmw",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recjDdMlPM6lfIfmw",
@@ -9645,9 +8181,9 @@
     },
     {
       "id": "recjQb9IjcJiI6sx2",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recjQb9IjcJiI6sx2",
@@ -9657,9 +8193,9 @@
     },
     {
       "id": "reckAuerKU3A7JKWc",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reckAuerKU3A7JKWc",
@@ -9669,9 +8205,9 @@
     },
     {
       "id": "reckbLVsxbURnKINw",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reckbLVsxbURnKINw",
@@ -9681,9 +8217,9 @@
     },
     {
       "id": "reckplwCdLtqshhuu",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reckplwCdLtqshhuu",
@@ -9693,9 +8229,9 @@
     },
     {
       "id": "reckqdGNnV76VSZ9h",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reckqdGNnV76VSZ9h",
@@ -9705,9 +8241,9 @@
     },
     {
       "id": "recks5SwQhH08H3mB",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recks5SwQhH08H3mB",
@@ -9717,9 +8253,9 @@
     },
     {
       "id": "reckt4FwkKGKrwi7Z",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reckt4FwkKGKrwi7Z",
@@ -9729,9 +8265,9 @@
     },
     {
       "id": "recktt0uo2g9o0qSI",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recktt0uo2g9o0qSI",
@@ -9741,9 +8277,9 @@
     },
     {
       "id": "recl80qjnxC6cD5pj",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recl80qjnxC6cD5pj",
@@ -9753,9 +8289,9 @@
     },
     {
       "id": "reclSjI5C9dw686jC",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reclSjI5C9dw686jC",
@@ -9765,9 +8301,9 @@
     },
     {
       "id": "reclbRikjaywJvxCi",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reclbRikjaywJvxCi",
@@ -9777,9 +8313,9 @@
     },
     {
       "id": "recliuO65W9brQXs9",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recliuO65W9brQXs9",
@@ -9789,9 +8325,9 @@
     },
     {
       "id": "recm62tzGXpmzUwNO",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recm62tzGXpmzUwNO",
@@ -9801,9 +8337,9 @@
     },
     {
       "id": "recmSuLaCe5luUsNo",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recmSuLaCe5luUsNo",
@@ -9813,9 +8349,9 @@
     },
     {
       "id": "recmclGJdidPUDXxV",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recmclGJdidPUDXxV",
@@ -9825,9 +8361,9 @@
     },
     {
       "id": "recmo6PazYR51d5Jy",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recmo6PazYR51d5Jy",
@@ -9837,9 +8373,9 @@
     },
     {
       "id": "reco7GtdQrKSIkYEA",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reco7GtdQrKSIkYEA",
@@ -9849,9 +8385,9 @@
     },
     {
       "id": "recoGjUbTkOwI7FMb",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recoGjUbTkOwI7FMb",
@@ -9861,9 +8397,9 @@
     },
     {
       "id": "recoNxoBxJ7aZcDGp",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recoNxoBxJ7aZcDGp",
@@ -9873,9 +8409,9 @@
     },
     {
       "id": "recokYP5uUKJd0WVN",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recokYP5uUKJd0WVN",
@@ -9885,9 +8421,9 @@
     },
     {
       "id": "recotDjupTrmLLDOF",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recotDjupTrmLLDOF",
@@ -9897,9 +8433,9 @@
     },
     {
       "id": "recp73FfaCtMgFNMV",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recp73FfaCtMgFNMV",
@@ -9909,9 +8445,9 @@
     },
     {
       "id": "recpKPP8LMv7FDddh",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recpKPP8LMv7FDddh",
@@ -9921,9 +8457,9 @@
     },
     {
       "id": "recqgEl9ZVy1oT6BH",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recqgEl9ZVy1oT6BH",
@@ -9933,9 +8469,9 @@
     },
     {
       "id": "recqitXztZm8j5RdN",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recqitXztZm8j5RdN",
@@ -9945,9 +8481,9 @@
     },
     {
       "id": "recqkOR58iWGn6ylD",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recqkOR58iWGn6ylD",
@@ -9957,9 +8493,9 @@
     },
     {
       "id": "recqkSPGhdCHvgODl",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recqkSPGhdCHvgODl",
@@ -9969,9 +8505,9 @@
     },
     {
       "id": "recqlDtF6FYdA7axf",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recqlDtF6FYdA7axf",
@@ -9981,9 +8517,9 @@
     },
     {
       "id": "recqnfGiY0ulkfGhq",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recqnfGiY0ulkfGhq",
@@ -9993,9 +8529,9 @@
     },
     {
       "id": "recqs8qN2tqOxfe4x",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recqs8qN2tqOxfe4x",
@@ -10005,9 +8541,9 @@
     },
     {
       "id": "recqutsnyEC9ini6K",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recqutsnyEC9ini6K",
@@ -10017,9 +8553,9 @@
     },
     {
       "id": "recqzdKNo6b2ciSrA",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recqzdKNo6b2ciSrA",
@@ -10029,9 +8565,9 @@
     },
     {
       "id": "recrROssI0SI1TVmu",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recrROssI0SI1TVmu",
@@ -10041,9 +8577,9 @@
     },
     {
       "id": "recraNNg0uVXOZwJC",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recraNNg0uVXOZwJC",
@@ -10053,9 +8589,9 @@
     },
     {
       "id": "recsCdGoAQggbjxFG",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recsCdGoAQggbjxFG",
@@ -10065,9 +8601,9 @@
     },
     {
       "id": "recsE07ld9LaMHCYM",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recsE07ld9LaMHCYM",
@@ -10077,9 +8613,9 @@
     },
     {
       "id": "recsEv1bP8eAgIxrj",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recsEv1bP8eAgIxrj",
@@ -10089,9 +8625,9 @@
     },
     {
       "id": "recshRCkGSw13t3qh",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recshRCkGSw13t3qh",
@@ -10101,9 +8637,9 @@
     },
     {
       "id": "recshm95hmq82YCW9",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recshm95hmq82YCW9",
@@ -10113,9 +8649,9 @@
     },
     {
       "id": "rect7rs3kLYH4CjVa",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rect7rs3kLYH4CjVa",
@@ -10125,9 +8661,9 @@
     },
     {
       "id": "rectAR6xa0dosidOF",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rectAR6xa0dosidOF",
@@ -10137,9 +8673,9 @@
     },
     {
       "id": "rectCka8y93ENc4jh",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rectCka8y93ENc4jh",
@@ -10149,9 +8685,9 @@
     },
     {
       "id": "rectbH4GIiIONUdK7",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rectbH4GIiIONUdK7",
@@ -10161,9 +8697,9 @@
     },
     {
       "id": "rectqCsDxSPeZ7EyE",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rectqCsDxSPeZ7EyE",
@@ -10173,9 +8709,9 @@
     },
     {
       "id": "rectsGzcnmGhYTmVl",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "rectsGzcnmGhYTmVl",
@@ -10185,9 +8721,9 @@
     },
     {
       "id": "recu2STn8ovIjhzSL",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recu2STn8ovIjhzSL",
@@ -10197,9 +8733,9 @@
     },
     {
       "id": "recuPnk8qMbgZOKgT",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recuPnk8qMbgZOKgT",
@@ -10209,9 +8745,9 @@
     },
     {
       "id": "recuSMrkFSr3c9Rsk",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recuSMrkFSr3c9Rsk",
@@ -10221,9 +8757,9 @@
     },
     {
       "id": "recuVnS8iSJLnzV2M",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recuVnS8iSJLnzV2M",
@@ -10233,9 +8769,9 @@
     },
     {
       "id": "recudantcRwG63Ogf",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recudantcRwG63Ogf",
@@ -10245,9 +8781,9 @@
     },
     {
       "id": "recudzAb7ZARY3ZfK",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recudzAb7ZARY3ZfK",
@@ -10257,9 +8793,9 @@
     },
     {
       "id": "recus50ALLaU6aNIo",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recus50ALLaU6aNIo",
@@ -10269,9 +8805,9 @@
     },
     {
       "id": "recvCAd0tNNZvEXDx",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recvCAd0tNNZvEXDx",
@@ -10281,9 +8817,9 @@
     },
     {
       "id": "recvJZ8tkUnkyixbT",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recvJZ8tkUnkyixbT",
@@ -10293,9 +8829,9 @@
     },
     {
       "id": "recvJrpkIzlbjVuOn",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recvJrpkIzlbjVuOn",
@@ -10305,9 +8841,9 @@
     },
     {
       "id": "recwEwZrmSYjzySel",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recwEwZrmSYjzySel",
@@ -10317,9 +8853,9 @@
     },
     {
       "id": "recwNogCWSpTEQ378",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recwNogCWSpTEQ378",
@@ -10329,9 +8865,9 @@
     },
     {
       "id": "recwQWzaQ3H7dgJwo",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recwQWzaQ3H7dgJwo",
@@ -10341,9 +8877,9 @@
     },
     {
       "id": "recwbY4WyRviRENt7",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recwbY4WyRviRENt7",
@@ -10353,9 +8889,9 @@
     },
     {
       "id": "recwnw0nHTPsYWrYQ",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recwnw0nHTPsYWrYQ",
@@ -10365,9 +8901,9 @@
     },
     {
       "id": "recwx7j5M9gAMrrzf",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recwx7j5M9gAMrrzf",
@@ -10377,9 +8913,9 @@
     },
     {
       "id": "recxUZ4XorQ9YT4BS",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recxUZ4XorQ9YT4BS",
@@ -10389,9 +8925,9 @@
     },
     {
       "id": "recxycsGkdNrhspBr",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recxycsGkdNrhspBr",
@@ -10401,9 +8937,9 @@
     },
     {
       "id": "recxz7nGL7QwWWga6",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recxz7nGL7QwWWga6",
@@ -10413,9 +8949,9 @@
     },
     {
       "id": "recy9uzjFtNWYkAt9",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recy9uzjFtNWYkAt9",
@@ -10425,9 +8961,9 @@
     },
     {
       "id": "recyDbDjsvg7mVOrm",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recyDbDjsvg7mVOrm",
@@ -10437,9 +8973,9 @@
     },
     {
       "id": "recyx59jaSyoGd1vZ",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "recyx59jaSyoGd1vZ",
@@ -10449,9 +8985,9 @@
     },
     {
       "id": "reczLZAp2HVLJJaLo",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reczLZAp2HVLJJaLo",
@@ -10461,9 +8997,9 @@
     },
     {
       "id": "reczOfB8lb6CYNV0b",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reczOfB8lb6CYNV0b",
@@ -10473,9 +9009,9 @@
     },
     {
       "id": "reczWOyr7n6AB1s6p",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reczWOyr7n6AB1s6p",
@@ -10485,9 +9021,9 @@
     },
     {
       "id": "reczkNmn6dNDL1OCT",
-      "reason": "invalid coordinates_confidence",
+      "reason": "not_validated",
       "severity": "critical",
-      "field": "coordinates_confidence"
+      "field": "validated"
     },
     {
       "id": "reczkNmn6dNDL1OCT",
