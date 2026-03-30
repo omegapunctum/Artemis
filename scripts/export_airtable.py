@@ -57,7 +57,7 @@ FALSE_SET = {False, 0, "0", "false", "no", "n", "нет"}
 ALLOWED_LICENSES = {"CC0", "CC BY", "CC BY-SA", "PD"}
 ALLOWED_COORDINATES_CONFIDENCE = {"exact", "approximately±Nkm", "conditional"}
 ALLOWED_LAYER_TYPES = {"architecture", "route_point", "biogeography", "biography"}
-ALLOWED_COORDINATES_SOURCES = {"wikipedia"}
+ALLOWED_COORDINATES_SOURCES = {"Wikipedia", "Pleiades", "GBIF", "IUCN", "expert"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -189,13 +189,7 @@ def is_valid_url(value: Optional[str]) -> bool:
 
 
 def normalize_coordinates_source(value: Any) -> Optional[str]:
-    text = safe_str(value)
-    if text is None:
-        return None
-    normalized = re.sub(r"\s+", "_", text.strip().lower())
-    if normalized.startswith("wikipedia"):
-        return "wikipedia"
-    return normalized
+    return safe_str(value)
 
 
 def validate_coordinate_range(
@@ -282,14 +276,10 @@ def map_record(record: Dict[str, Any], errors: List[Dict[str, Any]]) -> Dict[str
         if legacy_latitude not in (None, "") and latitude is None:
             latitude_parse_error = True
 
-    is_active = fields.get("is_active_bool")
-    if is_active in (None, ""):
-        legacy_is_active = fields.get("is_active")
-        if legacy_is_active not in (None, ""):
-            errors.append(
-                {"record_id": record_id, "field": "is_active", "warning": "using legacy fallback field", "value": legacy_is_active}
-            )
-        is_active = parse_bool(legacy_is_active)
+    validated = fields.get("validated")
+    if validated in (None, ""):
+        validated = fields.get("validated_bool")
+    validated = parse_bool(validated)
 
     source_license = safe_str(fields.get("source_license_enum"))
     if source_license is None:
@@ -347,7 +337,7 @@ def map_record(record: Dict[str, Any], errors: List[Dict[str, Any]]) -> Dict[str
         "coordinates_source": normalize_coordinates_source(fields.get("coordinates_source")),
         "sequence_order": to_int_or_none(fields.get("sequence_order"), record_id, "sequence_order", errors),
         "tags": to_tags(fields.get("tags")),
-        "is_active": is_active,
+        "validated": validated,
         # Доп. поля для слоёв (если в таблице присутствуют)
         "layer_name_ru": safe_str(fields.get("layer_name_ru") or fields.get("layer_name")),
         "layer_color_hex": safe_str(fields.get("layer_color_hex") or fields.get("color_hex")),
@@ -448,7 +438,7 @@ def generate_mock_records() -> List[Dict[str, Any]]:
                 "influence_radius_km": 12,
                 "layer_color_hex": "#ABCDEF",
                 "tags": "test",
-                "is_active_bool": True,
+                "validated": True,
                 "source_license": "CC BY",
                 "coordinates_confidence_enum": "exact",
                 "source_url": "https://example.com/source",
@@ -500,7 +490,8 @@ def build_geojson_features(mapped_records: Iterable[Dict[str, Any]], warnings: L
                     "coordinates_source": m.get("coordinates_source"),
                     "sequence_order": m.get("sequence_order"),
                     "tags": m.get("tags"),
-                    "is_active": m.get("is_active"),
+                    "validated": m.get("validated"),
+                    "date_valid": m.get("date_valid"),
                     "has_geometry": True,
                 },
             }
@@ -529,54 +520,34 @@ def validate_feature(mapped: Dict[str, Any], layer_ids: set[str], warnings: List
     def warning(field: str, reason: str) -> None:
         add_issue(warnings, "warning", record_id, reason, field)
 
-    if mapped.get("_invalid_coordinates"):
-        critical("geometry", "latitude/longitude must be float values")
-    if not mapped.get("id"):
-        critical("id", "missing id")
-    if not mapped.get("layer_id"):
-        critical("layer_id", "missing layer_id")
-    elif mapped["layer_id"] not in layer_ids:
-        critical("layer_id", "layer_id not found in layers")
-    if not is_valid_layer_type(mapped.get("layer_type")):
-        critical("layer_type", "invalid layer_type")
-    if not mapped.get("name_ru"):
-        critical("name_ru", "missing name_ru")
+    validated_value = parse_bool(mapped.get("validated"))
+    if validated_value is not True:
+        critical("validated", "not_validated")
     source_url = mapped.get("source_url")
     if not is_valid_url(source_url):
         critical("source_url", "invalid_source_url")
-    if mapped.get("latitude") is not None and not (-90 <= mapped["latitude"] <= 90):
-        critical("latitude", "latitude out of range")
-    if mapped.get("longitude") is not None and not (-180 <= mapped["longitude"] <= 180):
-        critical("longitude", "longitude out of range")
-    if not is_valid_iso_date(mapped.get("date_start")):
-        critical("date_start", "invalid ISO date")
-    if not is_valid_iso_date(mapped.get("date_end")):
-        critical("date_end", "invalid ISO date")
+    if mapped.get("_invalid_coordinates"):
+        critical("geometry", "invalid_coordinates")
+    latitude = mapped.get("latitude")
+    longitude = mapped.get("longitude")
+    if latitude is None or longitude is None:
+        critical("geometry", "invalid_coordinates")
+    elif not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+        critical("geometry", "invalid_coordinates")
+    date_valid = is_valid_iso_date(mapped.get("date_start")) and is_valid_iso_date(mapped.get("date_end"))
+    mapped["date_valid"] = date_valid
     if not is_valid_license(mapped.get("source_license")):
         critical("source_license", "invalid_license")
-    if mapped.get("coordinates_confidence") not in ALLOWED_COORDINATES_CONFIDENCE:
-        critical("coordinates_confidence", "invalid coordinates_confidence")
     coordinates_source = mapped.get("coordinates_source")
     if coordinates_source not in ALLOWED_COORDINATES_SOURCES:
         critical("coordinates_source", "invalid_coordinates_source")
-    if not isinstance(mapped.get("is_active"), bool):
-        critical("is_active", "is_active must be boolean")
     if mapped.get("title_short") and len(mapped["title_short"]) > 120:
-        critical("title_short", "title_short exceeds 120 characters")
+        critical("title_short", "title_too_long")
     if mapped.get("description") and len(mapped["description"]) > 2000:
-        critical("description", "description exceeds 2000 characters")
-    tags = mapped.get("tags") or []
-    if any(" " in tag for tag in tags):
-        critical("tags", "tags must be comma-separated without spaces")
-    if mapped.get("latitude") is None and mapped.get("longitude") is None:
-        warning("geometry", "coordinates are null")
-    elif mapped.get("latitude") is None or mapped.get("longitude") is None:
-        critical("geometry", "longitude/latitude must both be present or null")
+        critical("description", "description_too_long")
     image_url = mapped.get("image_url")
     if image_url and not is_valid_url(image_url):
         critical("image_url", "invalid_image_url")
-    if not mapped.get("description"):
-        warning("description", "empty description")
     return valid
 
 
@@ -692,16 +663,17 @@ def run_self_test() -> int:
             "influence_radius_km": "12",
             "layer_color_hex": "#ABCDEF",
             "tags": "A, b ,C",
-            "is_active_bool": True,
+            "validated": True,
             "source_license_enum": "CC BY",
             "coordinates_confidence_enum": "exact",
             "source_url": "https://example.com/source",
+            "coordinates_source": "Wikipedia",
         },
     }
     m = map_record(sample, errors)
     assert m["date_start"] == "-0753"
     assert m["tags"] == ["a", "b", "c"]
-    assert m["is_active"] is True
+    assert m["validated"] is True
     assert m["influence_radius_km"] == 12
     assert m["longitude"] == 37.6173
     assert m["latitude"] == 55.7558
@@ -782,13 +754,9 @@ def main() -> int:
     warnings: List[Dict[str, Any]] = []
     errors: List[Dict[str, Any]] = []
     candidate_records: List[Dict[str, Any]] = []
-    skipped_inactive = 0
     
     for record in records:
         mapped = map_record(record, warnings)
-        if mapped.get("is_active") is False and not args.include_inactive:
-            skipped_inactive += 1
-            continue
         candidate_records.append(mapped)
 
     layers = build_layers(candidate_records, warnings)
@@ -797,20 +765,36 @@ def main() -> int:
 
     mapped_records: List[Dict[str, Any]] = []
     rejected_records: List[Dict[str, Any]] = []
+    seen_dedupe_keys: set[Tuple[str, float, float]] = set()
     for mapped in candidate_records:
         prev_errors_len = len(errors)
         if validate_feature(mapped, valid_layer_ids, warnings, errors):
+            dedupe_key = (
+                mapped.get("name_ru") or "",
+                mapped.get("latitude"),
+                mapped.get("longitude"),
+            )
+            if dedupe_key in seen_dedupe_keys:
+                add_issue(errors, "critical", mapped.get("id") or "<missing>", "duplicate", "dedupe")
+                rejected_records.append(
+                    {"id": mapped.get("id") or "<missing>", "name_ru": mapped.get("name_ru"), "reasons": ["duplicate"]}
+                )
+                print(f"REJECT: {mapped.get('name_ru') or '<missing>'} — duplicate")
+                continue
+            seen_dedupe_keys.add(dedupe_key)
             mapped_records.append(mapped)
+            print(f"OK: {mapped.get('name_ru') or '<missing>'}")
             continue
         record_id = mapped.get("id") or "<missing>"
         reasons = [
-            {"field": err.get("field"), "reason": err.get("reason")}
+            err.get("reason")
             for err in errors[prev_errors_len:]
             if err.get("id") == record_id and err.get("severity") == "critical"
         ]
         if not reasons:
-            reasons = [{"field": None, "reason": "rejected by validation"}]
-        rejected_records.append({"id": record_id, "reasons": reasons})
+            reasons = ["rejected_by_validation"]
+        rejected_records.append({"id": record_id, "name_ru": mapped.get("name_ru"), "reasons": reasons})
+        print(f"REJECT: {mapped.get('name_ru') or '<missing>'} — {', '.join(reasons)}")
     mapped_records = sort_mapped_records(mapped_records)
     if args.exclude_without_geometry:
         mapped_records = [m for m in mapped_records if m.get("longitude") is not None and m.get("latitude") is not None]
@@ -832,7 +816,6 @@ def main() -> int:
         "records_geojson": len(geojson["features"]),
         "errors": len(errors),
         "warnings": len(warnings),
-        "skipped_inactive": skipped_inactive,
         "duration_seconds": round(time.time() - started_at, 3),
     }
 
@@ -856,11 +839,7 @@ def main() -> int:
         return 1
 
     # Финальный вывод — в формате, согласованном с мастер-промптом
-    print(
-        f"Прочитано: {len(records)} | Валидно: {len(mapped_records)} | "
-        f"Пропущено: {validation_report['skipped_records']} | "
-        f"Warnings: {len(warnings)} | Critical: {len(errors)}"
-    )
+    print(f"VALID: {len(mapped_records)} | REJECTED: {len(rejected_records)}")
 
     if args.commit:
         maybe_commit(
