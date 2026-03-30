@@ -102,6 +102,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Русский комментарий: запросы с cookie/credentials не кэшируем.
   if (request.credentials === 'include') {
     console.debug('[SW] skip credentialed request:', url.pathname);
     event.respondWith(fetch(request));
