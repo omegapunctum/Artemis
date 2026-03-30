@@ -29,48 +29,84 @@ function parseTags(tagsInput) {
 }
 
 function parseCoordinate(value, min, max) {
-  if (value === null || value === undefined || value === '') return NaN;
+  if (value === null || value === undefined || value === '') return null;
   const num = Number.parseFloat(String(value).replace(',', '.'));
   if (!Number.isFinite(num)) return NaN;
   if (num < min || num > max) return NaN;
   return num;
 }
 
+const COORDINATES_SOURCE_WHITELIST = new Set(['Wikipedia', 'Pleiades', 'GBIF', 'IUCN', 'expert']);
+const SOURCE_LICENSE_WHITELIST = new Set(['CC0', 'CC BY', 'CC BY-SA', 'PD']);
+
+function isHttpLike(value) {
+  return /^https?:\/\//i.test(String(value || '').trim());
+}
+
 export function validateDraftPayload(payload = {}) {
   const errors = {};
 
   if (!String(payload.name_ru || '').trim()) {
-    errors.name_ru = 'Укажите название (name_ru).';
+    errors.name_ru = 'required';
   }
 
   if (!String(payload.layer_id || '').trim()) {
-    errors.layer_id = 'Выберите слой (layer_id).';
+    errors.layer_id = 'required';
   }
 
   const dateStart = normalizeDate(payload.date_start);
+  if (!String(payload.date_start || '').trim()) {
+    errors.date_start = 'required';
+  }
+  if (!Number.isNaN(dateStart) && dateStart !== null && !Number.isInteger(dateStart)) {
+    errors.date_start = 'invalid_integer';
+  }
+
+  const sourceUrlRaw = String(payload.source_url ?? payload.source_media_url ?? '').trim();
+  if (!sourceUrlRaw) {
+    errors.source_url = 'required';
+  } else if (!isHttpLike(sourceUrlRaw)) {
+    errors.source_url = 'invalid_url_scheme';
+  }
+
+  const imageUrlRaw = String(payload.image_url ?? '').trim();
+  if (imageUrlRaw && !isHttpLike(imageUrlRaw)) {
+    errors.image_url = 'invalid_url_scheme';
+  }
+
+  if (String(payload.title_short || '').trim().length > 120) {
+    errors.title_short = 'too_long';
+  }
+  if (String(payload.description || '').trim().length > 2000) {
+    errors.description = 'too_long';
+  }
+
   const dateConstructionEnd = normalizeDate(payload.date_construction_end);
   const tags = parseTags(payload.tags);
-
-  const hasDateOrTags = Number.isInteger(dateStart) || Number.isInteger(dateConstructionEnd) || tags.length > 0;
-  if (!hasDateOrTags) {
-    errors.date_start = 'Укажите date_start или date_construction_end, либо добавьте хотя бы один tag.';
-  }
-
-  if (!Number.isNaN(dateStart) && dateStart !== null && !Number.isInteger(dateStart)) {
-    errors.date_start = 'date_start должен быть целым годом.';
-  }
   if (!Number.isNaN(dateConstructionEnd) && dateConstructionEnd !== null && !Number.isInteger(dateConstructionEnd)) {
-    errors.date_construction_end = 'date_construction_end должен быть целым годом.';
+    errors.date_construction_end = 'invalid_integer';
   }
 
   const longitude = parseCoordinate(payload.longitude, -180, 180);
   const latitude = parseCoordinate(payload.latitude, -90, 90);
-
-  if (Number.isNaN(longitude)) {
-    errors.longitude = 'Долгота должна быть числом от -180 до 180.';
+  const hasLongitude = longitude !== null;
+  const hasLatitude = latitude !== null;
+  if (hasLongitude !== hasLatitude) {
+    errors.longitude = 'pair_required';
+    errors.latitude = 'pair_required';
+  } else if (hasLongitude && hasLatitude) {
+    if (Number.isNaN(longitude)) errors.longitude = 'invalid_range';
+    if (Number.isNaN(latitude)) errors.latitude = 'invalid_range';
   }
-  if (Number.isNaN(latitude)) {
-    errors.latitude = 'Широта должна быть числом от -90 до 90.';
+
+  const coordinatesSource = String(payload.coordinates_source || '').trim();
+  if (coordinatesSource && !COORDINATES_SOURCE_WHITELIST.has(coordinatesSource)) {
+    errors.coordinates_source = 'not_allowed';
+  }
+
+  const sourceLicense = String(payload.source_license || '').trim();
+  if (sourceLicense && !SOURCE_LICENSE_WHITELIST.has(sourceLicense)) {
+    errors.source_license = 'not_allowed';
   }
 
   if (Object.keys(errors).length > 0) {
@@ -84,7 +120,9 @@ export function validateDraftPayload(payload = {}) {
       date_start: Number.isInteger(dateStart) ? dateStart : null,
       date_construction_end: Number.isInteger(dateConstructionEnd) ? dateConstructionEnd : null,
       tags,
-      coords: [longitude, latitude]
+      source_url: sourceUrlRaw,
+      image_url: imageUrlRaw || null,
+      coords: hasLongitude && hasLatitude ? [longitude, latitude] : null
     }
   };
 }

@@ -11,6 +11,15 @@ const draftState = {
 };
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const VALIDATION_ERROR_MESSAGES = {
+  required: 'Обязательное поле.',
+  invalid_integer: 'Ожидается целое число.',
+  invalid_url_scheme: 'Разрешены только http/https URL.',
+  too_long: 'Слишком длинное значение.',
+  pair_required: 'Укажите и широту, и долготу.',
+  invalid_range: 'Координата вне допустимого диапазона.',
+  not_allowed: 'Значение не входит в допустимый список.'
+};
 
 export async function uploadImage(file, draftId) {
   if (!file) throw new Error('Файл не выбран.');
@@ -460,6 +469,7 @@ function openDraftEditor(els, state, draft) {
 }
 
 function collectDraftPayload(form) {
+  const sourceMediaUrl = form.source_media_url.value.trim();
   return {
     name_ru: form.name_ru.value.trim(),
     name_en: form.name_en.value.trim(),
@@ -473,7 +483,10 @@ function collectDraftPayload(form) {
     title_short: form.title_short.value.trim(),
     description: form.description.value.trim(),
     tags: form.tags.value,
-    source_media_url: form.source_media_url.value.trim(),
+    source_media_url: sourceMediaUrl,
+    source_url: form.source_url ? form.source_url.value.trim() : sourceMediaUrl,
+    image_url: form.image_url ? form.image_url.value.trim() : sourceMediaUrl,
+    coordinates_source: form.coordinates_source ? form.coordinates_source.value.trim() : '',
     source_license: form.source_license.value.trim()
   };
 }
@@ -485,9 +498,10 @@ function renderFieldErrors(form, container, errors) {
   form.querySelectorAll('.is-invalid').forEach((node) => node.classList.remove('is-invalid'));
 
   Object.entries(errors).forEach(([field, message]) => {
+    const normalizedMessage = VALIDATION_ERROR_MESSAGES[String(message || '').trim()] || toSafeText(message);
     const row = document.createElement('div');
     row.className = 'field-error';
-    setText(row, `${toSafeText(field)}: ${toSafeText(message)}`);
+    setText(row, `${toSafeText(field)}: ${toSafeText(normalizedMessage)}`);
     container.appendChild(row);
 
     const input = form[field];
@@ -495,7 +509,7 @@ function renderFieldErrors(form, container, errors) {
     input.classList.add('is-invalid');
     const inline = document.createElement('div');
     inline.className = 'field-error-message';
-    setText(inline, message);
+    setText(inline, normalizedMessage);
     input.insertAdjacentElement('afterend', inline);
   });
 }
@@ -578,4 +592,3 @@ function handlePossiblyUnauthorized(error, state, els) {
     openModal(els.loginModal);
   }
 }
-
