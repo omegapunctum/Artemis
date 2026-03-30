@@ -20,6 +20,10 @@ export async function loadFeatures() {
     }
 
     featuresCache = await response.json();
+    const count = Array.isArray(featuresCache?.features) ? featuresCache.features.length : 0;
+    if (count === 0) {
+      console.warn('data/features.geojson загружен, но не содержит объектов (features = 0).');
+    }
     clearError();
     return featuresCache;
   })();

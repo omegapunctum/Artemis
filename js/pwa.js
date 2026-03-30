@@ -87,9 +87,16 @@ function hideInstallButton() {
 
 async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
+  const swUrl = new URL('sw.js', document.baseURI).pathname;
 
   try {
-    const registration = await navigator.serviceWorker.register('/sw.js');
+    const probe = await fetch(swUrl, { method: 'HEAD', cache: 'no-store' });
+    if (!probe.ok) {
+      console.info(`Service worker не найден (${swUrl}, HTTP ${probe.status}). PWA пропускается.`);
+      return;
+    }
+
+    const registration = await navigator.serviceWorker.register(swUrl);
 
     if (registration.waiting) {
       console.log('New version available');
@@ -107,6 +114,6 @@ async function registerServiceWorker() {
     });
   } catch (error) {
     console.error('Service worker registration failed:', error);
-    showError('Не удалось включить офлайн-режим. Приложение продолжит работу без PWA-кэша.');
+    console.info('PWA режим отключен, приложение продолжит работу без service worker.');
   }
 }

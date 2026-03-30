@@ -1,6 +1,14 @@
 let accessToken = null;
 let refreshPromise = null;
 let initPromise = null;
+let resolvedApiBase = null;
+
+const API_BASE_CANDIDATES = [
+  (window.ARTEMIS_API_BASE || '').trim(),
+  document.querySelector('meta[name="artemis-api-base"]')?.getAttribute('content')?.trim() || '',
+  '/api',
+  ''
+].filter((value, index, array) => value !== null && value !== undefined && array.indexOf(value) === index);
 
 function notifyAuthChanged() {
   window.dispatchEvent(new CustomEvent('artemis:auth-changed', { detail: getCurrentUser() }));
@@ -8,6 +16,45 @@ function notifyAuthChanged() {
 
 function authRequired() {
   window.dispatchEvent(new CustomEvent('artemis:auth-required'));
+}
+
+function normalizePath(path) {
+  const cleanedPath = String(path || '').trim();
+  if (!cleanedPath) return '/';
+  return cleanedPath.startsWith('/') ? cleanedPath : `/${cleanedPath}`;
+}
+
+function buildApiUrl(base, path) {
+  const normalizedPath = normalizePath(path);
+  if (!base) return normalizedPath;
+  const normalizedBase = String(base).replace(/\/+$/, '');
+  return `${normalizedBase}${normalizedPath}`;
+}
+
+async function requestApi(path, options = {}, fallbackMessage = 'API request failed') {
+  const method = String(options?.method || 'GET').toUpperCase();
+  const candidates = resolvedApiBase !== null ? [resolvedApiBase] : API_BASE_CANDIDATES;
+  let lastResponse = null;
+
+  for (const base of candidates) {
+    const url = buildApiUrl(base, path);
+    const response = await fetch(url, options);
+    lastResponse = response;
+
+    if (response.ok) {
+      resolvedApiBase = base;
+      return response;
+    }
+
+    const canTryFallback = (response.status === 404 || response.status === 405) && resolvedApiBase === null;
+    if (!canTryFallback) {
+      throw await buildApiError(response, fallbackMessage);
+    }
+
+    console.warn('ARTEMIS API route fallback', { method, path, tried: url, status: response.status });
+  }
+
+  throw await buildApiError(lastResponse, fallbackMessage);
 }
 
 function parseTokenClaims(token) {
@@ -117,37 +164,33 @@ export function getCurrentUser() {
 }
 
 export async function login(email, password) {
-  const response = await fetch('/auth/login', {
+  const response = await requestApi('/auth/login', {
     method: 'POST',
     headers: new Headers({ 'Content-Type': 'application/json' }),
     credentials: 'include',
     body: JSON.stringify({ email, password })
-  });
+  }, 'Login failed');
 
-  if (!response.ok) throw await buildApiError(response, 'Login failed');
   return parseAccessToken(response);
 }
 
 export async function register(email, password) {
-  const response = await fetch('/auth/register', {
+  const response = await requestApi('/auth/register', {
     method: 'POST',
     headers: new Headers({ 'Content-Type': 'application/json' }),
     credentials: 'include',
     body: JSON.stringify({ email, password })
-  });
+  }, 'Регистрация не выполнена. Проверьте URL API и доступность /auth/register.');
 
-  if (!response.ok) throw await buildApiError(response, 'Register failed');
   return parseAccessToken(response);
 }
 
 export async function logout() {
   try {
-    const response = await fetch('/auth/logout', {
+    const response = await requestApi('/auth/logout', {
       method: 'POST',
       credentials: 'include'
-    });
-
-    if (!response.ok) throw await buildApiError(response, 'Logout failed');
+    }, 'Logout failed');
   } finally {
     clearAuth();
   }
@@ -157,15 +200,10 @@ export async function refreshToken() {
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
-    const response = await fetch('/auth/refresh', {
+    const response = await requestApi('/auth/refresh', {
       method: 'POST',
       credentials: 'include'
-    });
-
-    if (!response.ok) {
-      clearAuth();
-      throw await buildApiError(response, 'Refresh failed');
-    }
+    }, 'Refresh failed');
 
     return parseAccessToken(response);
   })();

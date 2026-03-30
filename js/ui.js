@@ -9,6 +9,7 @@ export async function initUI(map, features) {
   const layers = await loadLayers().catch(() => []);
   const layerLookup = buildLayerLookup(layers, allFeatures);
   setLayerLookup(map, layers);
+  logLayerDiagnostics(allFeatures, layerLookup);
 
   const elements = {
     searchInput: document.getElementById('search-input'),
@@ -102,13 +103,14 @@ function isFeatureLike(feature) {
 function buildLayerLookup(layers, allFeatures) {
   const lookup = new Map();
   (Array.isArray(layers) ? layers : []).forEach((layer) => {
-    const id = String(layer?.id || '').trim();
+    const id = normalizeLayerValue(layer?.layer_id || layer?.id);
     if (!id) return;
-    lookup.set(id, String(layer?.name_ru || layer?.label || id));
+    const label = normalizeLayerLabel(layer?.name_ru || layer?.label, id);
+    lookup.set(id, label);
   });
 
   allFeatures.forEach((feature) => {
-    const id = String(feature?.properties?.layer_id || '').trim();
+    const id = normalizeLayerValue(feature?.properties?.layer_id);
     if (!id || lookup.has(id)) return;
     lookup.set(id, id);
   });
@@ -135,7 +137,7 @@ function filterFeatures(features, filters) {
   return features.filter((feature) => {
     const properties = feature?.properties && typeof feature.properties === 'object' ? feature.properties : {};
     const name = String(properties.name_ru || '').toLowerCase();
-    const layerId = String(properties.layer_id || '').trim();
+    const layerId = normalizeLayerValue(properties.layer_id);
     const dateStart = parseYear(properties.date_start);
     const dateEnd = parseYear(properties.date_end);
     const effectiveStart = Number.isFinite(dateStart) ? dateStart : dateEnd;
@@ -171,7 +173,7 @@ function renderList(container, features, layerLookup, map) {
 
   features.slice(0, 50).forEach((feature) => {
     const properties = feature?.properties && typeof feature.properties === 'object' ? feature.properties : {};
-    const layerId = String(properties.layer_id || '').trim();
+    const layerId = normalizeLayerValue(properties.layer_id);
     const layerLabel = layerLookup.get(layerId) || layerId || 'Слой не указан';
     const year = [properties.date_start, properties.date_end].find((value) => value !== null && value !== undefined && value !== '') || 'Год не указан';
     const hasGeometry = feature?.geometry?.type === 'Point' && Array.isArray(feature?.geometry?.coordinates);
@@ -209,3 +211,23 @@ function countActiveFilters(filters) {
   return ['search', 'layerId', 'dateFrom', 'dateTo'].reduce((count, key) => count + (String(filters[key] || '').trim() ? 1 : 0), 0);
 }
 
+function normalizeLayerValue(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const arrayMatch = raw.match(/^\[\s*['"]([^'"]+)['"]\s*\]$/);
+  return arrayMatch ? arrayMatch[1].trim() : raw;
+}
+
+function normalizeLayerLabel(value, fallback) {
+  const cleaned = normalizeLayerValue(value);
+  if (!cleaned) return fallback;
+  return /^rec[A-Za-z0-9]{10,}$/.test(cleaned) ? fallback : cleaned;
+}
+
+function logLayerDiagnostics(features, layerLookup) {
+  const featureLayerIds = new Set(features.map((feature) => normalizeLayerValue(feature?.properties?.layer_id)).filter(Boolean));
+  const unknownLayerIds = [...featureLayerIds].filter((id) => !layerLookup.has(id));
+  if (unknownLayerIds.length > 0) {
+    console.warn('Найдены layer_id в features.geojson без соответствия в layers.json:', unknownLayerIds.slice(0, 20));
+  }
+}

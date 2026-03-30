@@ -79,9 +79,9 @@ export function updateMapData(map, featureCollection, options = {}) {
 export function setLayerLookup(map, layers = []) {
   const lookup = new Map();
   (Array.isArray(layers) ? layers : []).forEach((layer) => {
-    const id = String(layer?.id || '').trim();
+    const id = normalizeLayerValue(layer?.layer_id || layer?.id);
     if (!id) return;
-    lookup.set(id, layer?.name_ru || layer?.label || id);
+    lookup.set(id, normalizeLayerLabel(layer?.name_ru || layer?.label, id));
   });
   map.__artemis = map.__artemis || {};
   map.__artemis.layerLookup = lookup;
@@ -253,7 +253,8 @@ function buildPopupContent(feature, layerLookup = new Map()) {
 
   article.appendChild(createTextElement('p', props.description, { fallback: 'Описание отсутствует' }));
 
-  article.appendChild(buildPopupMeta('Слой:', String(layerLookup.get(String(props.layer_id || '').trim()) || props.layer_id || 'Слой не указан')));
+  const layerId = normalizeLayerValue(props.layer_id);
+  article.appendChild(buildPopupMeta('Слой:', String(layerLookup.get(layerId) || layerId || 'Слой не указан')));
   const dateText = [props?.date_start, props?.date_end].filter((value) => value !== null && value !== undefined && value !== '').join(' — ') || 'Даты не указаны';
   article.appendChild(buildPopupMeta('Даты:', String(dateText)));
 
@@ -288,6 +289,19 @@ function buildPopupMeta(label, value) {
 
 function createImageFallback() {
   return createTextElement('div', 'Изображение отсутствует', { className: 'popup-image placeholder' });
+}
+
+function normalizeLayerValue(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  const arrayMatch = raw.match(/^\[\s*['"]([^'"]+)['"]\s*\]$/);
+  return arrayMatch ? arrayMatch[1].trim() : raw;
+}
+
+function normalizeLayerLabel(value, fallback) {
+  const cleaned = normalizeLayerValue(value);
+  if (!cleaned) return fallback;
+  return /^rec[A-Za-z0-9]{10,}$/.test(cleaned) ? fallback : cleaned;
 }
 
 function fitToFeatures(map, geojson) {
