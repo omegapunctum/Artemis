@@ -1,5 +1,5 @@
 import { loadLayers } from './data.js';
-import { updateMapData, setLayerLookup, focusFeatureOnMap, getMapFeatureCount } from './map.js';
+import { updateMapData, setLayerLookup, focusFeatureOnMap, getMapFeatureCount, getMapBuildDiagnostics } from './map.js';
 import { debounce } from './ux.js';
 import { createTextElement } from './safe-dom.js';
 
@@ -21,6 +21,8 @@ export async function initUI(map, features) {
     sidebarToggle: document.getElementById('sidebar-toggle'),
     resultsCount: document.getElementById('results-count'),
     mapCount: document.getElementById('map-count'),
+    sourceCount: document.getElementById('source-count'),
+    pointValidCount: document.getElementById('point-valid-count'),
     activeFiltersCount: document.getElementById('active-filters-count'),
     statusMessage: document.getElementById('status-message')
   };
@@ -197,14 +199,18 @@ function renderList(container, features, layerLookup, map) {
 }
 
 function updateCounters(elements, state, map) {
+  const diagnostics = getMapBuildDiagnostics(map);
   elements.resultsCount.textContent = String(state.filteredFeatures.length);
   elements.mapCount.textContent = String(getMapFeatureCount(map));
+  elements.sourceCount.textContent = String(diagnostics.inputTotal);
+  elements.pointValidCount.textContent = String(diagnostics.validPoints);
   elements.activeFiltersCount.textContent = String(countActiveFilters(state.filters));
 }
 
 function updateStatus(elements, state, map) {
   const activeFilters = countActiveFilters(state.filters);
-  elements.statusMessage.textContent = `Карта готова. Найдено ${state.filteredFeatures.length}, на карте ${getMapFeatureCount(map)}, активных фильтров ${activeFilters}.`;
+  const diagnostics = getMapBuildDiagnostics(map);
+  elements.statusMessage.textContent = `Карта готова. Загружено из файла ${diagnostics.inputTotal}, прошли Point-фильтр ${diagnostics.validPoints}, на карте ${getMapFeatureCount(map)}, после фильтров списка ${state.filteredFeatures.length}, активных фильтров ${activeFilters}.`;
 }
 
 function countActiveFilters(filters) {

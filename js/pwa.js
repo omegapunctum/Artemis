@@ -87,16 +87,21 @@ function hideInstallButton() {
 
 async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
-  const swUrl = new URL('sw.js', document.baseURI).pathname;
+  const swUrl = new URL('sw.js', document.baseURI);
+  const basePath = getBasePath();
+  const expectedScope = new URL(basePath, window.location.origin).href;
 
   try {
-    const probe = await fetch(swUrl, { method: 'HEAD', cache: 'no-store' });
+    await unregisterMismatchedWorkers(expectedScope);
+
+    const probe = await fetch(swUrl.href, { method: 'HEAD', cache: 'no-store' });
     if (!probe.ok) {
-      console.info(`Service worker не найден (${swUrl}, HTTP ${probe.status}). PWA пропускается.`);
+      console.info(`Service worker не найден (${swUrl.href}, HTTP ${probe.status}). PWA пропускается.`);
       return;
     }
 
-    const registration = await navigator.serviceWorker.register(swUrl);
+    const registration = await navigator.serviceWorker.register(swUrl.href, { scope: basePath });
+    console.info('[PWA] Service worker registered', { swUrl: swUrl.href, scope: registration.scope, expectedScope });
 
     if (registration.waiting) {
       console.log('New version available');
@@ -114,6 +119,28 @@ async function registerServiceWorker() {
     });
   } catch (error) {
     console.error('Service worker registration failed:', error);
-    console.info('PWA режим отключен, приложение продолжит работу без service worker.');
+    console.info('PWA режим отключен (fail-safe), приложение продолжит работу напрямую из сети без service worker.');
   }
+}
+
+function getBasePath() {
+  const path = window.location.pathname || '/';
+  const segments = path.split('/').filter(Boolean);
+  if (segments.length > 0 && !segments[segments.length - 1].includes('.')) {
+    return `/${segments.join('/')}/`;
+  }
+  return segments.length > 1 ? `/${segments.slice(0, -1).join('/')}/` : '/';
+}
+
+async function unregisterMismatchedWorkers(expectedScope) {
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  await Promise.all(registrations.map(async (registration) => {
+    if (registration.scope !== expectedScope) {
+      await registration.unregister();
+      console.warn('[PWA] Unregistered mismatched service worker scope', {
+        foundScope: registration.scope,
+        expectedScope
+      });
+    }
+  }));
 }

@@ -57,6 +57,8 @@
     </section>
 
     <section class="results-summary" aria-label="Сводка результатов">
+      <div><strong>Загружено из файла:</strong> <span id="source-count">0</span></div>
+      <div><strong>Валидные Point:</strong> <span id="point-valid-count">0</span></div>
       <div><strong>Найдено:</strong> <span id="results-count">0</span></div>
       <div><strong>На карте:</strong> <span id="map-count">0</span></div>
       <div><strong>Активных фильтров:</strong> <span id="active-filters-count">0</span></div>
@@ -160,6 +162,8 @@
       clearError();
       setStatus('Загрузка данных…', { loading: true });
       const features = await loadFeatures();
+      const sourceCount = Array.isArray(features?.features) ? features.features.length : 0;
+      setStatus(`Данные загружены: ${sourceCount} из файла features.geojson.`, { loading: true });
 
       setStatus('Инициализация карты…', { loading: true });
       const map = initMap('map', features);

@@ -14,13 +14,27 @@ export async function loadFeatures() {
   showLoading();
 
   featuresInFlight = (async () => {
-    const response = await fetchWithRetry(`${DATA_BASE_PATH}features.geojson`);
+    const requestUrl = new URL(`${DATA_BASE_PATH}features.geojson`, document.baseURI);
+    const response = await fetchWithRetry(requestUrl.href);
     if (!response.ok) {
       throw new Error(`Не удалось загрузить features.geojson: HTTP ${response.status}`);
     }
 
     featuresCache = await response.json();
-    const count = Array.isArray(featuresCache?.features) ? featuresCache.features.length : 0;
+    const rawFeatures = Array.isArray(featuresCache?.features) ? featuresCache.features : [];
+    const count = rawFeatures.length;
+    const firstFeature = rawFeatures[0] || null;
+    const firstGeometryType = firstFeature?.geometry?.type || null;
+    const firstCoordinates = firstFeature?.geometry?.coordinates || null;
+
+    console.info('[ARTEMIS:data] features.geojson loaded', {
+      requestedUrl: requestUrl.href,
+      responseUrl: response.url,
+      featureCount: count,
+      firstGeometryType,
+      firstCoordinates
+    });
+
     if (count === 0) {
       console.warn('data/features.geojson загружен, но не содержит объектов (features = 0).');
     }

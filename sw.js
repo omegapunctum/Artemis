@@ -19,28 +19,33 @@ const OFFLINE_STYLE = {
     }
   ]
 };
+const BASE_PATH = getBasePath();
+const PRECACHE_PATHS = [
+  '',
+  'index.html',
+  'manifest.json',
+  'css/style.css',
+  'js/auth.js',
+  'js/data.js',
+  'js/map.js',
+  'js/pwa.js',
+  'js/ui.js',
+  'js/ui.ugc.js',
+  'js/ui.moderation.js',
+  'js/ugc.js',
+  'js/uploads.js',
+  'js/state.js',
+  'js/ux.js',
+  'icons/icon-192.svg',
+  'icons/icon-512.svg',
+];
 const PRECACHE_URLS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/css/style.css',
-  '/js/auth.js',
-  '/js/data.js',
-  '/js/map.js',
-  '/js/pwa.js',
-  '/js/ui.js',
-  '/js/ui.ugc.js',
-  '/js/ui.moderation.js',
-  '/js/ugc.js',
-  '/js/uploads.js',
-  '/js/state.js',
-  '/js/ux.js',
-  '/icons/icon-192.svg',
-  '/icons/icon-512.svg',
+  ...PRECACHE_PATHS.map((path) => toBaseUrl(path)),
   MAPLIBRE_SCRIPT_URL,
   MAPLIBRE_STYLE_URL,
   MAP_STYLE_URL
 ];
+const INDEX_URL = toBaseUrl('index.html');
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
@@ -54,7 +59,7 @@ self.addEventListener('install', (event) => {
           throw error;
         }
       }));
-      const requiredFailures = results.filter((result, index) => result.status === 'rejected' && PRECACHE_URLS[index].startsWith('/'));
+      const requiredFailures = results.filter((result, index) => result.status === 'rejected' && PRECACHE_URLS[index].startsWith(self.location.origin));
       if (requiredFailures.length) {
         throw requiredFailures[0].reason;
       }
@@ -125,19 +130,24 @@ self.addEventListener('fetch', (event) => {
 });
 
 function isPrivateRequest(url) {
+  const privatePaths = [
+    'auth',
+    'me',
+    'profile',
+    'drafts',
+    'moderation',
+    'uploads',
+    'ugc',
+    'api/private',
+    'api/admin',
+    'api/moderation',
+    'api/drafts'
+  ];
+  const normalizedPath = trimBasePath(url.pathname);
+
   return [
-    '/auth',
-    '/me',
-    '/profile',
-    '/drafts',
-    '/moderation',
-    '/uploads',
-    '/ugc',
-    '/api/private',
-    '/api/admin',
-    '/api/moderation',
-    '/api/drafts'
-  ].some((path) => url.pathname === path || url.pathname.startsWith(`${path}/`));
+    ...privatePaths
+  ].some((path) => normalizedPath === path || normalizedPath.startsWith(`${path}/`));
 }
 
 function isAllowedCrossOrigin(url) {
@@ -145,7 +155,7 @@ function isAllowedCrossOrigin(url) {
 }
 
 function isDataRequest(url) {
-  return url.pathname.startsWith('/data/') && /\.(json|geojson)$/i.test(url.pathname);
+  return trimBasePath(url.pathname).startsWith('data/') && /\.(json|geojson)$/i.test(url.pathname);
 }
 
 function isStaticAssetRequest(url, request) {
@@ -160,7 +170,7 @@ function isStaticAssetRequest(url, request) {
 async function handleNavigationRequest(request) {
   try {
     const cache = await caches.open(STATIC_CACHE);
-    const cachedResponse = await cache.match('/index.html');
+    const cachedResponse = await cache.match(INDEX_URL);
 
     if (cachedResponse) {
       console.debug('[SW] navigation cache hit');
@@ -168,12 +178,12 @@ async function handleNavigationRequest(request) {
     }
 
     const networkResponse = await fetch(request);
-    await cache.put('/index.html', networkResponse.clone());
+    await cache.put(INDEX_URL, networkResponse.clone());
     console.debug('[SW] navigation cache miss -> network');
     return networkResponse;
   } catch (error) {
     console.debug('[SW] navigation network failed, fallback to cached shell');
-    const fallback = await caches.match('/index.html');
+    const fallback = await caches.match(INDEX_URL);
     if (fallback) return fallback;
     return Response.error();
   }
@@ -207,6 +217,25 @@ async function handleStaticRequest(request) {
       return Response.error();
     }
   }
+}
+
+function getBasePath() {
+  const registrationPath = new URL(self.registration.scope).pathname;
+  return registrationPath.endsWith('/') ? registrationPath : `${registrationPath}/`;
+}
+
+function toBaseUrl(path) {
+  const normalized = String(path || '').replace(/^\/+/, '');
+  return new URL(normalized, self.location.origin + BASE_PATH).href;
+}
+
+function trimBasePath(pathname) {
+  const normalizedPath = pathname.startsWith('/') ? pathname : `/${pathname}`;
+  if (normalizedPath === BASE_PATH.slice(0, -1)) return '';
+  if (normalizedPath.startsWith(BASE_PATH)) {
+    return normalizedPath.slice(BASE_PATH.length);
+  }
+  return normalizedPath.replace(/^\/+/, '');
 }
 
 async function handleDataRequest(request) {

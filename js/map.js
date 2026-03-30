@@ -8,13 +8,43 @@ const POPUP_CLASS_NAME = 'artemis-popup';
 
 // Нормализует FeatureCollection и исключает битые объекты из карты.
 function buildMapFeatureCollection(features) {
-  const safeFeatures = Array.isArray(features?.features) ? features.features : [];
+  const inputFeatures = Array.isArray(features?.features) ? features.features : [];
+  const total = inputFeatures.length;
+  let pointValid = 0;
+  let dropped = 0;
+
+  const safeFeatures = inputFeatures.filter((feature) => {
+    const valid = hasPointGeometry(feature);
+    if (valid) {
+      pointValid += 1;
+    } else {
+      dropped += 1;
+    }
+    return valid;
+  });
+
+  console.info('[ARTEMIS:map] buildMapFeatureCollection', {
+    inputTotal: total,
+    validPoints: pointValid,
+    dropped
+  });
+  if (total > 0 && safeFeatures.length === 0) {
+    console.warn('[ARTEMIS:map] Все features были отброшены фильтром геометрии (hasPointGeometry).');
+  }
+
   return {
-    type: 'FeatureCollection',
-    features: safeFeatures.filter(hasPointGeometry).map((feature) => ({
-      ...feature,
-      properties: feature?.properties && typeof feature.properties === 'object' ? feature.properties : {}
-    }))
+    collection: {
+      type: 'FeatureCollection',
+      features: safeFeatures.map((feature) => ({
+        ...feature,
+        properties: feature?.properties && typeof feature.properties === 'object' ? feature.properties : {}
+      }))
+    },
+    diagnostics: {
+      inputTotal: total,
+      validPoints: pointValid,
+      dropped
+    }
   };
 }
 
@@ -39,11 +69,13 @@ export function initMap(containerId, features) {
   });
 
   map.addControl(new maplibregl.NavigationControl(), 'top-right');
+  const initialBuild = buildMapFeatureCollection(features);
   map.__artemis = {
     popup: null,
     layerLookup: new Map(),
     lastMapFeatureCount: 0,
-    pendingFeatureCollection: buildMapFeatureCollection(features)
+    lastBuildDiagnostics: initialBuild.diagnostics,
+    pendingFeatureCollection: initialBuild.collection
   };
 
   map.on('load', () => {
@@ -59,8 +91,10 @@ export function initMap(containerId, features) {
 
 // Обновляет данные source без пересоздания карты.
 export function updateMapData(map, featureCollection, options = {}) {
-  const mapData = buildMapFeatureCollection(featureCollection);
+  const buildResult = buildMapFeatureCollection(featureCollection);
+  const mapData = buildResult.collection;
   map.__artemis = map.__artemis || {};
+  map.__artemis.lastBuildDiagnostics = buildResult.diagnostics;
   map.__artemis.pendingFeatureCollection = mapData;
   const source = map.getSource(SOURCE_ID);
   if (source) {
@@ -90,6 +124,10 @@ export function setLayerLookup(map, layers = []) {
 // Возвращает количество объектов, реально попавших в map source.
 export function getMapFeatureCount(map) {
   return Number(map?.__artemis?.lastMapFeatureCount || 0);
+}
+
+export function getMapBuildDiagnostics(map) {
+  return map?.__artemis?.lastBuildDiagnostics || { inputTotal: 0, validPoints: 0, dropped: 0 };
 }
 
 // Открывает popup и переводит карту к объекту, если геометрия существует.
