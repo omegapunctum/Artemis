@@ -44,6 +44,32 @@ jobs:
             exit 1
           fi
 
+      - name: Release guard: validate features.geojson
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("data/features.geojson")
+          if not path.exists():
+              raise SystemExit("ERROR: data/features.geojson not found")
+
+          raw = path.read_text(encoding="utf-8").strip()
+          if not raw:
+              print("WARNING: data/features.geojson is empty, skipping schema check")
+              raise SystemExit(0)
+
+          try:
+              payload = json.loads(raw)
+          except json.JSONDecodeError as exc:
+              raise SystemExit(f"ERROR: invalid JSON in data/features.geojson: {exc}") from exc
+
+          if not isinstance(payload, dict) or payload.get("type") != "FeatureCollection":
+              raise SystemExit("ERROR: data/features.geojson must be a GeoJSON FeatureCollection")
+
+          print("Release guard OK: FeatureCollection is valid")
+          PY
+
       - name: Debug data files
         run: ls -lh data/
 

@@ -22,7 +22,7 @@ from .utils import (
     COOKIE_PATH,
     COOKIE_SAMESITE,
     COOKIE_SECURE,
-    REFRESH_TOKEN_EXPIRE_DAYS,
+    REFRESH_COOKIE_MAX_AGE,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -37,7 +37,7 @@ def set_refresh_cookie(response: Response, refresh_token: str) -> None:
         samesite=COOKIE_SAMESITE,
         domain=COOKIE_DOMAIN,
         path=COOKIE_PATH,
-        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        max_age=REFRESH_COOKIE_MAX_AGE,
     )
 
 

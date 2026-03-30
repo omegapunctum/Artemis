@@ -36,6 +36,7 @@ COOKIE_SECURE = _env_bool("COOKIE_SECURE", APP_ENV == "production")
 COOKIE_SAMESITE = os.getenv("COOKIE_SAMESITE", "lax")
 COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN") or None
 COOKIE_PATH = os.getenv("COOKIE_PATH", "/")
+REFRESH_COOKIE_MAX_AGE = int(os.getenv("REFRESH_COOKIE_MAX_AGE", str(REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60)))
 
 
 def hash_password(password: str) -> str:
