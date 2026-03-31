@@ -751,7 +751,7 @@ def validate_feature(mapped: Dict[str, Any], layer_ids: set[str], warnings: List
     if mapped.get("coordinates_source"):
         warning("coordinates_source", "coordinates_source_saved_as_is")
     if mapped.get("image_url") and not is_valid_url(mapped.get("image_url")):
-        warning("image_url", "invalid_image_url_nonfatal")
+        critical("image_url", "invalid_image_url")
     layer_id = mapped.get("layer_id")
     if mapped.get("_invalid_layer_link"):
         critical("layer_id", "invalid_layer_link_format")
