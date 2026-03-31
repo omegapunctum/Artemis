@@ -965,6 +965,23 @@ def main() -> int:
             )
             continue
 
+        record_errors_start = len(errors)
+        feature_valid = validate_feature(mapped, valid_layer_ids, warnings, errors)
+        if not feature_valid:
+            critical_reasons = [
+                issue.get("reason")
+                for issue in errors[record_errors_start:]
+                if issue.get("severity") == "critical" and issue.get("record_id") == (mapped.get("id") or "<missing>")
+            ]
+            rejected_features.append(
+                {
+                    "id": mapped.get("id") or "<missing>",
+                    "name_ru": mapped.get("name_ru"),
+                    "reasons": critical_reasons,
+                }
+            )
+            continue
+
         etl_error = get_etl_error(mapped)
         if etl_error is not None:
             rejected_features.append(
