@@ -3,6 +3,7 @@ import { appendText, createTextElement, normalizeSafeUrl, setSafeLink, setText, 
 const SOURCE_ID = 'artemis-features';
 const LAYER_ID = 'artemis-points';
 const SELECTED_LAYER_ID = 'artemis-points-selected';
+const HOVER_LAYER_ID = 'artemis-points-hover';
 const CLUSTER_LAYER_ID = 'artemis-clusters';
 const CLUSTER_COUNT_LAYER_ID = 'artemis-cluster-count';
 const POPUP_CLASS_NAME = 'artemis-popup';
@@ -82,6 +83,7 @@ export function initMap(containerId, features) {
     pendingFeatureCollection: initialBuild.collection,
     featureClickHandler: null,
     selectedFeatureId: null,
+    hoveredFeatureId: null,
     currentYearFilter: null
   };
 
@@ -153,6 +155,13 @@ export function setSelectedFeatureId(map, featureId = null) {
   if (!map || !map.getLayer) return;
   map.__artemis = map.__artemis || {};
   map.__artemis.selectedFeatureId = featureId ? String(featureId) : null;
+  applyLayerFilters(map);
+}
+
+export function setHoveredFeatureId(map, featureId = null) {
+  if (!map || !map.getLayer) return;
+  map.__artemis = map.__artemis || {};
+  map.__artemis.hoveredFeatureId = featureId ? String(featureId) : null;
   applyLayerFilters(map);
 }
 
@@ -240,6 +249,19 @@ function loadGeoJSON(map, featureCollection) {
     },
     filter: ['==', ['get', '_ui_id'], '__none__']
   });
+  map.addLayer({
+    id: HOVER_LAYER_ID,
+    type: 'circle',
+    source: SOURCE_ID,
+    paint: {
+      'circle-radius': 11,
+      'circle-color': 'rgba(147, 197, 253, 0.25)',
+      'circle-stroke-color': '#93c5fd',
+      'circle-stroke-width': 2,
+      'circle-opacity': 1
+    },
+    filter: ['==', ['get', '_ui_id'], '__none__']
+  });
   applyLayerFilters(map);
   // =========================================
 }
@@ -247,6 +269,7 @@ function loadGeoJSON(map, featureCollection) {
 function applyLayerFilters(map) {
   const timelineFilter = map?.__artemis?.currentYearFilter;
   const selectedFeatureId = map?.__artemis?.selectedFeatureId;
+  const hoveredFeatureId = map?.__artemis?.hoveredFeatureId;
   if (map.getLayer(CLUSTER_LAYER_ID)) {
     map.setFilter(CLUSTER_LAYER_ID, combineFilters([timelineFilter, ['has', 'point_count']]));
   }
@@ -261,6 +284,12 @@ function applyLayerFilters(map) {
       ? ['==', ['get', '_ui_id'], selectedFeatureId]
       : ['==', ['get', '_ui_id'], '__none__'];
     map.setFilter(SELECTED_LAYER_ID, combineFilters([timelineFilter, ['!', ['has', 'point_count']], selectedFilter]));
+  }
+  if (map.getLayer(HOVER_LAYER_ID)) {
+    const hoverFilter = hoveredFeatureId
+      ? ['==', ['get', '_ui_id'], hoveredFeatureId]
+      : ['==', ['get', '_ui_id'], '__none__'];
+    map.setFilter(HOVER_LAYER_ID, combineFilters([timelineFilter, ['!', ['has', 'point_count']], hoverFilter]));
   }
 }
 
