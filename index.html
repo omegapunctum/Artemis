@@ -66,8 +66,16 @@
 
     <section id="bottom-panel" class="glass-panel" aria-label="Timeline and cards">
       <div id="timeline" class="timeline-row">
-        <div id="timeline-range-label">1600–1650</div>
-        <div class="timeline-sliders">
+        <div class="timeline-head">
+          <div id="timeline-range-label">Selected range</div>
+          <div id="timeline-range-capsule" class="timeline-capsule">1600–1650</div>
+        </div>
+        <div class="timeline-track-wrap">
+          <div class="timeline-track-base"></div>
+          <div id="timeline-active-range" class="timeline-active-range"></div>
+          <div id="timeline-knob-start" class="timeline-knob"></div>
+          <div id="timeline-knob-end" class="timeline-knob"></div>
+          <div id="timeline-axis" class="timeline-axis" aria-hidden="true"></div>
           <input id="timeline-start" type="range" min="-3000" max="2026" value="1600" step="1" />
           <input id="timeline-end" type="range" min="-3000" max="2026" value="1650" step="1" />
         </div>

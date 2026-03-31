@@ -1,9 +1,11 @@
 import { loadLayers } from './data.js';
-import { updateMapData, setLayerLookup, focusFeatureOnMap, getMapFeatureCount, getMapBuildDiagnostics, setMapFeatureClickHandler, setMapLayerFilter } from './map.js';
+import { updateMapData, setLayerLookup, focusFeatureOnMap, getMapFeatureCount, getMapBuildDiagnostics, setMapFeatureClickHandler, setMapLayerFilter, setSelectedFeatureId } from './map.js';
 import { debounce } from './ux.js';
 
 export async function initUI(map, features) {
-  const allFeatures = Array.isArray(features?.features) ? features.features.filter(isFeatureLike) : [];
+  const allFeatures = Array.isArray(features?.features)
+    ? features.features.filter(isFeatureLike).map(enrichFeatureForUiKey)
+    : [];
   const layers = await loadLayers().catch(() => []);
   const layerLookup = buildLayerLookup(layers, allFeatures);
   setLayerLookup(map, layers);
@@ -14,6 +16,11 @@ export async function initUI(map, features) {
     timelineStart: document.getElementById('timeline-start'),
     timelineEnd: document.getElementById('timeline-end'),
     timelineLabel: document.getElementById('timeline-range-label'),
+    timelineCapsule: document.getElementById('timeline-range-capsule'),
+    timelineActiveRange: document.getElementById('timeline-active-range'),
+    timelineKnobStart: document.getElementById('timeline-knob-start'),
+    timelineKnobEnd: document.getElementById('timeline-knob-end'),
+    timelineAxis: document.getElementById('timeline-axis'),
     cardsRibbon: document.getElementById('cards-ribbon') || document.getElementById('object-list'),
     cardsState: document.getElementById('cards-state'),
     floatingCard: document.getElementById('floating-card'),
@@ -44,7 +51,7 @@ export async function initUI(map, features) {
     currentEndYear: years.max,
     loading: true,
     error: '',
-    activeFeature: null
+    selectedFeatureId: null
   };
 
   hydrateTimeline(elements, years, state);
@@ -66,6 +73,10 @@ export async function initUI(map, features) {
 
     updateMapData(map, { type: 'FeatureCollection', features: state.filteredFeatures });
     setMapLayerFilter(map, buildMapYearFilter(state.currentStartYear, state.currentEndYear));
+    if (state.selectedFeatureId && !state.filteredFeatures.some((f) => getFeatureUiId(f) === state.selectedFeatureId)) {
+      clearSelection(state, elements, map);
+    }
+    setSelectedFeatureId(map, state.selectedFeatureId);
     renderCards(elements, state, map);
     updateCounters(elements, state, map);
     updateStatus(elements, state, map);
@@ -85,6 +96,7 @@ export async function initUI(map, features) {
     elements.timelineStart.value = String(state.currentStartYear);
     syncLegacyDateInputs(elements, state);
     updateTimelineLabel(elements, state);
+    updateTimelineViz(elements, state);
     applyState();
   });
   elements.timelineEnd?.addEventListener('input', () => {
@@ -92,6 +104,7 @@ export async function initUI(map, features) {
     elements.timelineEnd.value = String(state.currentEndYear);
     syncLegacyDateInputs(elements, state);
     updateTimelineLabel(elements, state);
+    updateTimelineViz(elements, state);
     applyState();
   });
 
@@ -101,11 +114,14 @@ export async function initUI(map, features) {
   });
 
   setMapFeatureClickHandler(map, (feature, coordinates) => {
-    state.activeFeature = feature;
-    showFloatingCard(map, elements, feature, coordinates);
+    selectFeature(state, elements, map, feature, {
+      coordinates,
+      openFloating: true,
+      scrollCard: true
+    });
   });
   map.on('move', () => {
-    const feature = state.activeFeature;
+    const feature = getSelectedFeature(state);
     if (feature && !elements.floatingCard?.hidden) {
       const coords = feature?.geometry?.coordinates;
       if (Array.isArray(coords)) positionFloatingCard(map, elements.floatingCard, coords);
@@ -119,8 +135,7 @@ export async function initUI(map, features) {
     const withinFloating = elements.floatingCard.contains(target);
     const withinCard = target.closest?.('.ribbon-card');
     if (!withinFloating && !withinCard) {
-      state.activeFeature = null;
-      hideFloatingCard(elements);
+      clearSelection(state, elements, map);
     }
   });
 
@@ -151,13 +166,12 @@ function renderCards(elements, state, map) {
   renderCardsState(elements, { ...state, loading: false, empty: false });
   state.filteredFeatures.slice(0, 80).forEach((feature) => {
     const props = normalizeProps(feature);
+    const featureId = getFeatureUiId(feature);
     const item = document.createElement('li');
-    item.className = 'ribbon-card';
+    item.className = `ribbon-card${state.selectedFeatureId === featureId ? ' is-selected' : ''}`;
+    item.dataset.featureId = featureId;
 
-    const image = document.createElement('img');
-    image.src = String(props.image_url || '').trim() || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-    image.alt = String(props.name_ru || 'Object image');
-    image.loading = 'lazy';
+    const image = buildImageNode(props, 'Object image');
 
     const meta = document.createElement('div');
     meta.className = 'meta';
@@ -165,14 +179,14 @@ function renderCards(elements, state, map) {
     title.textContent = String(props.name_ru || 'Без названия');
     const date = document.createElement('p');
     date.textContent = formatRange(props.date_start, props.date_end);
-    meta.append(title, date);
+    const tag = document.createElement('p');
+    tag.className = 'tag';
+    tag.textContent = String(props.title_short || state.layerLookup.get(String(props.layer_id || '').trim()) || '').slice(0, 56);
+    meta.append(title, date, tag);
 
     item.append(image, meta);
     item.addEventListener('click', () => {
-      focusFeatureOnMap(map, feature);
-      state.activeFeature = feature;
-      const coords = feature?.geometry?.coordinates;
-      showFloatingCard(map, elements, feature, Array.isArray(coords) ? coords : null);
+      selectFeature(state, elements, map, feature, { centerOnMap: true, openFloating: true, scrollCard: false });
     });
 
     list.appendChild(item);
@@ -183,9 +197,13 @@ function showFloatingCard(map, elements, feature, coordinates) {
   const props = normalizeProps(feature);
   elements.floatingTitle.textContent = String(props.name_ru || 'Без названия');
   elements.floatingDate.textContent = formatRange(props.date_start, props.date_end);
-  elements.floatingDescription.textContent = String(props.description || 'Описание отсутствует.');
-  elements.floatingImage.src = String(props.image_url || '').trim() || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-  elements.floatingImage.alt = String(props.name_ru || 'Object image');
+  elements.floatingDescription.textContent = truncateText(String(props.description || 'Описание отсутствует.'), 180);
+  const safeImage = String(props.image_url || '').trim();
+  elements.floatingImage.hidden = !safeImage;
+  if (safeImage) {
+    elements.floatingImage.src = safeImage;
+    elements.floatingImage.alt = String(props.name_ru || 'Object image');
+  }
   elements.floatingCard.hidden = false;
 
   if (Array.isArray(coordinates)) {
@@ -211,12 +229,16 @@ function renderCardsState(elements, state) {
   if (state.loading) {
     elements.cardsState.classList.add('is-loading');
     elements.cardsState.textContent = 'Loading events…';
+    renderCardsSkeleton(elements, 4);
   } else if (state.error) {
     elements.cardsState.classList.add('is-error');
+    elements.cardsState.classList.add('has-inline-error');
     elements.cardsState.textContent = `Error: ${state.error}`;
+    if (elements.cardsRibbon) elements.cardsRibbon.replaceChildren();
   } else if (state.empty) {
     elements.cardsState.classList.add('is-empty');
-    elements.cardsState.textContent = 'No results in selected time range';
+    elements.cardsState.textContent = 'No objects in this time range';
+    if (elements.cardsRibbon) elements.cardsRibbon.replaceChildren();
   } else {
     elements.cardsState.textContent = `${state.filteredFeatures.length} objects`;
   }
@@ -230,14 +252,32 @@ function hydrateTimeline(elements, years, state) {
   elements.timelineEnd.max = String(years.max);
   elements.timelineStart.value = String(state.currentStartYear);
   elements.timelineEnd.value = String(state.currentEndYear);
+  renderTimelineAxis(elements, years);
   syncLegacyDateInputs(elements, state);
   updateTimelineLabel(elements, state);
+  updateTimelineViz(elements, state);
 }
 
 function updateTimelineLabel(elements, state) {
   if (elements.timelineLabel) {
-    elements.timelineLabel.textContent = `${state.currentStartYear}–${state.currentEndYear}`;
+    elements.timelineLabel.textContent = 'Selected range';
   }
+  if (elements.timelineCapsule) {
+    elements.timelineCapsule.textContent = `${state.currentStartYear}–${state.currentEndYear}`;
+  }
+}
+
+function updateTimelineViz(elements, state) {
+  if (!elements.timelineActiveRange) return;
+  const min = Number(elements.timelineStart?.min ?? state.currentStartYear);
+  const max = Number(elements.timelineStart?.max ?? state.currentEndYear);
+  const span = Math.max(1, max - min);
+  const left = ((state.currentStartYear - min) / span) * 100;
+  const right = ((state.currentEndYear - min) / span) * 100;
+  elements.timelineActiveRange.style.left = `${left}%`;
+  elements.timelineActiveRange.style.right = `${100 - right}%`;
+  if (elements.timelineKnobStart) elements.timelineKnobStart.style.left = `${left}%`;
+  if (elements.timelineKnobEnd) elements.timelineKnobEnd.style.left = `${right}%`;
 }
 
 function syncLegacyDateInputs(elements, state) {
@@ -275,9 +315,72 @@ function updateStatus(elements, state, map) {
   const diagnostics = getMapBuildDiagnostics(map);
   elements.statusMessage.textContent = `Карта готова. Загружено ${diagnostics.inputTotal}, отображается ${getMapFeatureCount(map)}, в ленте ${state.filteredFeatures.length}.`;
 }
+function selectFeature(state, elements, map, feature, options = {}) {
+  const selectedFeature = state.allFeatures.find((candidate) => getFeatureUiId(candidate) === getFeatureUiId(feature));
+  if (!selectedFeature) return;
+  state.selectedFeatureId = getFeatureUiId(selectedFeature);
+  setSelectedFeatureId(map, state.selectedFeatureId);
+  renderCards(elements, state, map);
+  if (options.centerOnMap) focusFeatureOnMap(map, selectedFeature);
+  if (options.openFloating !== false) {
+    const coords = options.coordinates || selectedFeature?.geometry?.coordinates;
+    showFloatingCard(map, elements, selectedFeature, Array.isArray(coords) ? coords : null);
+  }
+  if (options.scrollCard) {
+    const selectedNode = elements.cardsRibbon?.querySelector(`.ribbon-card[data-feature-id="${CSS.escape(state.selectedFeatureId)}"]`);
+    selectedNode?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }
+}
+
+function clearSelection(state, elements, map) {
+  state.selectedFeatureId = null;
+  setSelectedFeatureId(map, null);
+  hideFloatingCard(elements);
+  renderCards(elements, state, map);
+}
+
+function getSelectedFeature(state) {
+  return state.allFeatures.find((feature) => getFeatureUiId(feature) === state.selectedFeatureId) || null;
+}
+
+function renderCardsSkeleton(elements, count = 4) {
+  if (!elements.cardsRibbon) return;
+  const skeletons = Array.from({ length: count }, () => {
+    const item = document.createElement('li');
+    item.className = 'skeleton-card';
+    return item;
+  });
+  elements.cardsRibbon.replaceChildren(...skeletons);
+}
+
+function renderTimelineAxis(elements, years) {
+  if (!elements.timelineAxis) return;
+  const points = [years.min, Math.round((years.min + years.max) / 2), years.max];
+  elements.timelineAxis.replaceChildren(...points.map((year) => {
+    const node = document.createElement('span');
+    node.textContent = String(year);
+    return node;
+  }));
+}
 
 function isFeatureLike(feature) {
   return feature && typeof feature === 'object' && (feature.type === 'Feature' || feature.properties || feature.geometry);
+}
+function enrichFeatureForUiKey(feature, index) {
+  const properties = normalizeProps(feature);
+  const sourceId = String(properties.id || properties.object_id || properties.slug || '').trim();
+  const coords = Array.isArray(feature?.geometry?.coordinates) ? feature.geometry.coordinates.join(':') : String(index);
+  const uiKey = sourceId || `${String(properties.name_ru || 'feature').trim()}::${coords}::${index}`;
+  return {
+    ...feature,
+    properties: {
+      ...properties,
+      _ui_id: uiKey
+    }
+  };
+}
+function getFeatureUiId(feature) {
+  return String(normalizeProps(feature)._ui_id || '');
 }
 function normalizeProps(feature) {
   return feature?.properties && typeof feature.properties === 'object' ? feature.properties : {};
@@ -309,4 +412,28 @@ function formatRange(start, end) {
   if (Number.isFinite(s)) return String(s);
   if (Number.isFinite(e)) return String(e);
   return 'Дата не указана';
+}
+function truncateText(value, limit) {
+  if (value.length <= limit) return value;
+  return `${value.slice(0, limit - 1).trimEnd()}…`;
+}
+function buildImageNode(props, fallbackAlt) {
+  const safeImage = String(props.image_url || '').trim();
+  if (safeImage) {
+    const image = document.createElement('img');
+    image.src = safeImage;
+    image.alt = String(props.name_ru || fallbackAlt);
+    image.loading = 'lazy';
+    image.addEventListener('error', () => {
+      image.replaceWith(createPlaceholderImage());
+    }, { once: true });
+    return image;
+  }
+  return createPlaceholderImage();
+}
+function createPlaceholderImage() {
+  const placeholder = document.createElement('div');
+  placeholder.className = 'img-placeholder';
+  placeholder.textContent = 'No image';
+  return placeholder;
 }

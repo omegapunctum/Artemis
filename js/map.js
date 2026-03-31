@@ -2,6 +2,7 @@ import { appendText, createTextElement, normalizeSafeUrl, setSafeLink, setText, 
 
 const SOURCE_ID = 'artemis-features';
 const LAYER_ID = 'artemis-points';
+const SELECTED_LAYER_ID = 'artemis-points-selected';
 const CLUSTER_LAYER_ID = 'artemis-clusters';
 const CLUSTER_COUNT_LAYER_ID = 'artemis-cluster-count';
 const POPUP_CLASS_NAME = 'artemis-popup';
@@ -76,7 +77,9 @@ export function initMap(containerId, features) {
     lastMapFeatureCount: 0,
     lastBuildDiagnostics: initialBuild.diagnostics,
     pendingFeatureCollection: initialBuild.collection,
-    featureClickHandler: null
+    featureClickHandler: null,
+    selectedFeatureId: null,
+    currentYearFilter: null
   };
 
   map.on('load', () => {
@@ -138,11 +141,16 @@ export function setMapFeatureClickHandler(map, handler) {
 
 export function setMapLayerFilter(map, filterExpression = null) {
   if (!map || !map.getLayer) return;
-  [LAYER_ID, CLUSTER_LAYER_ID, CLUSTER_COUNT_LAYER_ID].forEach((layerId) => {
-    if (map.getLayer(layerId)) {
-      map.setFilter(layerId, filterExpression);
-    }
-  });
+  map.__artemis = map.__artemis || {};
+  map.__artemis.currentYearFilter = filterExpression;
+  applyLayerFilters(map);
+}
+
+export function setSelectedFeatureId(map, featureId = null) {
+  if (!map || !map.getLayer) return;
+  map.__artemis = map.__artemis || {};
+  map.__artemis.selectedFeatureId = featureId ? String(featureId) : null;
+  applyLayerFilters(map);
 }
 
 // Открывает popup и переводит карту к объекту, если геометрия существует.
@@ -217,7 +225,48 @@ function loadGeoJSON(map, featureCollection) {
   }
 
   map.addLayer(pointLayer);
+  map.addLayer({
+    id: SELECTED_LAYER_ID,
+    type: 'circle',
+    source: SOURCE_ID,
+    paint: {
+      'circle-radius': 12,
+      'circle-color': 'rgba(56, 189, 248, 0.35)',
+      'circle-stroke-color': '#38bdf8',
+      'circle-stroke-width': 2.5,
+      'circle-opacity': 1
+    },
+    filter: ['==', ['get', '_ui_id'], '__none__']
+  });
+  applyLayerFilters(map);
   // =========================================
+}
+
+function applyLayerFilters(map) {
+  const timelineFilter = map?.__artemis?.currentYearFilter;
+  const selectedFeatureId = map?.__artemis?.selectedFeatureId;
+  if (map.getLayer(CLUSTER_LAYER_ID)) {
+    map.setFilter(CLUSTER_LAYER_ID, combineFilters([timelineFilter, ['has', 'point_count']]));
+  }
+  if (map.getLayer(CLUSTER_COUNT_LAYER_ID)) {
+    map.setFilter(CLUSTER_COUNT_LAYER_ID, combineFilters([timelineFilter, ['has', 'point_count']]));
+  }
+  if (map.getLayer(LAYER_ID)) {
+    map.setFilter(LAYER_ID, combineFilters([timelineFilter, ['!', ['has', 'point_count']]]));
+  }
+  if (map.getLayer(SELECTED_LAYER_ID)) {
+    const selectedFilter = selectedFeatureId
+      ? ['==', ['get', '_ui_id'], selectedFeatureId]
+      : ['==', ['get', '_ui_id'], '__none__'];
+    map.setFilter(SELECTED_LAYER_ID, combineFilters([timelineFilter, ['!', ['has', 'point_count']], selectedFilter]));
+  }
+}
+
+function combineFilters(filters) {
+  const clean = filters.filter(Boolean);
+  if (!clean.length) return null;
+  if (clean.length === 1) return clean[0];
+  return ['all', ...clean];
 }
 
 function bindPopupHandlers(map) {
