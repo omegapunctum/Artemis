@@ -130,6 +130,25 @@ body { overflow: hidden; }
 
 #app-shell { position: relative; width: 100%; height: 100%; }
 #map-container, #map { position: absolute; inset: 0; }
+.global-data-error {
+  position: absolute;
+  inset: 0;
+  z-index: calc(var(--z-top-header) + 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-lg);
+  padding: 24px;
+  text-align: center;
+  background: rgba(11, 15, 20, 0.78);
+}
+.global-data-error[hidden] { display: none; }
+.global-data-error-text {
+  margin: 0;
+  color: var(--color-text-primary);
+  font: var(--font-panel-title);
+}
 
 #top-header {
   position: fixed;

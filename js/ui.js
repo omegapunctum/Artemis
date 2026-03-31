@@ -3,15 +3,52 @@ import { updateMapData, setLayerLookup, focusFeatureOnMap, getMapFeatureCount, g
 import { debounce, createInlineStateBlock } from './ux.js';
 import { normalizeSafeUrl, setSafeLink } from './safe-dom.js';
 
+let globalDataErrorRetryHandler = null;
+
+export function showGlobalDataError({ message, onRetry } = {}) {
+  const host = document.getElementById('global-data-error');
+  const text = document.getElementById('global-data-error-text');
+  const retryBtn = document.getElementById('global-data-error-retry');
+  if (!host || !text || !retryBtn) return;
+
+  text.textContent = message || 'Не удалось загрузить данные карты.';
+  host.hidden = false;
+  host.setAttribute('aria-hidden', 'false');
+
+  if (globalDataErrorRetryHandler) {
+    retryBtn.removeEventListener('click', globalDataErrorRetryHandler);
+    globalDataErrorRetryHandler = null;
+  }
+  if (typeof onRetry === 'function') {
+    globalDataErrorRetryHandler = () => onRetry();
+    retryBtn.addEventListener('click', globalDataErrorRetryHandler);
+  }
+}
+
+export function hideGlobalDataError() {
+  const host = document.getElementById('global-data-error');
+  const retryBtn = document.getElementById('global-data-error-retry');
+  if (!host || !retryBtn) return;
+  host.hidden = true;
+  host.setAttribute('aria-hidden', 'true');
+  if (globalDataErrorRetryHandler) {
+    retryBtn.removeEventListener('click', globalDataErrorRetryHandler);
+    globalDataErrorRetryHandler = null;
+  }
+}
+
 export async function initUI(map, features) {
+  hideGlobalDataError();
   const allFeatures = Array.isArray(features?.features)
     ? features.features.filter(isFeatureLike).map(enrichFeatureForUiKey)
     : [];
-  let layersLoadError = '';
-  const layers = await loadLayers().catch((error) => {
-    layersLoadError = error?.message || 'Failed to load layers.';
-    return [];
-  });
+  let layers;
+  try {
+    layers = await loadLayers();
+  } catch (error) {
+    showGlobalDataError({ message: 'Не удалось загрузить данные карты.' });
+    throw error;
+  }
   const layerLookup = buildLayerLookup(layers, allFeatures);
   setLayerLookup(map, layers);
 
@@ -71,7 +108,7 @@ export async function initUI(map, features) {
     searchResults: [],
     bookmarks: [],
     applyState: null,
-    warnings: layersLoadError ? ['Layers are temporarily unavailable.'] : []
+    warnings: []
   };
   initializeAnimatedPanels(elements);
   if (!state.enabledLayerIds.size) {

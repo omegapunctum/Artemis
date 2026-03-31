@@ -72,6 +72,10 @@
     <main id="map-container" aria-label="Карта объектов">
       <div id="map"></div>
     </main>
+    <section id="global-data-error" class="global-data-error glass-panel" hidden aria-hidden="true" aria-live="assertive">
+      <p id="global-data-error-text" class="global-data-error-text">Не удалось загрузить данные карты.</p>
+      <button id="global-data-error-retry" type="button" class="ui-button ui-button-primary">Повторить</button>
+    </section>
 
     <section id="bottom-panel" class="glass-panel" aria-label="Timeline and cards">
       <div id="timeline" class="timeline-row">
@@ -242,7 +246,7 @@
   <script type="module">
     import { loadFeatures } from './js/data.js';
     import { initMap } from './js/map.js';
-    import { initUI } from './js/ui.js';
+    import { initUI, showGlobalDataError, hideGlobalDataError } from './js/ui.js';
     import { initAuth } from './js/auth.js';
     import { initUGCUI } from './js/ui.ugc.js';
     import { initModerationUI } from './js/ui.moderation.js';
@@ -267,6 +271,7 @@
 
     async function bootstrapApp() {
       try {
+        hideGlobalDataError();
         setStatus('Загрузка токена…', { loading: true });
         showLoading();
         try {
@@ -295,11 +300,16 @@
         const foundCount = uiState?.getVisibleCounts?.().listCount ?? features.features?.length ?? 0;
         const mapCount = uiState?.getVisibleCounts?.().mapCount ?? 0;
         clearError();
+        hideGlobalDataError();
         setStatus(`Карта готова. Найдено: ${foundCount}, на карте: ${mapCount}.`, { loading: false });
       } catch (error) {
         console.error('Ошибка инициализации:', error);
         const normalized = normalizeAppError(error, 'Unable to load application data.');
         showError(normalized.message);
+        showGlobalDataError({
+          message: 'Не удалось загрузить данные карты.',
+          onRetry: () => bootstrapApp()
+        });
         setStatus(normalized.message, { error: true, loading: false });
         if (cardsStateHost) {
           cardsStateHost.replaceChildren(createInlineStateBlock({

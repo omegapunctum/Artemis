@@ -51,7 +51,7 @@ export async function loadFeatures() {
   } catch (error) {
     console.error('Ошибка при загрузке data/features.geojson:', error);
     showError('Ошибка загрузки данных');
-    throw error;
+    throw createDataLoadError('features.geojson', error);
   } finally {
     featuresInFlight = null;
     hideLoading();
@@ -80,7 +80,7 @@ export async function loadLayers() {
   } catch (error) {
     console.error('Ошибка при загрузке data/layers.json:', error);
     showError('Ошибка загрузки слоёв');
-    throw error;
+    throw createDataLoadError('layers.json', error);
   } finally {
     layersInFlight = null;
     hideLoading();
@@ -118,4 +118,14 @@ function notifyCacheState(response) {
     hasShownNoCacheMessage = true;
     showSystemMessage('No cached data available', { variant: 'warning', timeout: 3600 });
   }
+}
+
+function createDataLoadError(resourceName, cause) {
+  const reason = cause?.message ? `: ${cause.message}` : '';
+  const error = new Error(`Не удалось загрузить данные карты (${resourceName})${reason}`);
+  error.name = 'DataLoadError';
+  error.code = 'DATA_LOAD_FAILED';
+  error.resource = resourceName;
+  error.cause = cause;
+  return error;
 }
