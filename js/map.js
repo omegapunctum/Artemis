@@ -75,7 +75,8 @@ export function initMap(containerId, features) {
     layerLookup: new Map(),
     lastMapFeatureCount: 0,
     lastBuildDiagnostics: initialBuild.diagnostics,
-    pendingFeatureCollection: initialBuild.collection
+    pendingFeatureCollection: initialBuild.collection,
+    featureClickHandler: null
   };
 
   map.on('load', () => {
@@ -128,6 +129,20 @@ export function getMapFeatureCount(map) {
 
 export function getMapBuildDiagnostics(map) {
   return map?.__artemis?.lastBuildDiagnostics || { inputTotal: 0, validPoints: 0, dropped: 0 };
+}
+
+export function setMapFeatureClickHandler(map, handler) {
+  map.__artemis = map.__artemis || {};
+  map.__artemis.featureClickHandler = typeof handler === 'function' ? handler : null;
+}
+
+export function setMapLayerFilter(map, filterExpression = null) {
+  if (!map || !map.getLayer) return;
+  [LAYER_ID, CLUSTER_LAYER_ID, CLUSTER_COUNT_LAYER_ID].forEach((layerId) => {
+    if (map.getLayer(layerId)) {
+      map.setFilter(layerId, filterExpression);
+    }
+  });
 }
 
 // Открывает popup и переводит карту к объекту, если геометрия существует.
@@ -210,6 +225,11 @@ function bindPopupHandlers(map) {
     const feature = event.features?.[0];
     if (!feature) return;
     const coordinates = feature?.geometry?.coordinates;
+    const onFeatureClick = map?.__artemis?.featureClickHandler;
+    if (typeof onFeatureClick === 'function') {
+      onFeatureClick(feature, Array.isArray(coordinates) ? coordinates : [event.lngLat.lng, event.lngLat.lat], event);
+      return;
+    }
     openFeaturePopup(map, feature, Array.isArray(coordinates) ? coordinates : event.lngLat);
   });
 

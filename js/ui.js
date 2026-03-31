@@ -1,24 +1,31 @@
 import { loadLayers } from './data.js';
-import { updateMapData, setLayerLookup, focusFeatureOnMap, getMapFeatureCount, getMapBuildDiagnostics } from './map.js';
+import { updateMapData, setLayerLookup, focusFeatureOnMap, getMapFeatureCount, getMapBuildDiagnostics, setMapFeatureClickHandler, setMapLayerFilter } from './map.js';
 import { debounce } from './ux.js';
-import { createTextElement } from './safe-dom.js';
 
-// Инициализирует фильтры, единое состояние и синхронизацию списка с картой.
 export async function initUI(map, features) {
   const allFeatures = Array.isArray(features?.features) ? features.features.filter(isFeatureLike) : [];
   const layers = await loadLayers().catch(() => []);
   const layerLookup = buildLayerLookup(layers, allFeatures);
   setLayerLookup(map, layers);
-  logLayerDiagnostics(allFeatures, layerLookup);
 
   const elements = {
-    searchInput: document.getElementById('search-input'),
+    searchInput: document.getElementById('global-search') || document.getElementById('search-input'),
+    legacySearch: document.getElementById('search-input'),
+    timelineStart: document.getElementById('timeline-start'),
+    timelineEnd: document.getElementById('timeline-end'),
+    timelineLabel: document.getElementById('timeline-range-label'),
+    cardsRibbon: document.getElementById('cards-ribbon') || document.getElementById('object-list'),
+    cardsState: document.getElementById('cards-state'),
+    floatingCard: document.getElementById('floating-card'),
+    floatingCardClose: document.getElementById('floating-card-close'),
+    floatingTitle: document.getElementById('floating-card-title'),
+    floatingDate: document.getElementById('floating-card-date'),
+    floatingDescription: document.getElementById('floating-card-description'),
+    floatingImage: document.getElementById('floating-card-image'),
+    filtersBtn: document.getElementById('filters-btn'),
     layerFilter: document.getElementById('layer-filter'),
     dateFrom: document.getElementById('date-from'),
     dateTo: document.getElementById('date-to'),
-    objectList: document.getElementById('object-list'),
-    sidebar: document.getElementById('sidebar'),
-    sidebarToggle: document.getElementById('sidebar-toggle'),
     resultsCount: document.getElementById('results-count'),
     mapCount: document.getElementById('map-count'),
     sourceCount: document.getElementById('source-count'),
@@ -27,213 +34,279 @@ export async function initUI(map, features) {
     statusMessage: document.getElementById('status-message')
   };
 
+  const years = collectYearBounds(allFeatures);
   const state = {
-    filters: {
-      search: '',
-      layerId: '',
-      dateFrom: '',
-      dateTo: ''
-    },
     allFeatures,
-    filteredFeatures: allFeatures,
-    mapFeatureCollection: { type: 'FeatureCollection', features: [] },
-    layerLookup
+    filteredFeatures: [],
+    layerLookup,
+    search: '',
+    currentStartYear: years.min,
+    currentEndYear: years.max,
+    loading: true,
+    error: '',
+    activeFeature: null
   };
 
-  hydrateLayerFilter(elements.layerFilter, layerLookup);
+  hydrateTimeline(elements, years, state);
+  renderCardsState(elements, state);
 
-  // Применяет единое состояние фильтров к списку и карте.
-  const applyState = ({ fitBounds = false } = {}) => {
-    state.filteredFeatures = filterFeatures(state.allFeatures, state.filters);
-    state.mapFeatureCollection = updateMapData(map, {
-      type: 'FeatureCollection',
-      features: state.filteredFeatures
-    }, { fitBounds });
+  const applyState = () => {
+    const text = state.search.toLowerCase();
+    state.filteredFeatures = state.allFeatures.filter((feature) => {
+      const props = normalizeProps(feature);
+      const haystack = `${String(props.name_ru || '')} ${normalizeTags(props.tags)}`.toLowerCase();
+      if (text && !haystack.includes(text)) return false;
 
-    renderList(elements.objectList, state.filteredFeatures, state.layerLookup, map);
+      const start = parseYear(props.date_start ?? props.date_construction_end ?? props.date_end);
+      const end = parseYear(props.date_end ?? props.date_construction_end ?? props.date_start);
+      if (Number.isFinite(start) && start > state.currentEndYear) return false;
+      if (Number.isFinite(end) && end < state.currentStartYear) return false;
+      return true;
+    });
+
+    updateMapData(map, { type: 'FeatureCollection', features: state.filteredFeatures });
+    setMapLayerFilter(map, buildMapYearFilter(state.currentStartYear, state.currentEndYear));
+    renderCards(elements, state, map);
     updateCounters(elements, state, map);
     updateStatus(elements, state, map);
   };
 
-  const syncStateFromInputs = () => {
-    state.filters.search = elements.searchInput.value.trim();
-    state.filters.layerId = elements.layerFilter.value;
-    state.filters.dateFrom = elements.dateFrom.value.trim();
-    state.filters.dateTo = elements.dateTo.value.trim();
+  const debouncedSearch = debounce(() => {
+    state.search = (elements.searchInput?.value || '').trim();
+    if (elements.legacySearch && elements.legacySearch !== elements.searchInput) {
+      elements.legacySearch.value = state.search;
+    }
     applyState();
-  };
+  }, 300);
 
-  const debouncedSearchInput = debounce(syncStateFromInputs, 300);
-
-  [elements.searchInput, elements.layerFilter, elements.dateFrom, elements.dateTo].forEach((node) => {
-    const handler = node === elements.searchInput ? debouncedSearchInput : syncStateFromInputs;
-    node.addEventListener('input', handler);
-    node.addEventListener('change', syncStateFromInputs);
+  elements.searchInput?.addEventListener('input', debouncedSearch);
+  elements.timelineStart?.addEventListener('input', () => {
+    state.currentStartYear = Math.min(Number(elements.timelineStart.value), state.currentEndYear);
+    elements.timelineStart.value = String(state.currentStartYear);
+    syncLegacyDateInputs(elements, state);
+    updateTimelineLabel(elements, state);
+    applyState();
+  });
+  elements.timelineEnd?.addEventListener('input', () => {
+    state.currentEndYear = Math.max(Number(elements.timelineEnd.value), state.currentStartYear);
+    elements.timelineEnd.value = String(state.currentEndYear);
+    syncLegacyDateInputs(elements, state);
+    updateTimelineLabel(elements, state);
+    applyState();
   });
 
-  // Позволяет быстро очистить поиск клавишей Escape.
-  elements.searchInput.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape') return;
-    if (!elements.searchInput.value) return;
-    elements.searchInput.value = '';
-    syncStateFromInputs();
-    elements.searchInput.blur();
+  elements.filtersBtn?.addEventListener('click', () => {
+    if (!elements.searchInput) return;
+    elements.searchInput.focus();
   });
 
-  elements.sidebarToggle.addEventListener('click', () => {
-    const collapsed = elements.sidebar.classList.toggle('collapsed');
-    elements.sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
+  setMapFeatureClickHandler(map, (feature, coordinates) => {
+    state.activeFeature = feature;
+    showFloatingCard(map, elements, feature, coordinates);
+  });
+  map.on('move', () => {
+    const feature = state.activeFeature;
+    if (feature && !elements.floatingCard?.hidden) {
+      const coords = feature?.geometry?.coordinates;
+      if (Array.isArray(coords)) positionFloatingCard(map, elements.floatingCard, coords);
+    }
   });
 
-  applyState({ fitBounds: true });
+  elements.floatingCardClose?.addEventListener('click', () => hideFloatingCard(elements));
+  document.addEventListener('click', (event) => {
+    if (elements.floatingCard?.hidden) return;
+    const target = event.target;
+    const withinFloating = elements.floatingCard.contains(target);
+    const withinCard = target.closest?.('.ribbon-card');
+    if (!withinFloating && !withinCard) {
+      state.activeFeature = null;
+      hideFloatingCard(elements);
+    }
+  });
+
+  state.loading = false;
+  applyState();
 
   return {
     getVisibleCounts() {
-      return {
-        listCount: state.filteredFeatures.length,
-        mapCount: getMapFeatureCount(map)
-      };
+      return { listCount: state.filteredFeatures.length, mapCount: getMapFeatureCount(map) };
     }
   };
+}
+
+function renderCards(elements, state, map) {
+  const list = elements.cardsRibbon;
+  if (!list) return;
+  list.replaceChildren();
+
+  if (state.error) {
+    renderCardsState(elements, { ...state, loading: false });
+    return;
+  }
+  if (!state.filteredFeatures.length) {
+    renderCardsState(elements, { ...state, loading: false, empty: true });
+    return;
+  }
+
+  renderCardsState(elements, { ...state, loading: false, empty: false });
+  state.filteredFeatures.slice(0, 80).forEach((feature) => {
+    const props = normalizeProps(feature);
+    const item = document.createElement('li');
+    item.className = 'ribbon-card';
+
+    const image = document.createElement('img');
+    image.src = String(props.image_url || '').trim() || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+    image.alt = String(props.name_ru || 'Object image');
+    image.loading = 'lazy';
+
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    const title = document.createElement('h4');
+    title.textContent = String(props.name_ru || 'Без названия');
+    const date = document.createElement('p');
+    date.textContent = formatRange(props.date_start, props.date_end);
+    meta.append(title, date);
+
+    item.append(image, meta);
+    item.addEventListener('click', () => {
+      focusFeatureOnMap(map, feature);
+      state.activeFeature = feature;
+      const coords = feature?.geometry?.coordinates;
+      showFloatingCard(map, elements, feature, Array.isArray(coords) ? coords : null);
+    });
+
+    list.appendChild(item);
+  });
+}
+
+function showFloatingCard(map, elements, feature, coordinates) {
+  const props = normalizeProps(feature);
+  elements.floatingTitle.textContent = String(props.name_ru || 'Без названия');
+  elements.floatingDate.textContent = formatRange(props.date_start, props.date_end);
+  elements.floatingDescription.textContent = String(props.description || 'Описание отсутствует.');
+  elements.floatingImage.src = String(props.image_url || '').trim() || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+  elements.floatingImage.alt = String(props.name_ru || 'Object image');
+  elements.floatingCard.hidden = false;
+
+  if (Array.isArray(coordinates)) {
+    positionFloatingCard(map, elements.floatingCard, coordinates);
+  }
+}
+
+function positionFloatingCard(map, card, coordinates) {
+  const px = map.project(coordinates);
+  const x = Math.min(Math.max(px.x + 14, 12), window.innerWidth - card.offsetWidth - 12);
+  const y = Math.min(Math.max(px.y - 50, 74), window.innerHeight - card.offsetHeight - 220);
+  card.style.left = `${x}px`;
+  card.style.top = `${y}px`;
+}
+
+function hideFloatingCard(elements) {
+  if (elements.floatingCard) elements.floatingCard.hidden = true;
+}
+
+function renderCardsState(elements, state) {
+  if (!elements.cardsState) return;
+  elements.cardsState.className = 'cards-state';
+  if (state.loading) {
+    elements.cardsState.classList.add('is-loading');
+    elements.cardsState.textContent = 'Loading events…';
+  } else if (state.error) {
+    elements.cardsState.classList.add('is-error');
+    elements.cardsState.textContent = `Error: ${state.error}`;
+  } else if (state.empty) {
+    elements.cardsState.classList.add('is-empty');
+    elements.cardsState.textContent = 'No results in selected time range';
+  } else {
+    elements.cardsState.textContent = `${state.filteredFeatures.length} objects`;
+  }
+}
+
+function hydrateTimeline(elements, years, state) {
+  if (!elements.timelineStart || !elements.timelineEnd) return;
+  elements.timelineStart.min = String(years.min);
+  elements.timelineStart.max = String(years.max);
+  elements.timelineEnd.min = String(years.min);
+  elements.timelineEnd.max = String(years.max);
+  elements.timelineStart.value = String(state.currentStartYear);
+  elements.timelineEnd.value = String(state.currentEndYear);
+  syncLegacyDateInputs(elements, state);
+  updateTimelineLabel(elements, state);
+}
+
+function updateTimelineLabel(elements, state) {
+  if (elements.timelineLabel) {
+    elements.timelineLabel.textContent = `${state.currentStartYear}–${state.currentEndYear}`;
+  }
+}
+
+function syncLegacyDateInputs(elements, state) {
+  if (elements.dateFrom) elements.dateFrom.value = String(state.currentStartYear);
+  if (elements.dateTo) elements.dateTo.value = String(state.currentEndYear);
+}
+
+function collectYearBounds(features) {
+  const years = features.flatMap((feature) => {
+    const p = normalizeProps(feature);
+    return [parseYear(p.date_start), parseYear(p.date_construction_end), parseYear(p.date_end)].filter(Number.isFinite);
+  });
+  if (!years.length) return { min: 0, max: 2026 };
+  return { min: Math.min(...years), max: Math.max(...years) };
+}
+
+function buildMapYearFilter(start, end) {
+  return ['all',
+    ['<=', ['coalesce', ['to-number', ['get', 'date_start']], ['to-number', ['get', 'date_end']], end], end],
+    ['>=', ['coalesce', ['to-number', ['get', 'date_end']], ['to-number', ['get', 'date_start']], start], start]
+  ];
+}
+
+function updateCounters(elements, state, map) {
+  const diagnostics = getMapBuildDiagnostics(map);
+  if (elements.resultsCount) elements.resultsCount.textContent = String(state.filteredFeatures.length);
+  if (elements.mapCount) elements.mapCount.textContent = String(getMapFeatureCount(map));
+  if (elements.sourceCount) elements.sourceCount.textContent = String(diagnostics.inputTotal);
+  if (elements.pointValidCount) elements.pointValidCount.textContent = String(diagnostics.validPoints);
+  if (elements.activeFiltersCount) elements.activeFiltersCount.textContent = String(Number(Boolean(state.search)) + 1);
+}
+
+function updateStatus(elements, state, map) {
+  if (!elements.statusMessage) return;
+  const diagnostics = getMapBuildDiagnostics(map);
+  elements.statusMessage.textContent = `Карта готова. Загружено ${diagnostics.inputTotal}, отображается ${getMapFeatureCount(map)}, в ленте ${state.filteredFeatures.length}.`;
 }
 
 function isFeatureLike(feature) {
   return feature && typeof feature === 'object' && (feature.type === 'Feature' || feature.properties || feature.geometry);
 }
-
-// Собирает человекочитаемые названия слоёв с fallback на layer_id.
+function normalizeProps(feature) {
+  return feature?.properties && typeof feature.properties === 'object' ? feature.properties : {};
+}
 function buildLayerLookup(layers, allFeatures) {
   const lookup = new Map();
   (Array.isArray(layers) ? layers : []).forEach((layer) => {
-    const id = normalizeLayerValue(layer?.layer_id || layer?.id);
-    if (!id) return;
-    const label = normalizeLayerLabel(layer?.name_ru || layer?.label, id);
-    lookup.set(id, label);
+    const id = String(layer?.layer_id || layer?.id || '').trim();
+    if (id) lookup.set(id, String(layer?.name_ru || layer?.label || id));
   });
-
-  allFeatures.forEach((feature) => {
-    const id = normalizeLayerValue(feature?.properties?.layer_id);
-    if (!id || lookup.has(id)) return;
-    lookup.set(id, id);
+  allFeatures.forEach((f) => {
+    const id = String(normalizeProps(f).layer_id || '').trim();
+    if (id && !lookup.has(id)) lookup.set(id, id);
   });
-
   return lookup;
 }
-
-function hydrateLayerFilter(select, layerLookup) {
-  select.replaceChildren(new Option('Все слои', ''));
-  [...layerLookup.entries()]
-    .sort((a, b) => a[1].localeCompare(b[1], 'ru'))
-    .forEach(([id, label]) => {
-      select.appendChild(new Option(label, id));
-    });
-}
-
-// Фильтрует массив по названию, слою и диапазону дат.
-function filterFeatures(features, filters) {
-  const searchValue = String(filters.search || '').trim().toLowerCase();
-  const layerValue = String(filters.layerId || '').trim();
-  const from = parseYear(filters.dateFrom);
-  const to = parseYear(filters.dateTo);
-
-  return features.filter((feature) => {
-    const properties = feature?.properties && typeof feature.properties === 'object' ? feature.properties : {};
-    const name = String(properties.name_ru || '').toLowerCase();
-    const layerId = normalizeLayerValue(properties.layer_id);
-    const dateStart = parseYear(properties.date_start);
-    const dateEnd = parseYear(properties.date_end);
-    const effectiveStart = Number.isFinite(dateStart) ? dateStart : dateEnd;
-    const effectiveEnd = Number.isFinite(dateEnd) ? dateEnd : dateStart;
-
-    if (searchValue && !name.includes(searchValue)) return false;
-    if (layerValue && layerId !== layerValue) return false;
-    if (Number.isFinite(from) && (!Number.isFinite(effectiveEnd) || effectiveEnd < from)) return false;
-    if (Number.isFinite(to) && (!Number.isFinite(effectiveStart) || effectiveStart > to)) return false;
-
-    return true;
-  });
-}
-
 function parseYear(value) {
-  if (value === null || value === undefined || value === '') return NaN;
-  const normalized = String(value).trim();
-  if (!/^-?\d+$/.test(normalized)) return NaN;
-  return Number.parseInt(normalized, 10);
+  const n = Number.parseInt(String(value ?? '').trim(), 10);
+  return Number.isFinite(n) ? n : NaN;
 }
-
-// Рендерит максимум 50 элементов списка и не ломается на объектах без геометрии.
-function renderList(container, features, layerLookup, map) {
-  container.replaceChildren();
-
-  if (!features.length) {
-    const empty = document.createElement('li');
-    empty.className = 'object-list-empty';
-    empty.textContent = 'Ничего не найдено';
-    container.appendChild(empty);
-    return;
-  }
-
-  features.slice(0, 50).forEach((feature) => {
-    const properties = feature?.properties && typeof feature.properties === 'object' ? feature.properties : {};
-    const layerId = normalizeLayerValue(properties.layer_id);
-    const layerLabel = layerLookup.get(layerId) || layerId || 'Слой не указан';
-    const year = [properties.date_start, properties.date_end].find((value) => value !== null && value !== undefined && value !== '') || 'Год не указан';
-    const hasGeometry = feature?.geometry?.type === 'Point' && Array.isArray(feature?.geometry?.coordinates);
-
-    const item = document.createElement('li');
-    item.className = 'object-list-item';
-    if (!hasGeometry) item.classList.add('is-static');
-    item.appendChild(createTextElement('strong', properties.name_ru, { fallback: 'Без названия' }));
-    item.appendChild(createTextElement('span', layerLabel, { fallback: 'Слой не указан' }));
-    item.appendChild(createTextElement('span', year, { fallback: 'Год не указан' }));
-
-    item.addEventListener('click', () => {
-      if (!focusFeatureOnMap(map, feature)) {
-        item.classList.add('is-static-pulse');
-        window.setTimeout(() => item.classList.remove('is-static-pulse'), 800);
-      }
-    });
-
-    container.appendChild(item);
-  });
+function normalizeTags(tags) {
+  if (Array.isArray(tags)) return tags.join(' ');
+  return String(tags || '');
 }
-
-function updateCounters(elements, state, map) {
-  const diagnostics = getMapBuildDiagnostics(map);
-  elements.resultsCount.textContent = String(state.filteredFeatures.length);
-  elements.mapCount.textContent = String(getMapFeatureCount(map));
-  elements.sourceCount.textContent = String(diagnostics.inputTotal);
-  elements.pointValidCount.textContent = String(diagnostics.validPoints);
-  elements.activeFiltersCount.textContent = String(countActiveFilters(state.filters));
-}
-
-function updateStatus(elements, state, map) {
-  const activeFilters = countActiveFilters(state.filters);
-  const diagnostics = getMapBuildDiagnostics(map);
-  elements.statusMessage.textContent = `Карта готова. Загружено из файла ${diagnostics.inputTotal}, прошли Point-фильтр ${diagnostics.validPoints}, на карте ${getMapFeatureCount(map)}, после фильтров списка ${state.filteredFeatures.length}, активных фильтров ${activeFilters}.`;
-}
-
-function countActiveFilters(filters) {
-  return ['search', 'layerId', 'dateFrom', 'dateTo'].reduce((count, key) => count + (String(filters[key] || '').trim() ? 1 : 0), 0);
-}
-
-function normalizeLayerValue(value) {
-  const raw = String(value || '').trim();
-  if (!raw) return '';
-  const arrayMatch = raw.match(/^\[\s*['"]([^'"]+)['"]\s*\]$/);
-  return arrayMatch ? arrayMatch[1].trim() : raw;
-}
-
-function normalizeLayerLabel(value, fallback) {
-  const cleaned = normalizeLayerValue(value);
-  if (!cleaned) return fallback;
-  return /^rec[A-Za-z0-9]{10,}$/.test(cleaned) ? fallback : cleaned;
-}
-
-function logLayerDiagnostics(features, layerLookup) {
-  const featureLayerIds = new Set(features.map((feature) => normalizeLayerValue(feature?.properties?.layer_id)).filter(Boolean));
-  const unknownLayerIds = [...featureLayerIds].filter((id) => !layerLookup.has(id));
-  if (unknownLayerIds.length > 0) {
-    console.warn('Найдены layer_id в features.geojson без соответствия в layers.json:', unknownLayerIds.slice(0, 20));
-  }
+function formatRange(start, end) {
+  const s = parseYear(start);
+  const e = parseYear(end);
+  if (Number.isFinite(s) && Number.isFinite(e)) return `${s}—${e}`;
+  if (Number.isFinite(s)) return String(s);
+  if (Number.isFinite(e)) return String(e);
+  return 'Дата не указана';
 }
