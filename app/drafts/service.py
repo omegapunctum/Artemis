@@ -91,9 +91,13 @@ def update_draft(
 
     # Русский комментарий: обычный пользователь не может вручную менять служебные статусы.
     if not allow_system_fields:
-        blocked_fields = {"status", "publish_status", "airtable_record_id", "published_at", "user_id", "id"}
-        for blocked_field in blocked_fields:
-            changes.pop(blocked_field, None)
+        blocked_fields = {"status", "publish_status", "airtable_record_id", "published_at", "user_id", "id", "created_at", "updated_at"}
+        forbidden_fields = sorted(field for field in blocked_fields if field in changes)
+        if forbidden_fields:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"forbidden fields in payload: {', '.join(forbidden_fields)}",
+            )
 
         if draft.status not in EDITABLE_STATUSES:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Draft is not editable in current status")

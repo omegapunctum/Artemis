@@ -138,18 +138,36 @@ class RateLimitUnitTests(unittest.TestCase):
                 latitude=40,
             )
 
-    def test_draft_payload_blocks_system_fields_and_status_update(self):
-        with self.assertRaises(ValidationError):
-            DraftCreate(
-                name_ru='Name',
-                date_start='2026-01-01',
-                source_url='https://example.com',
-                etl_status='ready',
-            )
-        with self.assertRaises(ValidationError):
-            DraftCreate(name_ru='Name', date_start='2026-01-01', source_url='https://example.com', status='review')
-        with self.assertRaises(ValidationError):
-            DraftUpdate(status='approved')
+    def test_draft_payload_blocks_forbidden_system_fields(self):
+        create_payload = {
+            'name_ru': 'Name',
+            'date_start': '2026-01-01',
+            'source_url': 'https://example.com',
+        }
+        for forbidden_field in (
+            'etl_status',
+            'etl_error',
+            'date_valid',
+            'dedupe_key',
+            'published_from_draft_id',
+            'version',
+            'created_at',
+            'updated_at',
+            'validated',
+            'is_active',
+            'status',
+            'publish_status',
+            'airtable_record_id',
+            'published_at',
+            'id',
+            'user_id',
+        ):
+            with self.assertRaises(ValidationError):
+                DraftCreate(**create_payload, **{forbidden_field: 'forbidden'})
+
+        for forbidden_field in ('status', 'created_at', 'updated_at'):
+            with self.assertRaises(ValidationError):
+                DraftUpdate(**{forbidden_field: 'forbidden'})
 
     def test_draft_create_rejects_invalid_source_url(self):
         with self.assertRaises(ValidationError):
