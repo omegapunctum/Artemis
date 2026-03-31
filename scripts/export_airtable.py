@@ -191,11 +191,38 @@ def is_valid_url(value: Optional[str]) -> bool:
 def normalize_coordinates_source(value: Any) -> Optional[str]:
     return safe_str(value)
 
-def normalize_coordinates_confidence(value: Any) -> Optional[str]:
+
+def normalize_single_select(value: Any) -> Optional[str]:
     raw = safe_str(value)
     if raw is None:
         return None
-    normalized = raw.strip()
+    return raw.strip()
+
+
+def normalize_source_license(value: Any) -> Optional[str]:
+    normalized = normalize_single_select(value)
+    if normalized is None:
+        return None
+    upper = normalized.upper().replace("_", " ").replace("-", " ")
+    compact = " ".join(upper.split())
+    aliases = {
+        "CC0": "CC0",
+        "CC 0": "CC0",
+        "CC BY": "CC BY",
+        "CCBY": "CC BY",
+        "CC BY SA": "CC BY-SA",
+        "CC BY-SA": "CC BY-SA",
+        "PD": "PD",
+        "PUBLIC DOMAIN": "PD",
+    }
+    return aliases.get(compact, normalized)
+
+
+def normalize_coordinates_confidence(value: Any) -> Optional[str]:
+    raw = normalize_single_select(value)
+    if raw is None:
+        return None
+    normalized = raw
     upper_normalized = normalized.upper()
     if upper_normalized == "EXACT":
         return "exact"
@@ -208,6 +235,20 @@ def normalize_coordinates_confidence(value: Any) -> Optional[str]:
     if normalized == "approximately±nkm":
         normalized = "approximate"
     return normalized
+
+
+def normalize_layer_type(value: Any) -> Optional[str]:
+    normalized = normalize_single_select(value)
+    if normalized is None:
+        return None
+    aliases = {
+        "architecture": "architecture",
+        "route_point": "route_point",
+        "route point": "route_point",
+        "biogeography": "biogeography",
+        "biography": "biography",
+    }
+    return aliases.get(normalized.strip().lower(), normalized.strip().lower())
 
 
 def validate_coordinate_range(
@@ -307,14 +348,23 @@ def map_record(
         if legacy_latitude not in (None, "") and latitude is None:
             latitude_parse_error = True
 
-    validated = fields.get("validated")
-    if validated in (None, ""):
-        validated = fields.get("validated_bool")
-    validated = parse_bool(validated)
+    validated_raw = fields.get("validated")
+    if validated_raw in (None, ""):
+        validated_raw = fields.get("validated_bool")
+    validated = parse_bool(validated_raw)
+    if validated is None and validated_raw not in (None, ""):
+        errors.append({"record_id": record_id, "field": "validated", "error": "invalid bool", "value": validated_raw})
 
-    source_license = safe_str(fields.get("source_license_enum"))
+    is_active_raw = fields.get("is_active")
+    if is_active_raw in (None, ""):
+        is_active_raw = fields.get("is_active_bool")
+    is_active = parse_bool(is_active_raw)
+    if is_active is None and is_active_raw not in (None, ""):
+        errors.append({"record_id": record_id, "field": "is_active", "error": "invalid bool", "value": is_active_raw})
+
+    source_license = normalize_source_license(fields.get("source_license_enum"))
     if source_license is None:
-        source_license = safe_str(fields.get("source_license"))
+        source_license = normalize_source_license(fields.get("source_license"))
         if source_license is not None:
             errors.append(
                 {
@@ -347,10 +397,31 @@ def map_record(
     if source_draft_id is None and external_id and external_id.startswith("draft:"):
         source_draft_id = external_id
 
-    raw_layer_id = normalize_linked_record_id(fields.get("layer_id"))
+    layer_id_field = fields.get("layer_id")
+    raw_layer_id: Optional[str] = None
+    layer_id_used_legacy_fallback = False
+    invalid_layer_link = False
+    if isinstance(layer_id_field, list):
+        if len(layer_id_field) == 1:
+            raw_layer_id = safe_str(layer_id_field[0])
+        elif len(layer_id_field) > 1:
+            invalid_layer_link = True
+    elif layer_id_field in (None, ""):
+        raw_layer_id = None
+    elif isinstance(layer_id_field, str):
+        raw_layer_id = safe_str(layer_id_field)
+        layer_id_used_legacy_fallback = raw_layer_id is not None
+    else:
+        invalid_layer_link = True
+
+    if layer_id_used_legacy_fallback:
+        errors.append(
+            {"record_id": record_id, "field": "layer_id", "warning": "using legacy string fallback", "value": raw_layer_id}
+        )
+
     mapped_layer_id = raw_layer_id
     unknown_layer_link = False
-    if isinstance(fields.get("layer_id"), list) or (raw_layer_id and raw_layer_id.startswith("rec")):
+    if isinstance(layer_id_field, list) or (raw_layer_id and raw_layer_id.startswith("rec")):
         mapped_layer_id = linked_layer_to_public_id.get(raw_layer_id or "")
         if raw_layer_id and not mapped_layer_id:
             unknown_layer_link = True
@@ -363,7 +434,8 @@ def map_record(
         "layer_id": mapped_layer_id,
         "_raw_layer_link_id": raw_layer_id,
         "_unknown_layer_link": unknown_layer_link,
-        "layer_type": safe_str(fields.get("layer_type")),
+        "_invalid_layer_link": invalid_layer_link,
+        "layer_type": normalize_layer_type(fields.get("layer_type_enum") or fields.get("layer_type")),
         "name_ru": safe_str(fields.get("name_ru")),
         "name_en": safe_str(fields.get("name_en")),
         "date_start": to_date_or_none(fields.get("date_start"), record_id, "date_start", errors),
@@ -387,6 +459,7 @@ def map_record(
         "sequence_order": to_int_or_none(fields.get("sequence_order"), record_id, "sequence_order", errors),
         "tags": to_tags(fields.get("tags")),
         "validated": validated,
+        "is_active": is_active,
         # Доп. поля для слоёв (если в таблице присутствуют)
         "layer_name_ru": safe_str(fields.get("layer_name_ru") or fields.get("layer_name")),
         "layer_color_hex": safe_str(fields.get("layer_color_hex") or fields.get("color_hex")),
@@ -624,19 +697,29 @@ def validate_feature(mapped: Dict[str, Any], layer_ids: set[str], warnings: List
     def warning(field: str, reason: str) -> None:
         add_issue(warnings, "warning", record_id, reason, field)
 
+    if not mapped.get("id"):
+        critical("id", "missing_id")
+    if not mapped.get("name_ru"):
+        critical("name_ru", "missing_name_ru")
+    if not mapped.get("date_start"):
+        critical("date_start", "missing_date_start")
     validated_value = parse_bool(mapped.get("validated"))
     if validated_value is not True:
         critical("validated", "not_validated")
     source_url = mapped.get("source_url")
+    if not source_url:
+        critical("source_url", "missing_source_url")
     if not is_valid_url(source_url):
         critical("source_url", "invalid_source_url")
+    if mapped.get("layer_type") not in ALLOWED_LAYER_TYPES:
+        critical("layer_type", "invalid_layer_type")
     if mapped.get("_invalid_coordinates"):
         critical("geometry", "invalid_coordinates")
     latitude = mapped.get("latitude")
     longitude = mapped.get("longitude")
-    if latitude is None or longitude is None:
-        critical("geometry", "invalid_coordinates")
-    elif not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+    if (latitude is None) ^ (longitude is None):
+        critical("geometry", "missing_geometry_coordinate")
+    elif latitude is not None and longitude is not None and not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
         critical("geometry", "invalid_coordinates")
     date_valid = is_valid_iso_date(mapped.get("date_start")) and is_valid_iso_date(mapped.get("date_end"))
     mapped["date_valid"] = date_valid
@@ -649,7 +732,9 @@ def validate_feature(mapped: Dict[str, Any], layer_ids: set[str], warnings: List
     if mapped.get("image_url") and not is_valid_url(mapped.get("image_url")):
         warning("image_url", "invalid_image_url_nonfatal")
     layer_id = mapped.get("layer_id")
-    if not layer_id:
+    if mapped.get("_invalid_layer_link"):
+        critical("layer_id", "invalid_layer_link_format")
+    elif not layer_id:
         critical("layer_id", "unknown_layer_link" if mapped.get("_unknown_layer_link") else "missing_layer_id")
     elif layer_id not in layer_ids:
         critical("layer_id", "unknown_layer_link")
