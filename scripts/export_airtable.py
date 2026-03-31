@@ -662,14 +662,6 @@ def get_etl_error(mapped: Dict[str, Any]) -> Optional[str]:
     source_url = mapped.get("source_url")
     if not source_url:
         return "missing_source_url"
-    if mapped.get("_invalid_coordinates"):
-        return "invalid_coordinates"
-    latitude = mapped.get("latitude")
-    longitude = mapped.get("longitude")
-    if latitude is not None and not (-90 <= latitude <= 90):
-        return "invalid_latitude"
-    if longitude is not None and not (-180 <= longitude <= 180):
-        return "invalid_longitude"
     if not is_valid_iso_date(mapped.get("date_start")):
         return "invalid_date_start"
     return None
