@@ -966,13 +966,23 @@ def main() -> int:
 
         etl_error = get_etl_error(mapped)
         if etl_error is not None:
-            rejected_features.append({"id": mapped.get("id") or "<missing>", "name_ru": mapped.get("name_ru"), "etl_error": etl_error})
+            rejected_features.append(
+                {
+                    "id": mapped.get("id") or "<missing>",
+                    "name_ru": mapped.get("name_ru"),
+                    "reasons": [etl_error],
+                }
+            )
             continue
 
         dedupe_key = get_dedupe_key(mapped)
         if dedupe_key in seen_dedupe_keys:
             rejected_features.append(
-                {"id": mapped.get("id") or "<missing>", "name_ru": mapped.get("name_ru"), "etl_error": "duplicate"}
+                {
+                    "id": mapped.get("id") or "<missing>",
+                    "name_ru": mapped.get("name_ru"),
+                    "reasons": ["duplicate"],
+                }
             )
             continue
         seen_dedupe_keys.add(dedupe_key)
