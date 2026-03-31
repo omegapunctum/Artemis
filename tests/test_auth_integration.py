@@ -220,6 +220,107 @@ class AuthIntegrationTests(unittest.TestCase):
         self.assertEqual(valid_update.status_code, 200)
         self.assertEqual(valid_update.json()["description"], "Валидное обновление")
 
+    def test_draft_create_update_endpoint_validation_matrix(self):
+        access_token, _ = self._create_user_and_login()
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        valid_create_payload = {
+            "name_ru": "Черновик API",
+            "date_start": "2026-01-01",
+            "source_url": "https://example.com/source",
+            "description": "Описание",
+            "layer_type": "biography",
+            "coordinates_confidence": "exact",
+            "source_license": "CC BY-SA",
+        }
+
+        # Create: valid payload -> success
+        create_ok = self.session.post(
+            f"{self.BASE_URL}/api/drafts",
+            headers=headers,
+            json=valid_create_payload,
+            timeout=5,
+        )
+        self.assertEqual(create_ok.status_code, 201)
+        draft_id = create_ok.json()["id"]
+
+        # Create: required, date/url/enum/forbidden validations
+        create_missing_name_ru = self.session.post(
+            f"{self.BASE_URL}/api/drafts",
+            headers=headers,
+            json={k: v for k, v in valid_create_payload.items() if k != "name_ru"},
+            timeout=5,
+        )
+        self.assertEqual(create_missing_name_ru.status_code, 422)
+
+        create_invalid_date = self.session.post(
+            f"{self.BASE_URL}/api/drafts",
+            headers=headers,
+            json={**valid_create_payload, "date_start": "2026/01/01"},
+            timeout=5,
+        )
+        self.assertEqual(create_invalid_date.status_code, 422)
+
+        create_invalid_source_url = self.session.post(
+            f"{self.BASE_URL}/api/drafts",
+            headers=headers,
+            json={**valid_create_payload, "source_url": "not-url"},
+            timeout=5,
+        )
+        self.assertEqual(create_invalid_source_url.status_code, 422)
+
+        create_invalid_enum = self.session.post(
+            f"{self.BASE_URL}/api/drafts",
+            headers=headers,
+            json={**valid_create_payload, "layer_type": "invalid-enum"},
+            timeout=5,
+        )
+        self.assertEqual(create_invalid_enum.status_code, 422)
+
+        for forbidden_field in ("etl_status", "status"):
+            create_forbidden = self.session.post(
+                f"{self.BASE_URL}/api/drafts",
+                headers=headers,
+                json={**valid_create_payload, forbidden_field: "forbidden"},
+                timeout=5,
+            )
+            self.assertEqual(create_forbidden.status_code, 422)
+
+        # Update: valid payload -> success
+        update_ok = self.session.put(
+            f"{self.BASE_URL}/api/drafts/{draft_id}",
+            headers=headers,
+            json={"description": "Обновлено через API"},
+            timeout=5,
+        )
+        self.assertEqual(update_ok.status_code, 200)
+        self.assertEqual(update_ok.json()["description"], "Обновлено через API")
+
+        # Update: forbidden/enum/coordinates validations
+        update_forbidden_status = self.session.put(
+            f"{self.BASE_URL}/api/drafts/{draft_id}",
+            headers=headers,
+            json={"status": "review"},
+            timeout=5,
+        )
+        self.assertEqual(update_forbidden_status.status_code, 422)
+
+        update_invalid_enum = self.session.put(
+            f"{self.BASE_URL}/api/drafts/{draft_id}",
+            headers=headers,
+            json={"source_license": "INVALID"},
+            timeout=5,
+        )
+        self.assertEqual(update_invalid_enum.status_code, 422)
+
+        update_invalid_coordinates = self.session.put(
+            f"{self.BASE_URL}/api/drafts/{draft_id}",
+            headers=headers,
+            json={"latitude": 55.7},
+            timeout=5,
+        )
+        self.assertEqual(update_invalid_coordinates.status_code, 422)
+
 
 if __name__ == "__main__":
     unittest.main()
