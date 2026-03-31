@@ -822,6 +822,16 @@ def build_validation_report(
     }
 
 
+def aggregate_issues(issues: List[Dict[str, Any]]) -> Dict[str, int]:
+    stats: Dict[str, int] = {}
+    for issue in issues:
+        reason = issue.get("reason") or issue.get("error") or issue.get("warning")
+        if not reason:
+            continue
+        stats[reason] = stats.get(reason, 0) + 1
+    return stats
+
+
 def write_json(path: Path, data: Any) -> None:
     """Безопасная сериализация JSON в файл."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1063,6 +1073,8 @@ def main() -> int:
         warnings=warnings,
         errors=errors,
     )
+    error_stats = aggregate_issues(errors)
+    warning_stats = aggregate_issues(warnings)
 
     export_meta = {
         "timestamp": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
@@ -1072,6 +1084,8 @@ def main() -> int:
         "records_geojson": len(geojson["features"]),
         "errors": len(errors),
         "warnings": len(warnings),
+        "error_stats": error_stats,
+        "warning_stats": warning_stats,
         "duration_seconds": round(time.time() - started_at, 3),
     }
 
