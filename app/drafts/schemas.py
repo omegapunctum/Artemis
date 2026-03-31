@@ -149,6 +149,7 @@ class DraftResponse(BaseModel):
     description: str
     geometry: dict[str, Any] | None
     image_url: str | None
+    payload: dict[str, Any] | None = None
     status: Literal["draft", "review", "approved", "rejected"]
     publish_status: Literal["pending", "published", "failed"]
     airtable_record_id: str | None

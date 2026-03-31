@@ -20,6 +20,7 @@ class Draft(Base):
     description = Column(String, nullable=False)
     geometry = Column(JSON, nullable=True)
     image_url = Column(String, nullable=True)
+    payload = Column(JSON, nullable=True)
     status = Column(String, nullable=False, default="draft")
     publish_status = Column(String, nullable=False, default="pending")
     airtable_record_id = Column(String, nullable=True, unique=True)
@@ -43,6 +44,8 @@ def init_db() -> None:
             connection.execute(text("ALTER TABLE drafts ADD COLUMN airtable_record_id VARCHAR"))
         if "published_at" not in columns:
             connection.execute(text("ALTER TABLE drafts ADD COLUMN published_at DATETIME"))
+        if "payload" not in columns:
+            connection.execute(text("ALTER TABLE drafts ADD COLUMN payload JSON"))
 
 
 def list_drafts(db: Session, user: User) -> list[Draft]:
@@ -56,6 +59,7 @@ def create_draft(
     description: str,
     geometry: dict | None,
     image_url: str | None = None,
+    payload: dict | None = None,
 ) -> Draft:
     draft = Draft(
         user_id=user.id,
@@ -63,6 +67,7 @@ def create_draft(
         description=description,
         geometry=geometry,
         image_url=image_url,
+        payload=payload or {},
         status="draft",
     )
     db.add(draft)

@@ -244,33 +244,34 @@ def find_existing_airtable_feature(draft: Draft) -> dict[str, Any] | None:
 
 
 def build_airtable_fields(draft: Draft) -> dict[str, Any]:
-    longitude: float | None = None
-    latitude: float | None = None
+    draft_payload = draft.payload or {}
+    longitude = _to_float_or_none(draft_payload.get("longitude"))
+    latitude = _to_float_or_none(draft_payload.get("latitude"))
     geometry = draft.geometry or {}
-    if geometry.get("type") == "Point":
+    if (longitude is None or latitude is None) and geometry.get("type") == "Point":
         coordinates = geometry.get("coordinates") or []
         if isinstance(coordinates, list) and len(coordinates) >= 2:
-            longitude = _to_float_or_none(coordinates[0])
-            latitude = _to_float_or_none(coordinates[1])
+            longitude = longitude if longitude is not None else _to_float_or_none(coordinates[0])
+            latitude = latitude if latitude is not None else _to_float_or_none(coordinates[1])
 
     fields: dict[str, Any] = {
         AIRTABLE_EXTERNAL_ID_FIELD: get_draft_external_id(draft),
-        "name_ru": draft.title,
-        "description": draft.description,
-        "image_url": draft.image_url,
-        "source_url": DEFAULT_SOURCE_URL,
-        "source_license": DEFAULT_SOURCE_LICENSE,
+        "name_ru": draft_payload.get("name_ru") or draft.title,
+        "description": draft_payload.get("description") if "description" in draft_payload else draft.description,
+        "image_url": draft_payload.get("image_url") if "image_url" in draft_payload else draft.image_url,
+        "source_url": draft_payload.get("source_url") or DEFAULT_SOURCE_URL,
+        "source_license": draft_payload.get("source_license") or DEFAULT_SOURCE_LICENSE,
         "layer_id": DEFAULT_LAYER_ID,
-        "layer_type": DEFAULT_LAYER_TYPE,
-        "coordinates_confidence": DEFAULT_COORDINATES_CONFIDENCE,
-        "coordinates_source": DEFAULT_COORDINATES_SOURCE,
-        "name_en": None,
-        "date_start": None,
+        "layer_type": draft_payload.get("layer_type") or DEFAULT_LAYER_TYPE,
+        "coordinates_confidence": draft_payload.get("coordinates_confidence") or DEFAULT_COORDINATES_CONFIDENCE,
+        "coordinates_source": draft_payload.get("coordinates_source") or DEFAULT_COORDINATES_SOURCE,
+        "name_en": draft_payload.get("name_en"),
+        "date_start": draft_payload.get("date_start"),
         "date_end": None,
-        "influence_radius_km": None,
-        "sequence_order": None,
-        "title_short": draft.title,
-        "tags": None,
+        "influence_radius_km": draft_payload.get("influence_radius_km"),
+        "sequence_order": draft_payload.get("sequence_order"),
+        "title_short": draft_payload.get("title_short") or draft.title,
+        "tags": draft_payload.get("tags"),
         "is_active": True,
         "latitude": latitude,
         "longitude": longitude,
