@@ -731,8 +731,10 @@ def validate_feature(mapped: Dict[str, Any], layer_ids: set[str], warnings: List
     source_url = mapped.get("source_url")
     if not source_url:
         critical("source_url", "missing_source_url")
-    if not is_valid_url(source_url):
-        critical("source_url", "invalid_source_url")
+    else:
+        parsed_source_url = urlparse(source_url.strip())
+        if parsed_source_url.scheme not in ("http", "https") or parsed_source_url.netloc == "":
+            critical("source_url", "invalid_source_url")
     if mapped.get("layer_type") not in ALLOWED_LAYER_TYPES:
         critical("layer_type", "invalid_layer_type")
     if mapped.get("_invalid_coordinates"):
