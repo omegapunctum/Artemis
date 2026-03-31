@@ -189,17 +189,28 @@ function bindUgcPanel(els) {
 
   els.ugcCloseBtn?.addEventListener('click', () => closeUgcPanel(els));
   els.cancelBtn?.addEventListener('click', () => closeUgcPanel(els));
+
+  document.addEventListener('click', (event) => {
+    if (els.ugcPanel.hidden) return;
+    const target = event.target;
+    const insidePanel = els.ugcPanel.contains(target);
+    const opener = target?.closest?.('#ugc-create-btn, #open-draft-editor-btn');
+    if (!insidePanel && !opener) closeUgcPanel(els);
+  });
 }
 
 function bindEscClose(els) {
   document.addEventListener('keydown', (event) => {
+    if (event.defaultPrevented) return;
     if (event.key !== 'Escape') return;
     if (!els.loginModal.hidden) {
       closeModal(els.loginModal);
+      event.preventDefault();
       return;
     }
     if (!els.ugcPanel.hidden) {
       closeUgcPanel(els);
+      event.preventDefault();
     }
   });
 }
@@ -241,6 +252,9 @@ function bindForm(els) {
 function openUgcPanel(els) {
   els.ugcPanel.hidden = false;
   els.ugcPanel.setAttribute('aria-hidden', 'false');
+  els.ugcPanel.dataset.state = 'open';
+  els.createBtn?.setAttribute('aria-expanded', 'true');
+  els.fallbackCreateBtn?.setAttribute('aria-expanded', 'true');
   document.dispatchEvent(new CustomEvent('artemis:overlay-open', { detail: { source: 'ugc' } }));
 
   const loggedIn = Boolean(getCurrentUser());
@@ -271,6 +285,9 @@ function openUgcPanel(els) {
 function closeUgcPanel(els) {
   els.ugcPanel.hidden = true;
   els.ugcPanel.setAttribute('aria-hidden', 'true');
+  els.ugcPanel.dataset.state = 'closed';
+  els.createBtn?.setAttribute('aria-expanded', 'false');
+  els.fallbackCreateBtn?.setAttribute('aria-expanded', 'false');
   document.dispatchEvent(new CustomEvent('artemis:overlay-close', { detail: { source: 'ugc' } }));
   setGlobalError(els, '');
 }
@@ -429,6 +446,10 @@ function setFormState(els, nextState) {
   const label = STATUS_TEXT[nextState] || nextState;
   const suffix = uiState.readOnly ? ' (read-only)' : '';
   setText(els.ugcSubtitle, `Draft status: ${label}${suffix}`);
+  const pending = nextState === 'saving' || nextState === 'submitting';
+  els.saveBtn.disabled = uiState.readOnly || pending;
+  els.submitBtn.disabled = uiState.readOnly || uiState.mode !== 'edit' || pending;
+  els.deleteBtn.disabled = uiState.readOnly || pending;
 }
 
 async function saveDraft(els) {

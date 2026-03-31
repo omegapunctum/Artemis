@@ -77,6 +77,17 @@
   --text-main: var(--color-text-primary);
   --text-soft: var(--color-text-secondary);
   --text-muted: var(--color-text-muted);
+  /* Overlay layering scale (UI hardening) */
+  --z-map-base: 1;
+  --z-map-controls: 6;
+  --z-bottom-panel: 8;
+  --z-top-header: 12;
+  --z-top-dropdown: 13;
+  --z-detail-panel: 14;
+  --z-workspace: 15;
+  --z-modal: 18;
+  --z-system-banner: 20;
+  --z-system-toast: 21;
 }
 
 html, body {
@@ -125,7 +136,7 @@ body { overflow: hidden; }
   top: calc(10px + var(--safe-top));
   left: calc(12px + var(--safe-left));
   right: calc(12px + var(--safe-right));
-  z-index: 10;
+  z-index: var(--z-top-header);
   min-height: 58px;
   display: grid;
   grid-template-columns: 120px minmax(240px, 1fr) auto;
@@ -193,6 +204,7 @@ body { overflow: hidden; }
   pointer-events: none;
   transform: translateY(-6px) scale(0.985);
   transition: opacity var(--motion-normal) var(--ease-standard), transform var(--motion-soft) var(--ease-standard), visibility 0ms linear var(--motion-soft);
+  z-index: var(--z-top-dropdown);
 }
 .top-panel.is-open {
   opacity: 1;
@@ -269,7 +281,7 @@ button:focus-visible {
   left: calc(12px + var(--safe-left));
   right: calc(12px + var(--safe-right));
   bottom: calc(12px + var(--safe-bottom));
-  z-index: 8;
+  z-index: var(--z-bottom-panel);
   min-height: 168px;
   max-height: 190px;
   padding: 12px;
@@ -358,6 +370,7 @@ button:focus-visible {
   overflow-x: auto;
   scroll-behavior: smooth;
   scrollbar-width: thin;
+  overscroll-behavior-x: contain;
 }
 .ribbon-card {
   min-width: 200px;
@@ -389,7 +402,15 @@ button:focus-visible {
   background: rgba(148, 163, 184, 0.25);
 }
 .ribbon-card .meta { padding: 8px; display: grid; gap: 4px; }
-.ribbon-card h4 { margin: 0; font: var(--font-card-title); color: #f8fafc; }
+.ribbon-card h4 { margin: 0; font: var(--font-card-title); color: #f8fafc; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ribbon-card h4,
+.ribbon-card .tag,
+.bookmark-item > span:first-child,
+.search-result-item,
+.related-title,
+.related-meta {
+  overflow-wrap: anywhere;
+}
 .ribbon-card p { margin: 0; font: var(--font-meta); color: var(--text-soft); }
 .ribbon-card .tag {
   color: #93c5fd;
@@ -433,7 +454,7 @@ button:focus-visible {
   right: 12px;
   top: 86px;
   bottom: 212px;
-  z-index: 9;
+  z-index: var(--z-detail-panel);
   width: min(380px, calc(100vw - 24px));
   padding: var(--space-md);
   opacity: 0;
@@ -455,6 +476,7 @@ button:focus-visible {
   max-height: 100%;
   padding-right: 4px;
   scrollbar-width: thin;
+  overscroll-behavior: contain;
 }
 .detail-content { display: grid; gap: 10px; }
 .detail-hero-media {
@@ -470,6 +492,8 @@ button:focus-visible {
 .detail-date { margin: 0; font: var(--font-meta); color: #bfdbfe; }
 .detail-section-title { margin: 0; font: var(--font-caption); text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.06em; }
 .detail-description { margin: 0; font: var(--font-body); color: var(--text-soft); }
+.detail-description,
+.detail-meta-value { overflow-wrap: anywhere; }
 .detail-badges { display: flex; flex-wrap: wrap; gap: 6px; }
 .detail-badge, .ui-badge, .ugc-status-badge, .moderation-status-badge, .moderation-meta-pill {
   font: var(--font-caption);
@@ -514,7 +538,7 @@ button:focus-visible {
   left: 12px;
   right: 12px;
   top: 78px;
-  z-index: 20;
+  z-index: var(--z-system-banner);
   border-radius: var(--radius-md);
   padding: var(--space-md) var(--space-lg);
   border: 1px solid var(--state-error-border);
@@ -525,7 +549,7 @@ button:focus-visible {
   position: fixed;
   top: 80px;
   right: 14px;
-  z-index: 15;
+  z-index: var(--z-system-toast);
   border-radius: var(--radius-md);
   padding: var(--space-sm) var(--space-md);
   border: 1px solid var(--state-info-border);
@@ -536,7 +560,7 @@ button:focus-visible {
   position: fixed;
   left: calc(12px + var(--safe-left));
   top: calc(78px + var(--safe-top));
-  z-index: 22;
+  z-index: var(--z-system-banner);
   border-radius: var(--radius-lg);
   padding: 7px var(--space-lg);
   border: 1px solid var(--state-warning-border);
@@ -553,7 +577,7 @@ button:focus-visible {
   position: fixed;
   right: 12px;
   top: calc(78px + var(--safe-top));
-  z-index: 23;
+  z-index: var(--z-system-toast);
   display: grid;
   gap: 8px;
   width: min(360px, calc(100vw - 24px - var(--safe-left) - var(--safe-right)));
@@ -605,13 +629,13 @@ button:focus-visible {
   padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-md);
   font: var(--font-body);
-  z-index: 7;
+  z-index: var(--z-map-controls);
 }
 .status-loading { font-size: 12px; color: #bfdbfe; margin-bottom: 6px; }
 .status-error { margin-top: 6px; color: #fecaca; }
 
 /* modal and form legacy styles for auth/ugc */
-.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 20; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: var(--z-modal); }
 .modal-content { position: relative; width: min(460px, 92vw); max-height: 92vh; overflow: auto; background: #fff; color: #0f172a; border-radius: 14px; padding: 16px; }
 .modal label { display: block; font-size: 13px; margin: 8px 0 4px; color: #111827; }
 .modal input, .modal select, .modal textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
@@ -627,7 +651,7 @@ button:focus-visible {
   right: 12px;
   top: 84px;
   bottom: 206px;
-  z-index: 11;
+  z-index: var(--z-workspace);
   width: min(460px, calc(100vw - 24px));
   padding: var(--space-lg);
   display: grid;
@@ -657,7 +681,7 @@ button:focus-visible {
 .ugc-status-approved { background: rgba(21, 128, 61, 0.24); }
 .ugc-status-rejected { background: rgba(127, 29, 29, 0.32); }
 
-.ugc-draft-form { overflow: auto; border: 1px solid var(--glass-border); border-radius: 12px; padding: var(--space-md); display: grid; gap: var(--space-md); background: rgba(15, 23, 42, 0.5); }
+.ugc-draft-form { overflow: auto; border: 1px solid var(--glass-border); border-radius: 12px; padding: var(--space-md); display: grid; gap: var(--space-md); background: rgba(15, 23, 42, 0.5); overscroll-behavior: contain; }
 .ugc-form-section { border: 1px solid rgba(148,163,184,.2); border-radius: var(--radius-md); padding: var(--space-md); }
 .ugc-form-section h3 { margin: 0 0 var(--space-sm); font: var(--font-caption); color: #bfdbfe; text-transform: uppercase; letter-spacing: .06em; }
 .ugc-draft-form label { display: block; font: var(--font-meta); color: #cbd5e1; margin-bottom: var(--space-sm); }
@@ -680,13 +704,17 @@ button:focus-visible {
 .ugc-field-errors { display: grid; gap: 4px; }
 .ugc-form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .ugc-form-actions button[disabled] { opacity: .55; cursor: not-allowed; }
+.ugc-draft-item strong,
+.ugc-draft-meta,
+.ugc-field-errors,
+.field-error-message { overflow-wrap: anywhere; }
 
 .moderation-workspace {
   position: fixed;
   top: 84px;
   right: 12px;
   bottom: 206px;
-  z-index: 11;
+  z-index: var(--z-workspace);
   width: min(980px, calc(100vw - 24px));
   padding: var(--space-lg);
   display: grid;
@@ -727,12 +755,17 @@ button:focus-visible {
 .moderation-item-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
 .moderation-item-meta { margin: 0; color: var(--text-muted); font: var(--font-meta); }
 .moderation-status-badge { display: inline-flex; align-items: center; text-transform: uppercase; border-color: rgba(251, 191, 36, 0.55); background: rgba(120, 53, 15, 0.35); color: #fde68a; }
-.moderation-review-area { overflow: auto; display: grid; gap: 10px; align-content: start; }
+.moderation-review-area { overflow: auto; display: grid; gap: 10px; align-content: start; overscroll-behavior: contain; }
+.moderation-list { overscroll-behavior: contain; }
 .moderation-hero { min-height: 150px; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.25); background: rgba(15, 23, 42, 0.48); overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .moderation-hero img { width: 100%; max-height: 220px; object-fit: cover; display: block; }
 .moderation-hero-empty { color: var(--text-muted); }
 .moderation-review-title-row { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
 .moderation-review-title-row h3 { margin: 0; font-size: 18px; }
+.moderation-review-title-row h3,
+.moderation-review-block p,
+.moderation-meta-value,
+.moderation-item-meta { overflow-wrap: anywhere; }
 .moderation-review-sub { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
 .moderation-meta-pill { border-color: rgba(148, 163, 184, 0.35); color: var(--text-soft); font: var(--font-meta); }
 .moderation-review-main { display: grid; gap: 8px; }
@@ -746,7 +779,7 @@ button:focus-visible {
 .moderation-review-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .moderation-approve-btn { border-color: rgba(52, 211, 153, 0.6); background: rgba(6, 78, 59, 0.38); }
 .moderation-reject-btn { border-color: rgba(248, 113, 113, 0.56); background: rgba(127, 29, 29, 0.34); }
-.moderation-reject-modal { position: fixed; inset: 0; z-index: 12; background: rgba(2, 6, 23, 0.55); display: grid; place-items: center; padding: 12px; }
+.moderation-reject-modal { position: fixed; inset: 0; z-index: var(--z-modal); background: rgba(2, 6, 23, 0.55); display: grid; place-items: center; padding: 12px; }
 .moderation-reject-card { width: min(500px, calc(100vw - 24px)); padding: 14px; display: grid; gap: 10px; }
 .moderation-reject-card h3 { margin: 0; }
 .moderation-reject-card textarea { min-height: 110px; resize: vertical; }
@@ -822,11 +855,11 @@ button:focus-visible {
   flex-direction: column;
   align-items: stretch;
   min-width: 170px;
-  z-index: 14;
+  z-index: var(--z-top-dropdown);
 }
 .top-actions.is-collapsed.is-expanded > button { display: block; width: 100%; }
 
-.maplibregl-ctrl-top-right { top: calc(72px + var(--safe-top)); right: calc(10px + var(--safe-right)); }
+.maplibregl-ctrl-top-right { top: calc(72px + var(--safe-top)); right: calc(10px + var(--safe-right)); z-index: var(--z-map-controls); }
 
 @media (max-width: 1080px) {
   #top-header { grid-template-columns: 86px minmax(140px, 1fr) auto; min-height: 52px; }

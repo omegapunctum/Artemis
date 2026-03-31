@@ -166,6 +166,7 @@ async function rejectSelectedDraft() {
 
 function bindModerationEvents() {
   document.addEventListener('click', onModerationClick);
+  document.addEventListener('click', onModerationOutsideClick);
   document.addEventListener('keydown', onModerationKeydown);
 
   const searchInput = document.getElementById('moderation-search');
@@ -182,6 +183,31 @@ function bindModerationEvents() {
     applyQueueFilters();
     renderModerationWorkspace();
   });
+}
+
+function onModerationOutsideClick(event) {
+  const workspace = document.getElementById('moderation-workspace');
+  if (!workspace || workspace.hidden || !moderationState.isOpen) return;
+
+  const target = event.target;
+  const rejectModal = document.getElementById('moderation-reject-modal');
+  if (rejectModal && !rejectModal.hidden) {
+    const withinRejectCard = target.closest?.('.moderation-reject-card');
+    if (!withinRejectCard) {
+      moderationState.activeModal = null;
+      moderationState.rejectReason = '';
+      renderModerationWorkspace();
+    }
+    return;
+  }
+
+  const insideWorkspace = workspace.contains(target);
+  const opener = target.closest?.('[data-moderation-action=\"toggle-workspace\"]');
+  if (!insideWorkspace && !opener) {
+    moderationState.isOpen = false;
+    moderationState.mobileView = 'list';
+    renderModerationWorkspace();
+  }
 }
 
 function onModerationClick(event) {
@@ -263,6 +289,7 @@ function onModerationClick(event) {
 }
 
 function onModerationKeydown(event) {
+  if (event.defaultPrevented) return;
   if (event.key !== 'Escape') return;
 
   if (moderationState.activeModal === 'reject') {
@@ -277,6 +304,7 @@ function onModerationKeydown(event) {
     moderationState.isOpen = false;
     moderationState.mobileView = 'list';
     renderModerationWorkspace();
+    event.preventDefault();
   }
 }
 
@@ -357,6 +385,7 @@ function renderModerationWorkspace() {
   workspace.hidden = !moderationState.isAllowed;
   workspace.classList.toggle('is-open', moderationState.isAllowed && moderationState.isOpen);
   workspace.setAttribute('aria-hidden', moderationState.isAllowed && moderationState.isOpen ? 'false' : 'true');
+  workspace.dataset.state = moderationState.isAllowed && moderationState.isOpen ? 'open' : 'closed';
 
   const isMobile = window.matchMedia('(max-width: 720px)').matches;
   workspace.classList.toggle('is-mobile-review', isMobile && moderationState.mobileView === 'review');
@@ -526,6 +555,7 @@ function renderRejectModal() {
   const open = moderationState.isAllowed && moderationState.isOpen && moderationState.activeModal === 'reject';
   modal.hidden = !open;
   modal.setAttribute('aria-hidden', open ? 'false' : 'true');
+  modal.dataset.state = open ? 'open' : 'closed';
   textarea.value = moderationState.rejectReason;
 }
 

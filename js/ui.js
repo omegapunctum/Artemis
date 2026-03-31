@@ -114,7 +114,7 @@ export async function initUI(map, features) {
   elements.searchInput?.addEventListener('input', debouncedSearch);
   elements.searchInput?.addEventListener('focus', () => {
     if (state.search) {
-      openPrimaryPanel(elements, state, 'search');
+      openPrimaryPanel(elements, state, 'search', elements.searchInput);
       renderSearchDropdown(elements, state, map);
     }
   });
@@ -143,9 +143,9 @@ export async function initUI(map, features) {
     applyState();
   });
 
-  elements.filtersBtn?.addEventListener('click', () => togglePrimaryPanel(elements, state, 'filters'));
-  elements.layersBtn?.addEventListener('click', () => togglePrimaryPanel(elements, state, 'layers'));
-  elements.bookmarksBtn?.addEventListener('click', () => togglePrimaryPanel(elements, state, 'bookmarks'));
+  elements.filtersBtn?.addEventListener('click', () => togglePrimaryPanel(elements, state, 'filters', elements.filtersBtn));
+  elements.layersBtn?.addEventListener('click', () => togglePrimaryPanel(elements, state, 'layers', elements.layersBtn));
+  elements.bookmarksBtn?.addEventListener('click', () => togglePrimaryPanel(elements, state, 'bookmarks', elements.bookmarksBtn));
   elements.overflowBtn?.addEventListener('click', () => {
     if (!elements.topActions) return;
     const expanded = elements.topActions.classList.toggle('is-expanded');
@@ -174,15 +174,23 @@ export async function initUI(map, features) {
     const withinFloating = elements.detailPanel.contains(target);
     const withinCard = target.closest?.('.ribbon-card');
     if (!withinFloating && !withinCard) clearSelection(state, elements, map);
+    if (elements.topActions?.classList.contains('is-expanded')) {
+      const inTopActions = elements.topActions.contains(target) || elements.overflowBtn?.contains(target);
+      if (!inTopActions) {
+        elements.topActions.classList.remove('is-expanded');
+        elements.overflowBtn?.setAttribute('aria-expanded', 'false');
+      }
+    }
   });
 
   document.addEventListener('keydown', (event) => {
+    if (event.defaultPrevented) return;
     if (event.key !== 'Escape') return;
-    if (state.overlay.activePrimary) {
-      closePrimaryPanel(elements, state, state.overlay.activePrimary);
-      return;
+    const closed = closeTopOverlay(elements, state, map);
+    if (closed) {
+      event.preventDefault();
+      restoreOverlayFocus(state.overlay.lastPrimaryTrigger, elements);
     }
-    if (!elements.detailPanel?.hidden) clearSelection(state, elements, map);
   });
 
   state.loading = false;
@@ -369,7 +377,7 @@ function renderSearchDropdown(elements, state, map) {
     closePrimaryPanel(elements, state, 'search');
     return;
   }
-  openPrimaryPanel(elements, state, 'search');
+  openPrimaryPanel(elements, state, 'search', elements.searchInput);
 
   if (!state.searchResults.length) {
     const noResults = document.createElement('div');
@@ -424,12 +432,12 @@ function setupOverlayManager(elements, state, map) {
   });
 }
 
-function togglePrimaryPanel(elements, state, key) {
+function togglePrimaryPanel(elements, state, key, trigger = null) {
   if (state.overlay.activePrimary === key) closePrimaryPanel(elements, state, key);
-  else openPrimaryPanel(elements, state, key);
+  else openPrimaryPanel(elements, state, key, trigger);
 }
 
-function openPrimaryPanel(elements, state, key) {
+function openPrimaryPanel(elements, state, key, trigger = null) {
   ['search', 'filters', 'layers', 'bookmarks'].forEach((name) => {
     const panel = getPanelByKey(elements, name);
     const button = getButtonByKey(elements, name);
@@ -438,6 +446,7 @@ function openPrimaryPanel(elements, state, key) {
     if (button) button.setAttribute('aria-expanded', String(isActive));
   });
   state.overlay.activePrimary = key;
+  state.overlay.lastPrimaryTrigger = trigger || getButtonByKey(elements, key) || elements.searchInput || null;
   if (state.viewport.isMobile) {
     document.dispatchEvent(new CustomEvent('artemis:overlay-open', { detail: { source: 'primary', key } }));
   }
@@ -846,16 +855,56 @@ function setPanelOpenState(panel, open) {
     panel.classList.remove('is-closing');
     panel.classList.add('is-open');
     panel.setAttribute('aria-hidden', 'false');
+    panel.dataset.state = 'open';
     return;
   }
   panel.classList.remove('is-open');
   panel.classList.add('is-closing');
   panel.setAttribute('aria-hidden', 'true');
+  panel.dataset.state = 'closed';
   window.setTimeout(() => {
     if (panel.classList.contains('is-open')) return;
     panel.hidden = true;
     panel.classList.remove('is-closing');
   }, 260);
+}
+
+function closeTopOverlay(elements, state, map) {
+  const rejectModal = document.getElementById('moderation-reject-modal');
+  if (rejectModal && !rejectModal.hidden) {
+    document.querySelector('[data-moderation-action="close-reject-modal"]')?.click();
+    return true;
+  }
+  const loginModal = document.getElementById('login-modal');
+  if (loginModal && !loginModal.hidden) {
+    loginModal.querySelector('[data-close-modal]')?.click();
+    return true;
+  }
+  const moderationWorkspace = document.getElementById('moderation-workspace');
+  if (moderationWorkspace && !moderationWorkspace.hidden && moderationWorkspace.classList.contains('is-open')) {
+    moderationWorkspace.querySelector('[data-moderation-action="close-workspace"]')?.click();
+    return true;
+  }
+  const ugcPanel = document.getElementById('ugc-panel');
+  if (ugcPanel && !ugcPanel.hidden) {
+    document.getElementById('ugc-close-btn')?.click();
+    return true;
+  }
+  if (state.overlay.activePrimary) {
+    closePrimaryPanel(elements, state, state.overlay.activePrimary);
+    return true;
+  }
+  if (!elements.detailPanel?.hidden) {
+    clearSelection(state, elements, map);
+    return true;
+  }
+  return false;
+}
+
+function restoreOverlayFocus(lastTrigger, elements) {
+  const fallback = elements.filtersBtn || elements.layersBtn || elements.bookmarksBtn || elements.searchInput;
+  const target = lastTrigger && typeof lastTrigger.focus === 'function' ? lastTrigger : fallback;
+  target?.focus?.({ preventScroll: true });
 }
 
 function renderTimelineAxis(elements, years) {
