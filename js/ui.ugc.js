@@ -35,6 +35,14 @@ const STATUS_TEXT = {
   rejected: 'rejected'
 };
 
+const DRAFT_STATUS_LABELS = {
+  draft: 'Draft',
+  pending: 'Pending review',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  unknown: 'Unknown status'
+};
+
 const CONFIDENCE_ALLOWED = new Set(['exact', 'approximate', 'conditional']);
 const READ_ONLY_STATUSES = new Set(['pending', 'approved']);
 
@@ -385,8 +393,8 @@ function renderDraftList(els) {
     const updated = document.createElement('span');
     setText(updated, formatUpdatedAt(draft?.updated_at));
 
-    const badge = renderStatusBadge(draft);
-    meta.append(updated, badge);
+    const statusInfo = renderStatusInfo(draft);
+    meta.append(updated, statusInfo);
 
     const actions = document.createElement('div');
     actions.className = 'ugc-draft-actions';
@@ -406,18 +414,32 @@ function renderDraftList(els) {
   });
 }
 
+function renderStatusInfo(draft) {
+  const statusWrap = document.createElement('div');
+  statusWrap.className = 'ugc-status-info';
+
+  const badge = renderStatusBadge(draft);
+  statusWrap.appendChild(badge);
+
+  const status = normalizeDraftStatus(draft?.status);
+  const rejectionReason = getDraftRejectionReason(draft);
+  if (status === 'rejected' && rejectionReason) {
+    const reason = document.createElement('small');
+    reason.className = 'ugc-status-reason';
+    setText(reason, rejectionReason);
+    statusWrap.appendChild(reason);
+  }
+
+  return statusWrap;
+}
+
 function renderStatusBadge(draft) {
   const status = normalizeDraftStatus(draft?.status);
   const badge = document.createElement('span');
   badge.className = 'ugc-status-badge';
   badge.classList.add(`ugc-status-${status}`);
 
-  let text = status;
-  if (!STATUS_TEXT[status]) text = 'draft';
-  if (status === 'rejected' && draft?.rejection_reason) {
-    text = `rejected: ${draft.rejection_reason}`;
-  }
-  setText(badge, text);
+  setText(badge, DRAFT_STATUS_LABELS[status] || DRAFT_STATUS_LABELS.unknown);
   return badge;
 }
 
@@ -460,10 +482,16 @@ function setFormState(els, nextState) {
 
 function normalizeDraftStatus(status) {
   const normalized = String(status || 'draft').toLowerCase();
-  if (normalized === 'pending' || normalized === 'approved' || normalized === 'rejected') {
+  if (normalized === 'draft' || normalized === 'pending' || normalized === 'approved' || normalized === 'rejected') {
     return normalized;
   }
-  return 'draft';
+  return 'unknown';
+}
+
+function getDraftRejectionReason(draft) {
+  const reason = draft?.rejection_reason ?? draft?.moderation_reason ?? draft?.rejected_reason;
+  if (reason == null) return '';
+  return String(reason).trim();
 }
 
 async function saveDraft(els) {

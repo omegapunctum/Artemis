@@ -687,10 +687,19 @@ button:focus-visible {
 .ugc-draft-meta { display: flex; gap: var(--space-sm); justify-content: space-between; align-items: center; font: var(--font-meta); color: var(--text-muted); }
 .ugc-draft-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .ugc-status-badge { text-transform: capitalize; padding: 2px 8px; }
+.ugc-status-info { display: grid; justify-items: end; gap: 4px; }
 .ugc-status-draft { background: rgba(30, 64, 175, 0.24); }
 .ugc-status-pending { background: rgba(180, 83, 9, 0.24); }
 .ugc-status-approved { background: rgba(21, 128, 61, 0.24); }
 .ugc-status-rejected { background: rgba(127, 29, 29, 0.32); }
+.ugc-status-unknown { background: rgba(71, 85, 105, 0.3); }
+.ugc-status-reason {
+  display: block;
+  max-width: 220px;
+  color: var(--state-error-text);
+  font: var(--font-meta);
+  text-align: right;
+}
 
 .ugc-draft-form { overflow: auto; border: 1px solid var(--glass-border); border-radius: 12px; padding: var(--space-md); display: grid; gap: var(--space-md); background: rgba(15, 23, 42, 0.5); overscroll-behavior: contain; }
 .ugc-form-section { border: 1px solid rgba(148,163,184,.2); border-radius: var(--radius-md); padding: var(--space-md); }
