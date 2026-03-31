@@ -955,6 +955,13 @@ def main() -> int:
     seen_dedupe_keys: set[Tuple[Any, ...]] = set()
     for mapped in candidate_records:
         if parse_bool(mapped.get("validated")) is not True:
+            rejected_features.append(
+                {
+                    "id": mapped.get("id") or "<missing>",
+                    "name_ru": mapped.get("name_ru"),
+                    "reasons": ["not_validated"],
+                }
+            )
             continue
 
         etl_error = get_etl_error(mapped)
