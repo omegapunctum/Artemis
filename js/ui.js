@@ -212,7 +212,7 @@ export async function initUI(map, features) {
       scrollCard: true
     });
   });
-  elements.detailPanelClose?.addEventListener('click', () => clearSelection(state, elements, map));
+  elements.detailPanelClose?.addEventListener('click', () => closeDetailView(elements));
   document.getElementById('detail-panel-expand')?.addEventListener('click', () => toggleDetailSheetState(state, elements));
   document.addEventListener('click', (event) => {
     const target = event.target;
@@ -226,7 +226,7 @@ export async function initUI(map, features) {
     if (elements.detailPanel?.hidden) return;
     const withinFloating = elements.detailPanel.contains(target);
     const withinCard = target.closest?.('.ribbon-card');
-    if (!withinFloating && !withinCard) clearSelection(state, elements, map);
+    if (!withinFloating && !withinCard) closeDetailView(elements);
     if (elements.topActions?.classList.contains('is-expanded')) {
       const inTopActions = elements.topActions.contains(target) || elements.overflowBtn?.contains(target);
       if (!inTopActions) {
@@ -599,130 +599,29 @@ function syncSelectedCardState(elements, selectedFeatureId) {
 function showDetailPanel(state, elements, map, feature) {
   if (!elements.detailPanel || !elements.detailPanelBody) return;
   const props = normalizeProps(feature);
-  const layerLabel = state.layerLookup.get(String(props.layer_id || '').trim()) || String(props.layer_id || 'Layer');
+  const layerLabel = state.layerLookup.get(String(props.layer_id || '').trim()) || String(props.layer_id || '');
   const dateLabel = formatRangeLabel(props.date_start, props.date_end);
   const detail = document.createElement('div');
   detail.className = 'detail-content';
-
-  const imageNode = buildImageNode(props, 'Object image', true);
-  imageNode.classList.add('detail-hero-media');
-  detail.appendChild(imageNode);
-
-  const header = document.createElement('section');
-  header.className = 'detail-section detail-header';
-  const title = document.createElement('h3');
-  title.className = 'detail-title';
-  title.textContent = getPrimaryTitle(props);
-  const date = document.createElement('p');
-  date.className = 'detail-date';
-  date.textContent = dateLabel;
-  const badges = document.createElement('div');
-  badges.className = 'detail-badges';
-  badges.append(buildBadge(layerLabel, 'muted'));
-  const confidence = getConfidenceLabel(props.coordinates_confidence);
-  if (confidence) badges.append(buildBadge(confidence, 'accent'));
-  header.append(title, date, badges);
-
-  const descriptionSection = document.createElement('section');
-  descriptionSection.className = 'detail-section';
-  const descriptionTitle = createSectionTitle('Context');
-  const descriptionText = document.createElement('p');
-  descriptionText.className = 'detail-description';
-  const fullDescription = String(props.description || props.title_short || 'Контекст для этого объекта пока отсутствует.');
-  descriptionText.textContent = truncateText(fullDescription, 220);
-  descriptionSection.append(descriptionTitle, descriptionText);
-  if (fullDescription.length > 220) {
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = 'detail-inline-action';
-    toggle.textContent = 'Expand';
-    toggle.addEventListener('click', () => {
-      const expanded = toggle.dataset.expanded === 'true';
-      toggle.dataset.expanded = expanded ? 'false' : 'true';
-      toggle.textContent = expanded ? 'Expand' : 'Collapse';
-      descriptionText.textContent = expanded ? truncateText(fullDescription, 220) : fullDescription;
-    });
-    descriptionSection.appendChild(toggle);
-  }
-
-  const metaSection = document.createElement('section');
-  metaSection.className = 'detail-section';
-  metaSection.appendChild(createSectionTitle('Meta'));
-  appendMetaRow(metaSection, 'Place', props.place_name || props.region || props.country);
-  appendMetaRow(metaSection, 'Coordinates', formatCoordinates(feature?.geometry?.coordinates));
-  appendMetaRow(metaSection, 'Source type', props.source_type || 'Unknown');
-  appendMetaRow(metaSection, 'Source domain', extractDomain(props.source_url));
-  appendMetaRow(metaSection, 'Sequence', props.sequence_order);
-  appendMetaRow(metaSection, 'Dates', dateLabel);
-
-  const sourceSection = document.createElement('section');
-  sourceSection.className = 'detail-section';
-  sourceSection.appendChild(createSectionTitle('Source'));
+  const title = getPrimaryTitle(props);
+  const description = String(props.description || props.title_short || '').trim();
   const sourceUrl = normalizeSafeUrl(String(props.source_url || '').trim());
+
+  detail.appendChild(createDetailRow('Название', title));
+  if (dateLabel !== 'Дата не указана') detail.appendChild(createDetailRow('Дата / период', dateLabel));
+  if (layerLabel) detail.appendChild(createDetailRow('Слой / тип', layerLabel));
+  if (description) detail.appendChild(createDetailRow('Описание', description));
   if (sourceUrl) {
-    const sourceLink = document.createElement('a');
-    sourceLink.className = 'detail-action-link';
-    setSafeLink(sourceLink, sourceUrl);
-    sourceLink.textContent = 'Open source';
-    sourceSection.appendChild(sourceLink);
-  } else {
-    const unavailable = document.createElement('p');
-    unavailable.className = 'detail-empty';
-    unavailable.textContent = 'Source unavailable';
-    sourceSection.appendChild(unavailable);
-  }
-  if (props.source_license) sourceSection.appendChild(buildBadge(String(props.source_license), 'muted'));
-
-  const relatedSection = document.createElement('section');
-  relatedSection.className = 'detail-section';
-  relatedSection.appendChild(createSectionTitle('Related'));
-  const relatedItems = getRelatedFeatures(state, feature, 3);
-  if (!relatedItems.length) {
-    const empty = document.createElement('p');
-    empty.className = 'detail-empty';
-    empty.textContent = 'No related objects';
-    relatedSection.appendChild(empty);
-  } else {
-    relatedItems.forEach((relatedFeature) => {
-      const relatedProps = normalizeProps(relatedFeature);
-      const item = document.createElement('button');
-      item.type = 'button';
-      item.className = 'related-item';
-      const itemTitle = document.createElement('span');
-      itemTitle.className = 'related-title';
-      itemTitle.textContent = getPrimaryTitle(relatedProps);
-      const itemMeta = document.createElement('span');
-      itemMeta.className = 'related-meta';
-      itemMeta.textContent = `${formatRangeLabel(relatedProps.date_start, relatedProps.date_end)} • ${state.layerLookup.get(String(relatedProps.layer_id || '').trim()) || relatedProps.layer_id || 'Layer'}`;
-      item.append(itemTitle, itemMeta);
-      item.addEventListener('click', () => {
-        selectFeature(state, elements, map, relatedFeature, { centerOnMap: true, openDetail: true, scrollCard: true });
-      });
-      relatedSection.appendChild(item);
-    });
+    const row = createDetailRow('Источник');
+    const link = document.createElement('a');
+    link.className = 'detail-action-link';
+    link.textContent = sourceUrl;
+    setSafeLink(link, sourceUrl);
+    row.querySelector('.detail-meta-value')?.appendChild(link);
+    detail.appendChild(row);
   }
 
-  const actionsSection = document.createElement('section');
-  actionsSection.className = 'detail-section detail-actions';
-  const focusButton = document.createElement('button');
-  focusButton.type = 'button';
-  focusButton.textContent = 'Focus on map';
-  focusButton.addEventListener('click', () => focusFeatureOnMap(map, feature));
-  const sourceButton = document.createElement('button');
-  sourceButton.type = 'button';
-  sourceButton.textContent = 'Open source';
-  sourceButton.disabled = !sourceUrl;
-  if (sourceUrl) {
-    sourceButton.addEventListener('click', () => window.open(sourceUrl, '_blank', 'noopener,noreferrer'));
-  }
-  const noteButton = document.createElement('button');
-  noteButton.type = 'button';
-  noteButton.textContent = 'Add note [TODO]';
-  noteButton.disabled = true;
-  actionsSection.append(focusButton, sourceButton, noteButton);
-
-  detail.append(header, descriptionSection, metaSection, sourceSection, relatedSection, actionsSection);
-  elements.detailPanelBody.replaceChildren(createDetailSkeleton());
+  elements.detailPanelBody.replaceChildren();
   setPanelOpenState(elements.detailPanel, true);
   elements.detailPanel.classList.add('is-selected');
   if (state.viewport.isMobile) {
@@ -889,6 +788,10 @@ function clearSelection(state, elements, map) {
   hideDetailPanel(elements);
   syncSelectedCardState(elements, null);
   renderCards(elements, state, map);
+}
+
+function closeDetailView(elements) {
+  hideDetailPanel(elements);
 }
 
 function getSelectedFeature(state) {
@@ -1103,6 +1006,18 @@ function appendMetaRow(parent, label, value) {
   val.textContent = String(value);
   row.append(key, val);
   parent.appendChild(row);
+}
+function createDetailRow(label, value = '') {
+  const row = document.createElement('section');
+  row.className = 'detail-section detail-min-row';
+  const labelNode = document.createElement('h3');
+  labelNode.className = 'detail-section-title';
+  labelNode.textContent = String(label || '');
+  const valueNode = document.createElement('div');
+  valueNode.className = 'detail-meta-value';
+  if (value) valueNode.textContent = String(value);
+  row.append(labelNode, valueNode);
+  return row;
 }
 function formatCoordinates(coords) {
   if (!Array.isArray(coords) || coords.length < 2) return '';

@@ -544,6 +544,9 @@ button:focus-visible {
 .detail-meta-row { display: flex; justify-content: space-between; gap: var(--space-sm); font: var(--font-meta); }
 .detail-meta-label { color: var(--text-muted); }
 .detail-meta-value { color: var(--text-main); text-align: right; }
+.detail-min-row { gap: 6px; }
+.detail-min-row .detail-meta-value { text-align: left; font: var(--font-body); color: var(--text-soft); }
+.detail-min-row .detail-action-link { overflow-wrap: anywhere; }
 .detail-action-link, .detail-inline-action { font: var(--font-meta); color: #7dd3fc; text-decoration: none; justify-self: start; }
 .detail-action-link:hover, .detail-inline-action:hover { text-decoration: underline; }
 .detail-empty { margin: 0; font-size: 12px; color: var(--text-muted); }
