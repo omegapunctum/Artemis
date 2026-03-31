@@ -360,6 +360,7 @@ async function refreshDrafts(els) {
     const normalized = normalizeAppError(error, 'Failed to load drafts.');
     const message = handleAuthError(error, els) || normalized.message;
     setGlobalError(els, message, { retry: () => refreshDrafts(els) });
+    toggleDraftsEmptyState(els, false);
   } finally {
     hideLoading();
   }
@@ -370,16 +371,17 @@ function renderDraftList(els) {
   const loggedIn = Boolean(getCurrentUser());
 
   if (!loggedIn) {
-    els.ugcDraftsEmpty.hidden = true;
+    toggleDraftsEmptyState(els, false);
     return;
   }
 
   if (!uiState.drafts.length) {
-    els.ugcDraftsEmpty.hidden = false;
+    const hasError = Boolean(String(els.ugcGlobalError?.textContent || '').trim());
+    toggleDraftsEmptyState(els, !hasError, 'No drafts yet.');
     return;
   }
 
-  els.ugcDraftsEmpty.hidden = true;
+  toggleDraftsEmptyState(els, false);
 
   uiState.drafts.forEach((draft) => {
     const item = document.createElement('li');
@@ -412,6 +414,15 @@ function renderDraftList(els) {
 
     els.ugcDraftsList.appendChild(item);
   });
+}
+
+function toggleDraftsEmptyState(els, visible, message = '') {
+  const emptyNode = els.ugcDraftsEmpty;
+  if (!emptyNode) return;
+
+  emptyNode.hidden = !visible;
+  if (!visible) return;
+  setText(emptyNode, message || 'No drafts yet.');
 }
 
 function renderStatusInfo(draft) {
