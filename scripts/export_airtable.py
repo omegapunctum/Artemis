@@ -69,11 +69,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dry-run", action="store_true", help="Не ходить в сеть и сгенерировать mock-данные")
     parser.add_argument("--max-records", type=int, default=None, help="Ограничить число записей (для тестирования)")
     parser.add_argument(
-        "--exclude-without-geometry",
-        action="store_true",
-        help="Исключить из GeoJSON записи без координат (по умолчанию такие записи остаются)",
-    )
-    parser.add_argument(
         "--include-inactive",
         action="store_true",
         help="Включать записи с is_active=False (по умолчанию такие записи пропускаются)",
