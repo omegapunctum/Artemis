@@ -68,6 +68,9 @@ export function initMap(containerId, features) {
     center: [37.6176, 55.7558],
     zoom: 4
   });
+  const container = map.getContainer?.();
+  if (container) container._map = map;
+  window.__ARTEMIS_MAP = map;
 
   map.addControl(new maplibregl.NavigationControl(), 'top-right');
   const initialBuild = buildMapFeatureCollection(features);

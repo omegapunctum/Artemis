@@ -62,6 +62,7 @@
         <div id="search-dropdown" class="top-panel search-dropdown" hidden></div>
       </div>
       <div class="top-actions">
+        <button id="ugc-create-btn" type="button" aria-label="Create draft">Create draft</button>
         <button id="filters-btn" type="button" aria-label="Toggle filters" aria-expanded="false">Filters</button>
         <button id="layers-btn" type="button" aria-label="Toggle layers" aria-expanded="false">Layers</button>
         <button id="bookmarks-btn" type="button" aria-label="Toggle bookmarks" aria-expanded="false">Bookmarks</button>
@@ -103,6 +104,77 @@
       </header>
       <div id="detail-panel-body" class="detail-panel-body"></div>
     </aside>
+
+    <aside id="ugc-panel" class="glass-panel ugc-panel" hidden aria-label="Draft editor" aria-hidden="true">
+      <header class="ugc-panel-head">
+        <div>
+          <h2 id="ugc-panel-title" class="ugc-panel-title">Create draft</h2>
+          <p id="ugc-panel-subtitle" class="ugc-panel-subtitle">Draft status: pristine</p>
+        </div>
+        <button id="ugc-close-btn" class="floating-card-close" type="button" aria-label="Close draft panel">×</button>
+      </header>
+      <div id="ugc-auth-cta" class="ugc-inline-note" hidden></div>
+      <div id="ugc-global-error" class="ugc-inline-error" hidden></div>
+      <section class="ugc-my-drafts">
+        <div class="ugc-my-drafts-head">
+          <h3>My drafts</h3>
+          <button id="ugc-refresh-drafts-btn" type="button">Refresh</button>
+        </div>
+        <div id="ugc-drafts-empty" class="ugc-empty-state" hidden>No drafts yet</div>
+        <ul id="ugc-drafts-list" class="ugc-drafts-list"></ul>
+      </section>
+      <form id="ugc-draft-form" class="ugc-draft-form" novalidate>
+        <section class="ugc-form-section">
+          <h3>Basic info</h3>
+          <label>name_ru <input name="name_ru" /></label>
+          <label>name_en <input name="name_en" /></label>
+          <label>layer_id
+            <select name="layer_id">
+              <option value="">Select layer</option>
+            </select>
+          </label>
+          <label>title_short <input name="title_short" maxlength="120" /></label>
+        </section>
+        <section class="ugc-form-section">
+          <h3>Time</h3>
+          <label>date_start <input name="date_start" inputmode="numeric" /></label>
+          <label>date_end <input name="date_end" inputmode="numeric" /></label>
+        </section>
+        <section class="ugc-form-section">
+          <h3>Location</h3>
+          <div class="ugc-coords-row">
+            <label>latitude <input name="latitude" inputmode="decimal" /></label>
+            <label>longitude <input name="longitude" inputmode="decimal" /></label>
+          </div>
+          <label>coordinates_confidence
+            <select name="coordinates_confidence">
+              <option value="">Not set</option>
+              <option value="exact">exact</option>
+              <option value="approximate">approximate</option>
+              <option value="conditional">conditional</option>
+            </select>
+          </label>
+          <button id="ugc-use-map-center-btn" type="button">Use current map center</button>
+        </section>
+        <section class="ugc-form-section">
+          <h3>Media & source</h3>
+          <label>image_url <input name="image_url" inputmode="url" /></label>
+          <label>source_url <input name="source_url" inputmode="url" /></label>
+        </section>
+        <section class="ugc-form-section">
+          <h3>Description & tags</h3>
+          <label>description <textarea name="description" maxlength="2000"></textarea></label>
+          <label>tags <input name="tags" placeholder="tag1, tag2" /></label>
+        </section>
+        <div id="ugc-field-errors" class="ugc-field-errors"></div>
+        <div class="ugc-form-actions">
+          <button id="ugc-save-btn" type="submit">Save draft</button>
+          <button id="ugc-submit-btn" type="button">Submit for review</button>
+          <button id="ugc-delete-btn" type="button">Delete draft</button>
+          <button id="ugc-cancel-btn" type="button">Cancel</button>
+        </div>
+      </form>
+    </aside>
   </div>
 
 <div id="error-banner" hidden></div>
@@ -122,36 +194,6 @@
         <label>Email <input type="email" name="email" required /></label>
         <label>Пароль <input type="password" name="password" minlength="8" required /></label>
         <button type="submit">Продолжить</button>
-      </form>
-    </div>
-  </div>
-
-  <div id="draft-modal" class="modal" hidden>
-    <div class="modal-content draft-modal-content">
-      <button type="button" class="modal-close" data-close-modal aria-label="Закрыть">×</button>
-      <h3>Редактор черновика</h3>
-      <form id="draft-form" novalidate>
-        <label>name_ru <input name="name_ru" required /></label>
-        <label>name_en <input name="name_en" /></label>
-        <label>layer_id
-          <select name="layer_id" required>
-            <option value="">Выберите слой</option>
-          </select>
-        </label>
-        <label>date_start <input name="date_start" inputmode="numeric" /></label>
-        <label>date_construction_end <input name="date_construction_end" inputmode="numeric" /></label>
-        <label>date_end <input name="date_end" inputmode="numeric" /></label>
-        <label>longitude <input name="longitude" /></label>
-        <label>latitude <input name="latitude" /></label>
-        <label>influence_radius_km <input name="influence_radius_km" /></label>
-        <label>title_short <input name="title_short" /></label>
-        <label>description <textarea name="description"></textarea></label>
-        <label>tags (comma separated) <input name="tags" /></label>
-        <label>image upload <input name="image_file" type="file" accept=".jpg,.jpeg,.png,.webp,image/*" /></label>
-        <label>source_media_url <input name="source_media_url" /></label>
-        <label>source_license <input name="source_license" /></label>
-        <div id="draft-errors"></div>
-        <button type="submit">Сохранить черновик</button>
       </form>
     </div>
   </div>

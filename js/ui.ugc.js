@@ -1,239 +1,137 @@
 import { buildApiError, login, register, logout, getCurrentUser, fetchWithAuth } from './auth.js';
-import { submitForModeration, validateDraftPayload } from './ugc.js';
 import { loadLayers } from './data.js';
 import { showError, clearError, showLoading, hideLoading } from './ux.js';
-import { normalizeSafeUrl, setSafeLink, setText, toSafeText } from './safe-dom.js';
+import { setText, toSafeText } from './safe-dom.js';
 
 let ugcInitialized = false;
 
-const draftState = {
-  drafts: []
+const FORM_FIELDS = [
+  'name_ru',
+  'name_en',
+  'layer_id',
+  'date_start',
+  'date_end',
+  'latitude',
+  'longitude',
+  'coordinates_confidence',
+  'title_short',
+  'description',
+  'image_url',
+  'source_url',
+  'tags'
+];
+
+const STATUS_TEXT = {
+  pristine: 'pristine',
+  editing: 'editing',
+  saving: 'saving',
+  saved: 'saved as draft',
+  submitting: 'submitting to pending',
+  validation: 'validation error',
+  server: 'server error',
+  draft: 'draft',
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected'
 };
 
-const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
-const VALIDATION_ERROR_MESSAGES = {
-  required: 'Обязательное поле.',
-  invalid_integer: 'Ожидается целое число.',
-  invalid_url_scheme: 'Разрешены только http/https URL.',
-  too_long: 'Слишком длинное значение.',
-  pair_required: 'Укажите и широту, и долготу.',
-  invalid_range: 'Координата вне допустимого диапазона.',
-  not_allowed: 'Значение не входит в допустимый список.'
+const CONFIDENCE_ALLOWED = new Set(['exact', 'approximate', 'conditional']);
+const READ_ONLY_STATUSES = new Set(['pending', 'approved']);
+
+const uiState = {
+  drafts: [],
+  activeDraftId: null,
+  mode: 'create',
+  formState: 'pristine',
+  readOnly: false,
+  pendingAfterLogin: null,
+  layers: []
 };
-
-export async function uploadImage(file, draftId) {
-  if (!file) throw new Error('Файл не выбран.');
-  if (!draftId) throw new Error('Сначала сохраните черновик, затем загрузите изображение.');
-
-  if (file.size > MAX_IMAGE_SIZE_BYTES) {
-    const error = new Error('Размер файла превышает 5 MB.');
-    console.error(error.message);
-    if (typeof window !== 'undefined' && typeof window.alert === 'function') window.alert(error.message);
-    throw error;
-  }
-
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('draft_id', String(draftId));
-
-  showLoading();
-  try {
-    const response = await fetchWithAuth('/uploads/image', {
-      method: 'POST',
-      body: formData
-    });
-
-    const data = await parseDraftResponse(response, 'Не удалось загрузить изображение.');
-    clearError();
-    return String(data?.url || '').trim();
-  } catch (error) {
-    showError(error.message || 'Не удалось загрузить изображение.');
-    throw error;
-  } finally {
-    hideLoading();
-  }
-}
-
-function cloneDrafts() {
-  return draftState.drafts.map((draft) => ({ ...draft }));
-}
-
-function normalizeDraft(draft) {
-  if (!draft || typeof draft !== 'object') return null;
-
-  const coords = Array.isArray(draft.coords)
-    ? draft.coords
-    : (draft.geometry?.type === 'Point' && Array.isArray(draft.geometry.coordinates) ? draft.geometry.coordinates : null);
-
-  return {
-    ...draft,
-    coords: Array.isArray(coords) ? coords : null
-  };
-}
-
-async function parseDraftResponse(response, fallbackMessage) {
-  let data = null;
-
-  try {
-    data = await response.json();
-  } catch (_error) {
-    data = null;
-  }
-
-  if (response.ok) return data;
-  if (response.status >= 500) console.error(fallbackMessage, data || response.statusText);
-  response.json = async () => data;
-  throw await buildApiError(response, fallbackMessage);
-}
-
-export async function loadDrafts() {
-  showLoading();
-  try {
-    const response = await fetchWithAuth('/drafts', { method: 'GET' });
-    const data = await parseDraftResponse(response, 'Не удалось загрузить черновики.');
-    draftState.drafts = Array.isArray(data) ? data.map(normalizeDraft).filter(Boolean) : [];
-    clearError();
-    return cloneDrafts();
-  } catch (error) {
-    showError(error.message || 'Не удалось загрузить черновики.');
-    throw error;
-  } finally {
-    hideLoading();
-  }
-}
-
-export async function createDraft(data) {
-  const check = validateDraftPayload(data);
-  if (!check.valid) {
-    const error = new Error('Ошибка валидации.');
-    error.type = 'validation';
-    error.fields = check.errors;
-    throw error;
-  }
-
-  showLoading();
-  try {
-    const response = await fetchWithAuth('/drafts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(check.data)
-    });
-    const createdDraft = normalizeDraft(await parseDraftResponse(response, 'Не удалось создать черновик.'));
-    if (createdDraft) draftState.drafts = [createdDraft, ...draftState.drafts.filter((draft) => draft.id !== createdDraft.id)];
-    clearError();
-    return createdDraft;
-  } catch (error) {
-    showError(error.message || 'Не удалось создать черновик.');
-    throw error;
-  } finally {
-    hideLoading();
-  }
-}
-
-export async function updateDraft(id, data) {
-  const check = validateDraftPayload(data);
-  if (!check.valid) {
-    const error = new Error('Ошибка валидации.');
-    error.type = 'validation';
-    error.fields = check.errors;
-    throw error;
-  }
-
-  showLoading();
-  try {
-    const response = await fetchWithAuth(`/drafts/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(check.data)
-    });
-    const updatedDraft = normalizeDraft(await parseDraftResponse(response, 'Не удалось обновить черновик.'));
-    if (updatedDraft) {
-      const hasDraft = draftState.drafts.some((draft) => draft.id === updatedDraft.id);
-      draftState.drafts = hasDraft
-        ? draftState.drafts.map((draft) => (draft.id === updatedDraft.id ? updatedDraft : draft))
-        : [updatedDraft, ...draftState.drafts];
-    }
-    clearError();
-    return updatedDraft;
-  } catch (error) {
-    showError(error.message || 'Не удалось обновить черновик.');
-    throw error;
-  } finally {
-    hideLoading();
-  }
-}
-
-export async function deleteDraft(id) {
-  showLoading();
-  try {
-    const response = await fetchWithAuth(`/drafts/${id}`, { method: 'DELETE' });
-    await parseDraftResponse(response, 'Не удалось удалить черновик.');
-    draftState.drafts = draftState.drafts.filter((draft) => String(draft.id) !== String(id));
-    clearError();
-    return cloneDrafts();
-  } catch (error) {
-    showError(error.message || 'Не удалось удалить черновик.');
-    throw error;
-  } finally {
-    hideLoading();
-  }
-}
 
 export async function initUGCUI() {
   if (ugcInitialized) return;
   ugcInitialized = true;
 
-  const els = {
-    authButtons: document.getElementById('auth-buttons'),
-    loginBtn: document.getElementById('login-btn'),
-    registerBtn: document.getElementById('register-btn'),
-    profilePanel: document.getElementById('profile-panel'),
-    draftsList: document.getElementById('drafts-list'),
-    openDraftEditorBtn: document.getElementById('open-draft-editor-btn'),
-    refreshDraftsBtn: document.getElementById('refresh-drafts-btn'),
-    logoutBtn: document.getElementById('logout-btn'),
-    loginModal: document.getElementById('login-modal'),
-    loginForm: document.getElementById('login-form'),
-    draftModal: document.getElementById('draft-modal'),
-    draftForm: document.getElementById('draft-form'),
-    draftErrors: document.getElementById('draft-errors')
-  };
+  const els = getElements();
+  if (!els.ugcPanel || !els.form) return;
 
-  const state = {
-    activeDraftId: null,
-    pendingAfterLogin: null,
-    layers: await loadLayers().catch(() => []),
-    isRefreshingDrafts: false
-  };
+  uiState.layers = await loadLayers().catch(() => []);
+  hydrateLayerSelect(els.form, uiState.layers);
 
-  hydrateLayerSelect(state.layers);
+  bindAuth(els);
   bindModalClosers(els);
-  bindAuth(els, state);
-  bindDraftEditor(els, state);
+  bindUgcPanel(els);
+  bindForm(els);
+  bindEscClose(els);
   syncAuthUI(els);
 
   if (getCurrentUser()) {
-    await refreshDraftsList(els, state);
+    await refreshDrafts(els);
+  } else {
+    renderDraftList(els);
   }
 
   window.addEventListener('artemis:auth-required', () => {
-    state.pendingAfterLogin = state.pendingAfterLogin || 'restore-session';
+    uiState.pendingAfterLogin = uiState.pendingAfterLogin || 'open-ugc';
     openModal(els.loginModal);
   }, { passive: true });
 }
 
-function bindAuth(els, state) {
-  els.loginBtn.addEventListener('click', () => {
+function getElements() {
+  return {
+    authButtons: document.getElementById('auth-buttons'),
+    profilePanel: document.getElementById('profile-panel'),
+    loginBtn: document.getElementById('login-btn'),
+    registerBtn: document.getElementById('register-btn'),
+    logoutBtn: document.getElementById('logout-btn'),
+    loginModal: document.getElementById('login-modal'),
+    loginForm: document.getElementById('login-form'),
+
+    createBtn: document.getElementById('ugc-create-btn'),
+    fallbackCreateBtn: document.getElementById('open-draft-editor-btn'),
+    refreshLegacyBtn: document.getElementById('refresh-drafts-btn'),
+
+    ugcPanel: document.getElementById('ugc-panel'),
+    ugcTitle: document.getElementById('ugc-panel-title'),
+    ugcSubtitle: document.getElementById('ugc-panel-subtitle'),
+    ugcAuthCta: document.getElementById('ugc-auth-cta'),
+    ugcGlobalError: document.getElementById('ugc-global-error'),
+    ugcDraftsList: document.getElementById('ugc-drafts-list'),
+    ugcDraftsEmpty: document.getElementById('ugc-drafts-empty'),
+    ugcRefreshDraftsBtn: document.getElementById('ugc-refresh-drafts-btn'),
+    ugcCloseBtn: document.getElementById('ugc-close-btn'),
+
+    form: document.getElementById('ugc-draft-form'),
+    fieldErrors: document.getElementById('ugc-field-errors'),
+    saveBtn: document.getElementById('ugc-save-btn'),
+    submitBtn: document.getElementById('ugc-submit-btn'),
+    deleteBtn: document.getElementById('ugc-delete-btn'),
+    cancelBtn: document.getElementById('ugc-cancel-btn'),
+    useMapCenterBtn: document.getElementById('ugc-use-map-center-btn')
+  };
+}
+
+function bindAuth(els) {
+  els.loginBtn?.addEventListener('click', () => {
     els.loginForm.dataset.mode = 'login';
     openModal(els.loginModal);
   });
 
-  els.registerBtn.addEventListener('click', () => {
+  els.registerBtn?.addEventListener('click', () => {
     els.loginForm.dataset.mode = 'register';
     openModal(els.loginModal);
   });
 
-  els.loginForm.addEventListener('submit', async (event) => {
+  els.logoutBtn?.addEventListener('click', async () => {
+    await logout();
+    uiState.drafts = [];
+    uiState.activeDraftId = null;
+    syncAuthUI(els);
+    renderDraftList(els);
+    closeUgcPanel(els);
+  });
+
+  els.loginForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const mode = els.loginForm.dataset.mode || 'login';
     const email = els.loginForm.email.value.trim();
@@ -243,360 +141,600 @@ function bindAuth(els, state) {
     try {
       if (mode === 'register') await register(email, password);
       else await login(email, password);
+
       clearError();
       closeModal(els.loginModal);
       syncAuthUI(els);
-      await refreshDraftsList(els, state);
-      showToast('Авторизация успешна.');
+      await refreshDrafts(els);
 
-      if (state.pendingAfterLogin === 'open-editor') {
-        state.pendingAfterLogin = null;
-        openDraftEditor(els, state, null);
+      if (uiState.pendingAfterLogin === 'open-ugc') {
+        uiState.pendingAfterLogin = null;
+        openUgcPanel(els);
       } else {
-        state.pendingAfterLogin = null;
+        uiState.pendingAfterLogin = null;
       }
     } catch (error) {
-      console.error('Ошибка авторизации:', error);
-      showError(error.message || 'Ошибка авторизации.');
-      showToast(error.message || 'Ошибка авторизации.');
+      showError(error.message || 'Authentication failed.');
     } finally {
       setLoading(els.loginForm, false);
     }
   });
-
-  els.logoutBtn.addEventListener('click', async () => {
-    await logout();
-    syncAuthUI(els);
-    els.draftsList.replaceChildren();
-    draftState.drafts = [];
-    state.activeDraftId = null;
-    closeModal(els.draftModal);
-    showToast('Вы вышли из аккаунта.');
-  });
 }
 
-function bindDraftEditor(els, state) {
-  els.openDraftEditorBtn.addEventListener('click', () => {
-    if (!getCurrentUser()) {
-      state.pendingAfterLogin = 'open-editor';
-      els.loginForm.dataset.mode = 'login';
-      openModal(els.loginModal);
-      return;
-    }
-    openDraftEditor(els, state, null);
-  });
-
-  els.refreshDraftsBtn.addEventListener('click', async () => {
-    if (!getCurrentUser()) {
-      openModal(els.loginModal);
-      return;
-    }
-    await refreshDraftsList(els, state);
-  });
-
-  els.draftForm.image_file.addEventListener('change', async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!state.activeDraftId) {
-      const message = 'Сначала сохраните черновик, затем загрузите изображение.';
-      console.error(message);
-      window.alert?.(message);
-      event.target.value = '';
-      return;
-    }
-
-    try {
-      setLoading(els.draftForm, true);
-      const imageUrl = await uploadImage(file, state.activeDraftId);
-      draftState.drafts = draftState.drafts.map((draft) => (
-        String(draft.id) === String(state.activeDraftId)
-          ? { ...draft, image_url: imageUrl, source_media_url: imageUrl }
-          : draft
-      ));
-      els.draftForm.source_media_url.value = imageUrl;
-      await refreshDraftsList(els, state);
-      const refreshedDraft = draftState.drafts.find((draft) => String(draft.id) === String(state.activeDraftId));
-      if (refreshedDraft) openDraftEditor(els, state, { ...refreshedDraft, source_media_url: imageUrl });
-      showToast('Изображение прикреплено к черновику.');
-    } catch (error) {
-      console.error('Ошибка загрузки изображения:', error);
-      handlePossiblyUnauthorized(error, state, els);
-      showError(error.message || 'Не удалось загрузить изображение.');
-      showToast(error.message || 'Не удалось загрузить изображение.');
-    } finally {
-      event.target.value = '';
-      setLoading(els.draftForm, false);
-    }
-  });
-
-  els.draftForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-
-    const payload = collectDraftPayload(els.draftForm);
-    const check = validateDraftPayload(payload);
-    if (!check.valid) {
-      renderFieldErrors(els.draftForm, els.draftErrors, check.errors);
-      return;
-    }
-
-    setLoading(els.draftForm, true);
-    renderFieldErrors(els.draftForm, els.draftErrors, {});
-    try {
-      if (state.activeDraftId) {
-        await updateDraft(state.activeDraftId, payload);
-        showToast('Черновик обновлён.');
-      } else {
-        await createDraft(payload);
-        showToast('Черновик создан.');
-      }
-      closeModal(els.draftModal);
-      await refreshDraftsList(els, state);
-    } catch (error) {
-      console.error('Ошибка сохранения черновика:', error);
-      if (error.type === 'validation') {
-        renderFieldErrors(els.draftForm, els.draftErrors, error.fields || {});
-      } else if (error.type === 'auth' || String(error.message || '').includes('Требуется повторный вход')) {
-        state.pendingAfterLogin = 'open-editor';
-        showError('Нужна авторизация.');
-        showToast('Нужна авторизация.');
-        openModal(els.loginModal);
-      } else {
-        showError(error.message || 'Не удалось сохранить черновик.');
-        showToast(error.message || 'Не удалось сохранить черновик.');
-      }
-    } finally {
-      setLoading(els.draftForm, false);
-    }
-  });
-}
-
-// Обновляет список черновиков без перезагрузки страницы.
-async function refreshDraftsList(els, state) {
-  if (state.isRefreshingDrafts) return;
-  state.isRefreshingDrafts = true;
-  try {
-    const drafts = await loadDrafts();
-    els.draftsList.replaceChildren();
-
-    drafts.forEach((draft) => {
-      const item = document.createElement('li');
-      item.className = 'draft-item';
-
-      const title = document.createElement('strong');
-      title.textContent = String(draft?.name_ru || 'Без названия');
-      item.appendChild(title);
-
-      const status = document.createElement('span');
-      status.className = 'status-label';
-      status.textContent = humanStatus(draft?.status);
-      item.appendChild(status);
-
-      const safeImageUrl = normalizeSafeUrl(draft?.image_url, { allowRelative: true });
-      if (safeImageUrl) {
-        const link = document.createElement('a');
-        link.className = 'draft-image-link';
-        setSafeLink(link, safeImageUrl, { allowRelative: true });
-        setText(link, 'Image attached');
-        item.appendChild(link);
-      }
-
-      const actions = document.createElement('div');
-      actions.className = 'draft-actions';
-      const editBtn = document.createElement('button');
-      editBtn.type = 'button';
-      editBtn.dataset.action = 'edit';
-      editBtn.textContent = 'Edit';
-      const deleteBtn = document.createElement('button');
-      deleteBtn.type = 'button';
-      deleteBtn.dataset.action = 'delete';
-      deleteBtn.textContent = 'Delete';
-      const submitBtn = document.createElement('button');
-      submitBtn.type = 'button';
-      submitBtn.dataset.action = 'submit';
-      submitBtn.textContent = 'Submit for moderation';
-      actions.append(editBtn, deleteBtn, submitBtn);
-      item.appendChild(actions);
-
-      editBtn.addEventListener('click', () => openDraftEditor(els, state, draft));
-      deleteBtn.addEventListener('click', async () => {
-        try {
-          await deleteDraft(draft.id);
-          showToast('Черновик удалён.');
-          await refreshDraftsList(els, state);
-        } catch (error) {
-          console.error('Ошибка удаления:', error);
-          handlePossiblyUnauthorized(error, state, els);
-          showError(error.message || 'Не удалось удалить черновик.');
-          showToast(error.message || 'Не удалось удалить черновик.');
-        }
-      });
-      submitBtn.addEventListener('click', async () => {
-        try {
-          await submitForModeration(draft.id);
-          showToast('Черновик отправлен на модерацию.');
-          await refreshDraftsList(els, state);
-        } catch (error) {
-          console.error('Ошибка отправки на модерацию:', error);
-          handlePossiblyUnauthorized(error, state, els);
-          showError(error.message || 'Не удалось отправить на модерацию.');
-          showToast(error.message || 'Не удалось отправить на модерацию.');
-        }
-      });
-
-      els.draftsList.appendChild(item);
+function bindModalClosers(els) {
+  [els.loginModal].forEach((modal) => {
+    modal?.addEventListener('click', (event) => {
+      const closeBtn = event.target.closest?.('[data-close-modal]');
+      if (event.target === modal || closeBtn) closeModal(modal);
     });
+  });
+}
+
+function bindUgcPanel(els) {
+  const openHandler = () => {
+    openUgcPanel(els);
+  };
+  els.createBtn?.addEventListener('click', openHandler);
+  els.fallbackCreateBtn?.addEventListener('click', openHandler);
+
+  els.refreshLegacyBtn?.addEventListener('click', async () => {
+    openUgcPanel(els);
+    if (getCurrentUser()) await refreshDrafts(els);
+  });
+
+  els.ugcRefreshDraftsBtn?.addEventListener('click', async () => {
+    if (!requireAuthForUgc(els)) return;
+    await refreshDrafts(els);
+  });
+
+  els.ugcCloseBtn?.addEventListener('click', () => closeUgcPanel(els));
+  els.cancelBtn?.addEventListener('click', () => closeUgcPanel(els));
+}
+
+function bindEscClose(els) {
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    if (!els.loginModal.hidden) {
+      closeModal(els.loginModal);
+      return;
+    }
+    if (!els.ugcPanel.hidden) {
+      closeUgcPanel(els);
+    }
+  });
+}
+
+function bindForm(els) {
+  els.form?.addEventListener('input', () => {
+    if (uiState.formState !== 'saving' && uiState.formState !== 'submitting') {
+      setFormState(els, 'editing');
+    }
+  });
+
+  els.form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!requireAuthForUgc(els)) return;
+    await saveDraft(els);
+  });
+
+  els.submitBtn?.addEventListener('click', async () => {
+    if (!requireAuthForUgc(els)) return;
+    await submitDraft(els);
+  });
+
+  els.deleteBtn?.addEventListener('click', async () => {
+    if (!requireAuthForUgc(els) || !uiState.activeDraftId) return;
+    await deleteActiveDraft(els);
+  });
+
+  els.useMapCenterBtn?.addEventListener('click', () => {
+    const mapNode = document.getElementById('map');
+    const map = mapNode?._map || window.__ARTEMIS_MAP || null;
+    if (!map || typeof map.getCenter !== 'function') return;
+    const center = map.getCenter();
+    els.form.latitude.value = Number(center.lat).toFixed(6);
+    els.form.longitude.value = Number(center.lng).toFixed(6);
+    setFormState(els, 'editing');
+  });
+}
+
+function openUgcPanel(els) {
+  els.ugcPanel.hidden = false;
+  els.ugcPanel.setAttribute('aria-hidden', 'false');
+
+  const loggedIn = Boolean(getCurrentUser());
+  els.ugcAuthCta.hidden = loggedIn;
+  els.form.hidden = !loggedIn;
+
+  if (!loggedIn) {
+    els.ugcAuthCta.replaceChildren();
+    const text = document.createElement('span');
+    setText(text, 'Please log in to create and manage drafts.');
+    const ctaBtn = document.createElement('button');
+    ctaBtn.type = 'button';
+    setText(ctaBtn, 'Login');
+    ctaBtn.addEventListener('click', () => {
+      uiState.pendingAfterLogin = 'open-ugc';
+      openModal(els.loginModal);
+    });
+    els.ugcAuthCta.append(text, ctaBtn);
+    setFormState(els, 'pristine');
+    return;
+  }
+
+  els.ugcAuthCta.hidden = true;
+  els.form.hidden = false;
+  openCreateMode(els);
+}
+
+function closeUgcPanel(els) {
+  els.ugcPanel.hidden = true;
+  els.ugcPanel.setAttribute('aria-hidden', 'true');
+  setGlobalError(els, '');
+}
+
+function openCreateMode(els) {
+  uiState.activeDraftId = null;
+  uiState.mode = 'create';
+  uiState.readOnly = false;
+  els.form.reset();
+  renderFieldErrors(els.form, els.fieldErrors, {});
+  syncModeUI(els);
+  setFormState(els, 'pristine');
+}
+
+function openEditMode(els, draft) {
+  uiState.activeDraftId = draft?.id ?? null;
+  uiState.mode = 'edit';
+  uiState.readOnly = READ_ONLY_STATUSES.has(String(draft?.status || '').toLowerCase());
+
+  els.form.reset();
+  FORM_FIELDS.forEach((field) => {
+    if (!els.form[field]) return;
+    const value = draft?.[field];
+    if (value === null || value === undefined) {
+      els.form[field].value = '';
+      return;
+    }
+    if (field === 'tags' && Array.isArray(value)) {
+      els.form[field].value = value.join(', ');
+      return;
+    }
+    els.form[field].value = String(value);
+  });
+
+  if (Array.isArray(draft?.coords)) {
+    els.form.longitude.value = draft.coords[0] ?? '';
+    els.form.latitude.value = draft.coords[1] ?? '';
+  }
+
+  renderFieldErrors(els.form, els.fieldErrors, {});
+  syncModeUI(els, draft);
+  setFormState(els, draft?.status || 'editing');
+}
+
+async function refreshDrafts(els) {
+  if (!getCurrentUser()) {
+    renderDraftList(els);
+    return;
+  }
+
+  showLoading();
+  setGlobalError(els, '');
+  try {
+    const data = await requestDraftApi(['/api/drafts/my', '/drafts/my', '/drafts'], { method: 'GET' }, 'Failed to load drafts.');
+    uiState.drafts = Array.isArray(data) ? data : [];
+    renderDraftList(els);
+    clearError();
   } catch (error) {
-    console.error('Ошибка загрузки черновиков:', error);
-    handlePossiblyUnauthorized(error, state, els);
-    showError(error.message || 'Не удалось загрузить черновики.');
-    showToast(error.message || 'Не удалось загрузить черновики.');
+    const message = handleAuthError(error, els) || (error.message || 'Failed to load drafts.');
+    setGlobalError(els, message);
+    showError(message);
   } finally {
-    state.isRefreshingDrafts = false;
+    hideLoading();
   }
 }
 
-function openDraftEditor(els, state, draft) {
-  state.activeDraftId = draft?.id || null;
-  els.draftForm.reset();
-  renderFieldErrors(els.draftForm, els.draftErrors, {});
+function renderDraftList(els) {
+  els.ugcDraftsList.replaceChildren();
+  const loggedIn = Boolean(getCurrentUser());
 
-  if (draft) {
-    for (const [key, value] of Object.entries(draft)) {
-      if (els.draftForm[key] && value !== null && value !== undefined) {
-        els.draftForm[key].value = Array.isArray(value) ? value.join(', ') : value;
+  if (!loggedIn) {
+    els.ugcDraftsEmpty.hidden = true;
+    return;
+  }
+
+  if (!uiState.drafts.length) {
+    els.ugcDraftsEmpty.hidden = false;
+    return;
+  }
+
+  els.ugcDraftsEmpty.hidden = true;
+
+  uiState.drafts.forEach((draft) => {
+    const item = document.createElement('li');
+    item.className = 'ugc-draft-item';
+
+    const title = document.createElement('strong');
+    setText(title, draft?.title_short || draft?.name_ru || 'Untitled draft');
+
+    const meta = document.createElement('div');
+    meta.className = 'ugc-draft-meta';
+    const updated = document.createElement('span');
+    setText(updated, formatUpdatedAt(draft?.updated_at));
+
+    const badge = renderStatusBadge(draft);
+    meta.append(updated, badge);
+
+    const actions = document.createElement('div');
+    actions.className = 'ugc-draft-actions';
+
+    const openBtn = document.createElement('button');
+    openBtn.type = 'button';
+    setText(openBtn, 'Open');
+    openBtn.addEventListener('click', () => {
+      openEditMode(els, draft);
+      if (els.ugcPanel.hidden) openUgcPanel(els);
+    });
+
+    actions.appendChild(openBtn);
+    item.append(title, meta, actions);
+
+    els.ugcDraftsList.appendChild(item);
+  });
+}
+
+function renderStatusBadge(draft) {
+  const status = String(draft?.status || 'draft').toLowerCase();
+  const badge = document.createElement('span');
+  badge.className = `ugc-status-badge ugc-status-${status === 'pending' || status === 'approved' || status === 'rejected' ? status : 'draft'}`;
+
+  let text = status;
+  if (!STATUS_TEXT[status]) text = 'draft';
+  if (status === 'rejected' && draft?.rejection_reason) {
+    text = `rejected: ${draft.rejection_reason}`;
+  }
+  setText(badge, text);
+  return badge;
+}
+
+function syncModeUI(els, draft = null) {
+  const isEdit = uiState.mode === 'edit';
+  const title = isEdit ? 'Edit draft' : 'Create draft';
+  setText(els.ugcTitle, title);
+
+  if (uiState.readOnly) {
+    setText(els.ugcSubtitle, `Draft status: ${draft?.status || 'pending'} (read-only)`);
+  } else {
+    setText(els.ugcSubtitle, `Draft status: ${STATUS_TEXT[uiState.formState] || uiState.formState}`);
+  }
+
+  const disableEdit = uiState.readOnly;
+  FORM_FIELDS.forEach((field) => {
+    if (els.form[field]) els.form[field].disabled = disableEdit;
+  });
+
+  els.saveBtn.disabled = disableEdit;
+  els.submitBtn.disabled = disableEdit || !isEdit;
+  els.deleteBtn.hidden = !isEdit;
+  els.deleteBtn.disabled = disableEdit;
+  els.useMapCenterBtn.disabled = disableEdit;
+}
+
+function setFormState(els, nextState) {
+  uiState.formState = nextState;
+  const label = STATUS_TEXT[nextState] || nextState;
+  const suffix = uiState.readOnly ? ' (read-only)' : '';
+  setText(els.ugcSubtitle, `Draft status: ${label}${suffix}`);
+}
+
+async function saveDraft(els) {
+  const payload = collectDraftPayload(els.form);
+  const validation = validateClientPayload(payload);
+  renderFieldErrors(els.form, els.fieldErrors, validation.errors);
+  if (!validation.valid) {
+    setFormState(els, 'validation');
+    return;
+  }
+
+  setFormState(els, 'saving');
+  setGlobalError(els, '');
+  showLoading();
+
+  try {
+    const method = uiState.activeDraftId ? 'PUT' : 'POST';
+    const paths = uiState.activeDraftId
+      ? [`/api/drafts/${uiState.activeDraftId}`, `/drafts/${uiState.activeDraftId}`]
+      : ['/api/drafts', '/drafts'];
+
+    const saved = await requestDraftApi(paths, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(validation.data)
+    }, 'Failed to save draft.');
+
+    if (saved?.id) {
+      uiState.activeDraftId = saved.id;
+      uiState.mode = 'edit';
+      upsertDraft(saved);
+      openEditMode(els, saved);
+    }
+
+    setFormState(els, 'saved');
+    await refreshDrafts(els);
+  } catch (error) {
+    const message = handleAuthError(error, els) || error.message || 'Failed to save draft.';
+    setGlobalError(els, message);
+    setFormState(els, 'server');
+  } finally {
+    hideLoading();
+  }
+}
+
+async function submitDraft(els) {
+  if (!uiState.activeDraftId) {
+    setGlobalError(els, 'Save draft first.');
+    return;
+  }
+
+  setFormState(els, 'submitting');
+  setGlobalError(els, '');
+  showLoading();
+
+  const id = uiState.activeDraftId;
+  const submitPaths = [`/api/drafts/${id}/submit`, `/drafts/${id}/submit`];
+
+  try {
+    let submitted;
+    try {
+      submitted = await requestDraftApi(submitPaths, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'pending' })
+      }, 'Failed to submit draft.');
+    } catch (error) {
+      const patchPayload = { ...collectDraftPayload(els.form), status: 'pending' };
+      const fallback = validateClientPayload(patchPayload);
+      submitted = await requestDraftApi([`/api/drafts/${id}`, `/drafts/${id}`], {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fallback.data)
+      }, error.message || 'Failed to submit draft.');
+    }
+
+    upsertDraft(submitted);
+    openEditMode(els, { ...submitted, status: 'pending' });
+    await refreshDrafts(els);
+  } catch (error) {
+    const message = handleAuthError(error, els) || error.message || 'Failed to submit draft.';
+    setGlobalError(els, message);
+    setFormState(els, 'server');
+  } finally {
+    hideLoading();
+  }
+}
+
+async function deleteActiveDraft(els) {
+  const id = uiState.activeDraftId;
+  if (!id) return;
+
+  setGlobalError(els, '');
+  showLoading();
+  try {
+    await requestDraftApi([`/api/drafts/${id}`, `/drafts/${id}`], { method: 'DELETE' }, 'Failed to delete draft.');
+    uiState.drafts = uiState.drafts.filter((draft) => String(draft.id) !== String(id));
+    openCreateMode(els);
+    renderDraftList(els);
+  } catch (error) {
+    const message = handleAuthError(error, els) || error.message || 'Failed to delete draft.';
+    setGlobalError(els, message);
+  } finally {
+    hideLoading();
+  }
+}
+
+async function requestDraftApi(paths, options, fallbackMessage) {
+  let lastError;
+
+  for (const path of paths) {
+    try {
+      const response = await fetchWithAuth(path, options);
+
+      if (response.ok) {
+        if (response.status === 204) return { ok: true };
+        return await response.json();
       }
-    }
-    if (Array.isArray(draft.coords)) {
-      els.draftForm.longitude.value = draft.coords[0] ?? '';
-      els.draftForm.latitude.value = draft.coords[1] ?? '';
+
+      if (response.status === 404 || response.status === 405) {
+        lastError = await buildApiError(response, fallbackMessage);
+        continue;
+      }
+
+      throw await buildApiError(response, fallbackMessage);
+    } catch (error) {
+      lastError = error;
+      if (error?.status === 404 || error?.status === 405) continue;
+      throw error;
     }
   }
 
-  openModal(els.draftModal);
+  throw lastError || new Error(fallbackMessage);
 }
 
-function collectDraftPayload(form) {
-  const sourceMediaUrl = form.source_media_url.value.trim();
+function requireAuthForUgc(els) {
+  if (getCurrentUser()) return true;
+  uiState.pendingAfterLogin = 'open-ugc';
+  openModal(els.loginModal);
+  setGlobalError(els, 'Please login to continue.');
+  return false;
+}
+
+function validateClientPayload(payload) {
+  const errors = {};
+
+  if (!payload.name_ru) errors.name_ru = 'name_ru is required';
+  if (!payload.date_start) errors.date_start = 'date_start is required';
+  if (!payload.source_url) errors.source_url = 'source_url is required';
+
+  const latitude = parseOptionalNumber(payload.latitude);
+  const longitude = parseOptionalNumber(payload.longitude);
+
+  if ((latitude === null) !== (longitude === null)) {
+    errors.latitude = 'latitude and longitude should be filled together';
+    errors.longitude = 'latitude and longitude should be filled together';
+  }
+
+  if (latitude !== null && (Number.isNaN(latitude) || latitude < -90 || latitude > 90)) {
+    errors.latitude = 'latitude should be in range -90..90';
+  }
+
+  if (longitude !== null && (Number.isNaN(longitude) || longitude < -180 || longitude > 180)) {
+    errors.longitude = 'longitude should be in range -180..180';
+  }
+
+  if (payload.title_short.length > 120) {
+    errors.title_short = 'title_short must be <= 120';
+  }
+
+  if (payload.description.length > 2000) {
+    errors.description = 'description must be <= 2000';
+  }
+
+  if (payload.coordinates_confidence && !CONFIDENCE_ALLOWED.has(payload.coordinates_confidence)) {
+    errors.coordinates_confidence = 'coordinates_confidence must be exact/approximate/conditional';
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return { valid: false, errors, data: payload };
+  }
+
   return {
-    name_ru: form.name_ru.value.trim(),
-    name_en: form.name_en.value.trim(),
-    layer_id: form.layer_id.value,
-    date_start: form.date_start.value,
-    date_construction_end: form.date_construction_end.value,
-    date_end: form.date_end.value,
-    longitude: form.longitude.value,
-    latitude: form.latitude.value,
-    influence_radius_km: form.influence_radius_km.value,
-    title_short: form.title_short.value.trim(),
-    description: form.description.value.trim(),
-    tags: form.tags.value,
-    source_media_url: sourceMediaUrl,
-    source_url: form.source_url ? form.source_url.value.trim() : sourceMediaUrl,
-    image_url: form.image_url ? form.image_url.value.trim() : sourceMediaUrl,
-    coordinates_source: form.coordinates_source ? form.coordinates_source.value.trim() : '',
-    source_license: form.source_license.value.trim()
+    valid: true,
+    errors,
+    data: {
+      ...payload,
+      coords: latitude !== null && longitude !== null ? [longitude, latitude] : null
+    }
   };
 }
 
-// Показывает ошибки рядом с соответствующими полями формы.
+function collectDraftPayload(form) {
+  const payload = {};
+  FORM_FIELDS.forEach((field) => {
+    const node = form[field];
+    payload[field] = node ? String(node.value || '').trim() : '';
+  });
+
+  payload.tags = parseTags(payload.tags);
+  return payload;
+}
+
+function parseTags(value) {
+  if (!value) return [];
+  return String(value)
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+}
+
+function parseOptionalNumber(value) {
+  if (value === null || value === undefined || String(value).trim() === '') return null;
+  const parsed = Number.parseFloat(String(value).replace(',', '.'));
+  return Number.isFinite(parsed) ? parsed : NaN;
+}
+
 function renderFieldErrors(form, container, errors) {
   container.replaceChildren();
   form.querySelectorAll('.field-error-message').forEach((node) => node.remove());
   form.querySelectorAll('.is-invalid').forEach((node) => node.classList.remove('is-invalid'));
 
-  Object.entries(errors).forEach(([field, message]) => {
-    const normalizedMessage = VALIDATION_ERROR_MESSAGES[String(message || '').trim()] || toSafeText(message);
+  Object.entries(errors || {}).forEach(([field, message]) => {
     const row = document.createElement('div');
     row.className = 'field-error';
-    setText(row, `${toSafeText(field)}: ${toSafeText(normalizedMessage)}`);
+    setText(row, `${toSafeText(field)}: ${toSafeText(message)}`);
     container.appendChild(row);
 
     const input = form[field];
     if (!input) return;
     input.classList.add('is-invalid');
+
     const inline = document.createElement('div');
     inline.className = 'field-error-message';
-    setText(inline, normalizedMessage);
+    setText(inline, message);
     input.insertAdjacentElement('afterend', inline);
-  });
-}
-
-function hydrateLayerSelect(layers) {
-  const select = document.querySelector('#draft-form select[name="layer_id"]');
-  if (!select) return;
-  const known = new Set([...select.options].map((option) => option.value));
-  (Array.isArray(layers) ? layers : []).forEach((layer) => {
-    const id = String(layer?.id || '').trim();
-    if (!id || known.has(id)) return;
-    known.add(id);
-    select.appendChild(new Option(toSafeText(layer.name_ru, id), id));
   });
 }
 
 function syncAuthUI(els) {
   const loggedIn = Boolean(getCurrentUser());
-  els.authButtons.hidden = loggedIn;
-  els.profilePanel.hidden = !loggedIn;
+  if (els.authButtons) els.authButtons.hidden = loggedIn;
+  if (els.profilePanel) els.profilePanel.hidden = !loggedIn;
 }
 
-function bindModalClosers(els) {
-  [els.loginModal, els.draftModal].forEach((modal) => {
-    modal.addEventListener('click', (event) => {
-      const closeBtn = event.target.closest?.('[data-close-modal]');
-      if (event.target === modal || closeBtn) {
-        closeModal(modal);
-      }
-    });
+function hydrateLayerSelect(form, layers) {
+  const select = form?.querySelector('select[name="layer_id"]');
+  if (!select) return;
+
+  const known = new Set(Array.from(select.options).map((option) => option.value));
+  (Array.isArray(layers) ? layers : []).forEach((layer) => {
+    const layerId = String(layer?.layer_id || layer?.id || '').trim();
+    if (!layerId || known.has(layerId)) return;
+    known.add(layerId);
+    const option = document.createElement('option');
+    option.value = layerId;
+    setText(option, layer?.name_ru || layerId);
+    select.appendChild(option);
   });
 }
 
 function openModal(node) {
-  if (!node || !node.hidden) return;
+  if (!node) return;
   node.hidden = false;
   document.body.classList.add('modal-open');
 }
 
 function closeModal(node) {
-  if (!node || node.hidden) return;
+  if (!node) return;
   node.hidden = true;
-  const hasVisibleModal = [...document.querySelectorAll('.modal')].some((modal) => !modal.hidden);
+  const hasVisibleModal = Array.from(document.querySelectorAll('.modal')).some((modal) => !modal.hidden);
   if (!hasVisibleModal) document.body.classList.remove('modal-open');
 }
 
-function setLoading(form, loading) {
-  form.querySelectorAll('button, input, select, textarea').forEach((node) => {
-    if (node.type === 'file') {
-      node.disabled = loading;
-      return;
-    }
+function setLoading(container, loading) {
+  container?.querySelectorAll('button,input,select,textarea').forEach((node) => {
     if (node.tagName === 'BUTTON') node.disabled = loading;
   });
 }
 
-function humanStatus(status) {
-  if (status === 'pending') return 'Ожидает модерации';
-  if (status === 'approved') return 'Одобрено';
-  if (status === 'rejected') return 'Отклонено';
-  return 'Черновик';
+function setGlobalError(els, message) {
+  const visible = Boolean(message);
+  els.ugcGlobalError.hidden = !visible;
+  setText(els.ugcGlobalError, message || '');
 }
 
-function showToast(message) {
-  let toast = document.getElementById('toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'toast';
-    document.body.appendChild(toast);
+function handleAuthError(error, els) {
+  if (error?.status !== 401 && !String(error?.message || '').toLowerCase().includes('auth')) {
+    return '';
   }
-  setText(toast, message);
-  toast.classList.add('show');
-  window.clearTimeout(showToast.timerId);
-  showToast.timerId = window.setTimeout(() => toast.classList.remove('show'), 2800);
+
+  uiState.pendingAfterLogin = 'open-ugc';
+  openModal(els.loginModal);
+  return 'Session expired, please login again.';
 }
 
-function handlePossiblyUnauthorized(error, state, els) {
-  if (error?.type === 'auth' || String(error?.message || '').includes('Требуется повторный вход')) {
-    state.pendingAfterLogin = 'open-editor';
-    openModal(els.loginModal);
+function upsertDraft(draft) {
+  if (!draft || !draft.id) return;
+  const idx = uiState.drafts.findIndex((item) => String(item.id) === String(draft.id));
+  if (idx < 0) {
+    uiState.drafts.unshift(draft);
+    return;
   }
+  uiState.drafts[idx] = { ...uiState.drafts[idx], ...draft };
+}
+
+function formatUpdatedAt(value) {
+  if (!value) return 'updated_at: —';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return `updated_at: ${String(value)}`;
+  return `updated_at: ${date.toISOString().slice(0, 16).replace('T', ' ')}`;
 }
