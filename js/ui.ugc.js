@@ -405,9 +405,10 @@ function renderDraftList(els) {
 }
 
 function renderStatusBadge(draft) {
-  const status = String(draft?.status || 'draft').toLowerCase();
+  const status = normalizeDraftStatus(draft?.status);
   const badge = document.createElement('span');
-  badge.className = `ugc-status-badge ugc-status-${status === 'pending' || status === 'approved' || status === 'rejected' ? status : 'draft'}`;
+  badge.className = 'ugc-status-badge';
+  badge.classList.add(`ugc-status-${status}`);
 
   let text = status;
   if (!STATUS_TEXT[status]) text = 'draft';
@@ -424,7 +425,7 @@ function syncModeUI(els, draft = null) {
   setText(els.ugcTitle, title);
 
   if (uiState.readOnly) {
-    setText(els.ugcSubtitle, `Draft status: ${draft?.status || 'pending'} (read-only)`);
+    setText(els.ugcSubtitle, `Draft status: ${normalizeDraftStatus(draft?.status || 'pending')} (read-only)`);
   } else {
     setText(els.ugcSubtitle, `Draft status: ${STATUS_TEXT[uiState.formState] || uiState.formState}`);
   }
@@ -450,6 +451,14 @@ function setFormState(els, nextState) {
   els.saveBtn.disabled = uiState.readOnly || pending;
   els.submitBtn.disabled = uiState.readOnly || uiState.mode !== 'edit' || pending;
   els.deleteBtn.disabled = uiState.readOnly || pending;
+}
+
+function normalizeDraftStatus(status) {
+  const normalized = String(status || 'draft').toLowerCase();
+  if (normalized === 'pending' || normalized === 'approved' || normalized === 'rejected') {
+    return normalized;
+  }
+  return 'draft';
 }
 
 async function saveDraft(els) {
