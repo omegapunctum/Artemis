@@ -965,6 +965,16 @@ def main() -> int:
             )
             continue
 
+        if not args.include_inactive and mapped.get("is_active") is False:
+            rejected_features.append(
+                {
+                    "id": mapped.get("id") or "<missing>",
+                    "name_ru": mapped.get("name_ru"),
+                    "reasons": ["inactive"],
+                }
+            )
+            continue
+
         record_errors_start = len(errors)
         feature_valid = validate_feature(mapped, valid_layer_ids, warnings, errors)
         if not feature_valid:
