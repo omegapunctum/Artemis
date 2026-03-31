@@ -1,5 +1,5 @@
 import { loadLayers } from './data.js';
-import { updateMapData, setLayerLookup, focusFeatureOnMap, getMapFeatureCount, getMapBuildDiagnostics, setMapFeatureClickHandler, setMapLayerFilter, setSelectedFeatureId } from './map.js';
+import { updateMapData, setLayerLookup, focusFeatureOnMap, getMapFeatureCount, getMapBuildDiagnostics, setMapFeatureClickHandler, setMapLayerFilter, setSelectedFeatureId, setHoveredFeatureId } from './map.js';
 import { debounce, createInlineStateBlock } from './ux.js';
 import { normalizeSafeUrl, setSafeLink } from './safe-dom.js';
 
@@ -116,6 +116,7 @@ export async function initUI(map, features) {
     loading: true,
     error: '',
     selectedFeatureId: null,
+    hoveredFeatureId: null,
     enabledLayerIds: new Set(layers.filter((layer) => layer?.is_enabled !== false).map((layer) => String(layer.layer_id || layer.id || '').trim()).filter(Boolean)),
     confidenceFilter: 'all',
     overlay: { activePrimary: null, activeModal: null },
@@ -146,6 +147,9 @@ export async function initUI(map, features) {
     setMapLayerFilter(map, buildMapYearFilter(state.currentStartYear, state.currentEndYear));
     if (state.selectedFeatureId && !state.filteredFeatures.some((f) => getFeatureUiId(f) === state.selectedFeatureId)) {
       clearSelection(state, elements, map);
+    }
+    if (state.hoveredFeatureId && !state.filteredFeatures.some((f) => getFeatureUiId(f) === state.hoveredFeatureId)) {
+      clearHoveredFeature(state, map);
     }
     setSelectedFeatureId(map, state.selectedFeatureId);
     state.searchResults = buildSearchResults(state.filteredFeatures, state.search);
@@ -581,6 +585,22 @@ function renderCards(elements, state, map) {
       event.preventDefault();
       selectFeature(state, elements, map, feature, { centerOnMap: true, openDetail: true, scrollCard: false });
     });
+    item.addEventListener('mouseenter', () => {
+      setHoveredFeature(state, map, featureId);
+      item.classList.add('is-hovered');
+    });
+    item.addEventListener('mouseleave', () => {
+      clearHoveredFeature(state, map);
+      item.classList.remove('is-hovered');
+    });
+    item.addEventListener('focus', () => {
+      setHoveredFeature(state, map, featureId);
+      item.classList.add('is-hovered');
+    });
+    item.addEventListener('blur', () => {
+      clearHoveredFeature(state, map);
+      item.classList.remove('is-hovered');
+    });
 
     list.appendChild(item);
   });
@@ -788,6 +808,19 @@ function clearSelection(state, elements, map) {
   hideDetailPanel(elements);
   syncSelectedCardState(elements, null);
   renderCards(elements, state, map);
+}
+
+function setHoveredFeature(state, map, featureId) {
+  const normalizedId = featureId ? String(featureId) : null;
+  if (state.hoveredFeatureId === normalizedId) return;
+  state.hoveredFeatureId = normalizedId;
+  setHoveredFeatureId(map, normalizedId);
+}
+
+function clearHoveredFeature(state, map) {
+  if (!state.hoveredFeatureId) return;
+  state.hoveredFeatureId = null;
+  setHoveredFeatureId(map, null);
 }
 
 function closeDetailView(elements) {
