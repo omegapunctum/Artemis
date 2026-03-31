@@ -92,9 +92,15 @@ class RateLimitUnitTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             DraftCreate(description='desc', date_start='2026-01-01', source_url='https://example.com')
         with self.assertRaises(ValidationError):
+            DraftCreate(name_ru='', date_start='2026-01-01', source_url='https://example.com')
+        with self.assertRaises(ValidationError):
             DraftCreate(name_ru='Name', description='desc', source_url='https://example.com')
         with self.assertRaises(ValidationError):
+            DraftCreate(name_ru='Name', date_start='', source_url='https://example.com')
+        with self.assertRaises(ValidationError):
             DraftCreate(name_ru='Name', description='desc', date_start='2026-01-01')
+        with self.assertRaises(ValidationError):
+            DraftCreate(name_ru='Name', date_start='2026-01-01', source_url='')
 
     def test_draft_create_rejects_invalid_enum_values(self):
         with self.assertRaises(ValidationError):
@@ -175,6 +181,21 @@ class RateLimitUnitTests(unittest.TestCase):
                 source_url='https://example.com',
                 latitude=40,
             )
+        with self.assertRaises(ValidationError):
+            DraftCreate(
+                name_ru='Name',
+                date_start='2026-01-01',
+                source_url='https://example.com',
+                longitude=40,
+            )
+        with self.assertRaises(ValidationError):
+            DraftCreate(
+                name_ru='Name',
+                date_start='2026-01-01',
+                source_url='https://example.com',
+                latitude=40,
+                longitude=200,
+            )
 
     def test_draft_payload_blocks_forbidden_system_fields(self):
         create_payload = {
@@ -214,6 +235,8 @@ class RateLimitUnitTests(unittest.TestCase):
     def test_draft_create_rejects_invalid_date_start(self):
         with self.assertRaises(ValidationError):
             DraftCreate(name_ru='Name', date_start='2026/01/01', source_url='https://example.com')
+        with self.assertRaises(ValidationError):
+            DraftCreate(name_ru='Name', date_start='20-01-01', source_url='https://example.com')
 
     def test_draft_create_rejects_too_long_fields(self):
         with self.assertRaises(ValidationError):
