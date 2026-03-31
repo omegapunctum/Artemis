@@ -144,6 +144,11 @@ export function setMapFeatureClickHandler(map, handler) {
   map.__artemis.featureClickHandler = typeof handler === 'function' ? handler : null;
 }
 
+export function setMapFeatureHoverHandler(map, handler) {
+  map.__artemis = map.__artemis || {};
+  map.__artemis.featureHoverHandler = typeof handler === 'function' ? handler : null;
+}
+
 export function setMapLayerFilter(map, filterExpression = null) {
   if (!map || !map.getLayer) return;
   map.__artemis = map.__artemis || {};
@@ -340,13 +345,30 @@ function bindPopupHandlers(map) {
     });
   });
 
-  [LAYER_ID, CLUSTER_LAYER_ID].forEach((layerId) => {
-    map.on('mouseenter', layerId, () => {
-      map.getCanvas().style.cursor = 'pointer';
-    });
-    map.on('mouseleave', layerId, () => {
-      map.getCanvas().style.cursor = '';
-    });
+  map.on('mouseenter', LAYER_ID, () => {
+    map.getCanvas().style.cursor = 'pointer';
+  });
+  map.on('mousemove', LAYER_ID, (event) => {
+    const feature = event.features?.[0];
+    const featureId = feature?.properties?._ui_id;
+    const onFeatureHover = map?.__artemis?.featureHoverHandler;
+    if (typeof onFeatureHover === 'function') {
+      onFeatureHover(featureId ? String(featureId) : null, feature, event);
+    }
+  });
+  map.on('mouseleave', LAYER_ID, () => {
+    map.getCanvas().style.cursor = '';
+    const onFeatureHover = map?.__artemis?.featureHoverHandler;
+    if (typeof onFeatureHover === 'function') {
+      onFeatureHover(null, null, null);
+    }
+  });
+
+  map.on('mouseenter', CLUSTER_LAYER_ID, () => {
+    map.getCanvas().style.cursor = 'pointer';
+  });
+  map.on('mouseleave', CLUSTER_LAYER_ID, () => {
+    map.getCanvas().style.cursor = '';
   });
 }
 

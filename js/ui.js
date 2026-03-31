@@ -1,5 +1,5 @@
 import { loadLayers } from './data.js';
-import { updateMapData, setLayerLookup, focusFeatureOnMap, getMapFeatureCount, getMapBuildDiagnostics, setMapFeatureClickHandler, setMapLayerFilter, setSelectedFeatureId, setHoveredFeatureId } from './map.js';
+import { updateMapData, setLayerLookup, focusFeatureOnMap, getMapFeatureCount, getMapBuildDiagnostics, setMapFeatureClickHandler, setMapFeatureHoverHandler, setMapLayerFilter, setSelectedFeatureId, setHoveredFeatureId } from './map.js';
 import { debounce, createInlineStateBlock } from './ux.js';
 import { normalizeSafeUrl, setSafeLink } from './safe-dom.js';
 
@@ -215,6 +215,14 @@ export async function initUI(map, features) {
       openDetail: true,
       scrollCard: true
     });
+  });
+  setMapFeatureHoverHandler(map, (featureId) => {
+    if (featureId) {
+      setHoveredFeature(state, map, featureId);
+    } else {
+      clearHoveredFeature(state, map);
+    }
+    syncMapHoveredCardState(elements, state.hoveredFeatureId);
   });
   elements.detailPanelClose?.addEventListener('click', () => closeDetailView(elements));
   document.getElementById('detail-panel-expand')?.addEventListener('click', () => toggleDetailSheetState(state, elements));
@@ -604,6 +612,7 @@ function renderCards(elements, state, map) {
 
     list.appendChild(item);
   });
+  syncMapHoveredCardState(elements, state.hoveredFeatureId);
 }
 
 function syncSelectedCardState(elements, selectedFeatureId) {
@@ -613,6 +622,14 @@ function syncSelectedCardState(elements, selectedFeatureId) {
     const isSelected = Boolean(selectedFeatureId) && card.dataset.featureId === selectedFeatureId;
     card.classList.toggle('is-selected', isSelected);
     card.setAttribute('aria-selected', String(isSelected));
+  });
+}
+
+function syncMapHoveredCardState(elements, hoveredFeatureId) {
+  if (!elements.cardsRibbon) return;
+  const cards = elements.cardsRibbon.querySelectorAll('.ribbon-card[data-feature-id]');
+  cards.forEach((card) => {
+    card.classList.toggle('is-map-hovered', Boolean(hoveredFeatureId) && card.dataset.featureId === hoveredFeatureId);
   });
 }
 

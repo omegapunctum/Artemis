@@ -430,6 +430,12 @@ button:focus-visible {
   border-color: rgba(147, 197, 253, 0.7);
   box-shadow: 0 10px 22px rgba(30, 64, 175, 0.24);
 }
+.ribbon-card.is-map-hovered:not(.is-selected) {
+  transform: translateY(-2px);
+  background: rgba(191, 219, 254, 0.08);
+  border-color: rgba(125, 211, 252, 0.62);
+  box-shadow: 0 8px 18px rgba(30, 64, 175, 0.18);
+}
 .ribbon-card.is-selected {
   transform: translateY(-3px);
   border-color: rgba(56, 189, 248, 0.95);
