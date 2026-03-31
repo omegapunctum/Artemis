@@ -207,6 +207,9 @@
     </div>
   </div>
 
+  <div id="offline-status" class="offline-status" role="status" aria-live="polite" hidden>You are offline</div>
+  <div id="app-status-host" class="app-status-host" aria-live="polite" aria-atomic="false"></div>
+
 <div id="error-banner" hidden></div>
   <div id="loading-indicator" hidden>Loading...</div>
 
@@ -237,7 +240,7 @@
     import { initUGCUI } from './js/ui.ugc.js';
     import { initModerationUI } from './js/ui.moderation.js';
     import { initPWA } from './js/pwa.js';
-    import { showError, clearError, showLoading, hideLoading } from './js/ux.js';
+    import { showError, clearError, showLoading, hideLoading, createInlineStateBlock, normalizeAppError } from './js/ux.js';
 
     initPWA();
 
@@ -253,40 +256,57 @@
       statusError.textContent = error ? message : '';
     }
 
-    try {
-      setStatus('Загрузка токена…', { loading: true });
-      showLoading();
+    const cardsStateHost = document.getElementById('cards-state');
+
+    async function bootstrapApp() {
       try {
-        await initAuth();
+        setStatus('Загрузка токена…', { loading: true });
+        showLoading();
+        try {
+          await initAuth();
+        } catch (error) {
+          console.info('Сессия не восстановлена:', error.message);
+        } finally {
+          hideLoading();
+        }
+
+        clearError();
+        if (cardsStateHost) cardsStateHost.replaceChildren(createInlineStateBlock({ variant: 'info', title: 'Loading', message: 'Loading data…' }));
+        setStatus('Загрузка данных…', { loading: true });
+        const features = await loadFeatures();
+        const sourceCount = Array.isArray(features?.features) ? features.features.length : 0;
+        setStatus(`Данные загружены: ${sourceCount} из файла features.geojson.`, { loading: true });
+
+        setStatus('Инициализация карты…', { loading: true });
+        const map = initMap('map', features);
+
+        setStatus('Инициализация интерфейса…', { loading: true });
+        const uiState = await initUI(map, features);
+        await initUGCUI();
+        await initModerationUI();
+
+        const foundCount = uiState?.getVisibleCounts?.().listCount ?? features.features?.length ?? 0;
+        const mapCount = uiState?.getVisibleCounts?.().mapCount ?? 0;
+        clearError();
+        setStatus(`Карта готова. Найдено: ${foundCount}, на карте: ${mapCount}.`, { loading: false });
       } catch (error) {
-        console.info('Сессия не восстановлена:', error.message);
-      } finally {
-        hideLoading();
+        console.error('Ошибка инициализации:', error);
+        const normalized = normalizeAppError(error, 'Unable to load application data.');
+        showError(normalized.message);
+        setStatus(normalized.message, { error: true, loading: false });
+        if (cardsStateHost) {
+          cardsStateHost.replaceChildren(createInlineStateBlock({
+            variant: 'error',
+            title: 'Data loading failed',
+            message: normalized.message,
+            actionLabel: 'Retry',
+            onAction: () => bootstrapApp()
+          }));
+        }
       }
-
-      clearError();
-      setStatus('Загрузка данных…', { loading: true });
-      const features = await loadFeatures();
-      const sourceCount = Array.isArray(features?.features) ? features.features.length : 0;
-      setStatus(`Данные загружены: ${sourceCount} из файла features.geojson.`, { loading: true });
-
-      setStatus('Инициализация карты…', { loading: true });
-      const map = initMap('map', features);
-
-      setStatus('Инициализация интерфейса…', { loading: true });
-      const uiState = await initUI(map, features);
-      await initUGCUI();
-      await initModerationUI();
-
-      const foundCount = uiState?.getVisibleCounts?.().listCount ?? features.features?.length ?? 0;
-      const mapCount = uiState?.getVisibleCounts?.().mapCount ?? 0;
-      clearError();
-      setStatus(`Карта готова. Найдено: ${foundCount}, на карте: ${mapCount}.`, { loading: false });
-    } catch (error) {
-      console.error('Ошибка инициализации:', error);
-      showError('Ошибка загрузки данных. Проверьте доступность data/features.geojson и data/layers.json.');
-      setStatus('Ошибка загрузки данных. Проверьте доступность data/features.geojson и data/layers.json.', { error: true, loading: false });
     }
+
+    bootstrapApp();
   </script>
 </body>
 </html>

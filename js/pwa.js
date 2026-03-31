@@ -1,4 +1,4 @@
-import { showError, clearError } from './ux.js';
+import { showError, clearError, setOfflineState, showSystemMessage } from './ux.js';
 
 const INSTALL_BUTTON_ID = 'install-btn';
 let deferredPrompt = null;
@@ -64,11 +64,14 @@ function setupConnectivityHandlers() {
 }
 
 function handleOffline() {
-  showError('Нет интернета. Используются кэшированные данные.');
+  setOfflineState(true);
+  showError('You are offline. Cached data may be shown.');
 }
 
 function handleOnline() {
+  setOfflineState(false);
   clearError();
+  showSystemMessage('Connection restored', { variant: 'success' });
 }
 
 function showInstallButton() {

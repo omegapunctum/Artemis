@@ -1,6 +1,6 @@
 import { buildApiError, login, register, logout, getCurrentUser, fetchWithAuth } from './auth.js';
 import { loadLayers } from './data.js';
-import { showError, clearError, showLoading, hideLoading } from './ux.js';
+import { showError, clearError, showLoading, hideLoading, normalizeAppError, showSystemMessage, ensureOnlineAction, createInlineStateBlock } from './ux.js';
 import { setText, toSafeText } from './safe-dom.js';
 
 let ugcInitialized = false;
@@ -327,8 +327,9 @@ async function refreshDrafts(els) {
     renderDraftList(els);
     clearError();
   } catch (error) {
-    const message = handleAuthError(error, els) || (error.message || 'Failed to load drafts.');
-    setGlobalError(els, message);
+    const normalized = normalizeAppError(error, 'Failed to load drafts.');
+    const message = handleAuthError(error, els) || normalized.message;
+    setGlobalError(els, message, { retry: () => refreshDrafts(els) });
     showError(message);
   } finally {
     hideLoading();
@@ -429,6 +430,11 @@ function setFormState(els, nextState) {
 }
 
 async function saveDraft(els) {
+  if (!ensureOnlineAction()) {
+    setGlobalError(els, 'You are offline. Draft save needs connection.');
+    return;
+  }
+
   const payload = collectDraftPayload(els.form);
   const validation = validateClientPayload(payload);
   renderFieldErrors(els.form, els.fieldErrors, validation.errors);
@@ -461,10 +467,11 @@ async function saveDraft(els) {
     }
 
     setFormState(els, 'saved');
+    showSystemMessage('Draft saved', { variant: 'success' });
     await refreshDrafts(els);
   } catch (error) {
-    const message = handleAuthError(error, els) || error.message || 'Failed to save draft.';
-    setGlobalError(els, message);
+    const message = handleAuthError(error, els) || normalizeAppError(error, 'Failed to save draft.').message;
+    setGlobalError(els, message, { retry: () => saveDraft(els) });
     setFormState(els, 'server');
   } finally {
     hideLoading();
@@ -472,6 +479,11 @@ async function saveDraft(els) {
 }
 
 async function submitDraft(els) {
+  if (!ensureOnlineAction()) {
+    setGlobalError(els, 'You are offline. Cannot submit for review.');
+    return;
+  }
+
   if (!uiState.activeDraftId) {
     setGlobalError(els, 'Save draft first.');
     return;
@@ -504,10 +516,11 @@ async function submitDraft(els) {
 
     upsertDraft(submitted);
     openEditMode(els, { ...submitted, status: 'pending' });
+    showSystemMessage('Submitted for review', { variant: 'success' });
     await refreshDrafts(els);
   } catch (error) {
-    const message = handleAuthError(error, els) || error.message || 'Failed to submit draft.';
-    setGlobalError(els, message);
+    const message = handleAuthError(error, els) || normalizeAppError(error, 'Failed to submit draft.').message;
+    setGlobalError(els, message, { retry: () => submitDraft(els) });
     setFormState(els, 'server');
   } finally {
     hideLoading();
@@ -515,6 +528,11 @@ async function submitDraft(els) {
 }
 
 async function deleteActiveDraft(els) {
+  if (!ensureOnlineAction()) {
+    setGlobalError(els, 'You are offline. Cannot delete draft.');
+    return;
+  }
+
   const id = uiState.activeDraftId;
   if (!id) return;
 
@@ -525,9 +543,10 @@ async function deleteActiveDraft(els) {
     uiState.drafts = uiState.drafts.filter((draft) => String(draft.id) !== String(id));
     openCreateMode(els);
     renderDraftList(els);
+    showSystemMessage('Draft deleted', { variant: 'success' });
   } catch (error) {
-    const message = handleAuthError(error, els) || error.message || 'Failed to delete draft.';
-    setGlobalError(els, message);
+    const message = handleAuthError(error, els) || normalizeAppError(error, 'Failed to delete draft.').message;
+    setGlobalError(els, message, { retry: () => deleteActiveDraft(els) });
   } finally {
     hideLoading();
   }
@@ -706,10 +725,22 @@ function setLoading(container, loading) {
   });
 }
 
-function setGlobalError(els, message) {
+function setGlobalError(els, message, { retry = null } = {}) {
   const visible = Boolean(message);
   els.ugcGlobalError.hidden = !visible;
-  setText(els.ugcGlobalError, message || '');
+  if (!visible) {
+    els.ugcGlobalError.replaceChildren();
+    return;
+  }
+
+  const block = createInlineStateBlock({
+    variant: 'error',
+    title: 'Unable to complete action',
+    message,
+    actionLabel: typeof retry === 'function' ? 'Retry' : '',
+    onAction: retry
+  });
+  els.ugcGlobalError.replaceChildren(block);
 }
 
 function handleAuthError(error, els) {
@@ -719,7 +750,7 @@ function handleAuthError(error, els) {
 
   uiState.pendingAfterLogin = 'open-ugc';
   openModal(els.loginModal);
-  return 'Session expired, please login again.';
+  return 'Session expired. Please sign in again.';
 }
 
 function upsertDraft(draft) {

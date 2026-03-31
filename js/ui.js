@@ -1,13 +1,17 @@
 import { loadLayers } from './data.js';
 import { updateMapData, setLayerLookup, focusFeatureOnMap, getMapFeatureCount, getMapBuildDiagnostics, setMapFeatureClickHandler, setMapLayerFilter, setSelectedFeatureId } from './map.js';
-import { debounce } from './ux.js';
+import { debounce, createInlineStateBlock } from './ux.js';
 import { normalizeSafeUrl, setSafeLink } from './safe-dom.js';
 
 export async function initUI(map, features) {
   const allFeatures = Array.isArray(features?.features)
     ? features.features.filter(isFeatureLike).map(enrichFeatureForUiKey)
     : [];
-  const layers = await loadLayers().catch(() => []);
+  let layersLoadError = '';
+  const layers = await loadLayers().catch((error) => {
+    layersLoadError = error?.message || 'Failed to load layers.';
+    return [];
+  });
   const layerLookup = buildLayerLookup(layers, allFeatures);
   setLayerLookup(map, layers);
 
@@ -62,7 +66,8 @@ export async function initUI(map, features) {
     overlay: { activePrimary: null },
     searchResults: [],
     bookmarks: [],
-    applyState: null
+    applyState: null,
+    warnings: layersLoadError ? ['Layers are temporarily unavailable.'] : []
   };
   initializeAnimatedPanels(elements);
   if (!state.enabledLayerIds.size) {
@@ -627,23 +632,48 @@ function hideDetailPanel(elements) {
 function renderCardsState(elements, state) {
   if (!elements.cardsState) return;
   elements.cardsState.className = 'cards-state';
+  elements.cardsState.replaceChildren();
+
   if (state.loading) {
-    elements.cardsState.classList.add('is-loading');
-    elements.cardsState.textContent = 'Loading events…';
+    elements.cardsState.appendChild(createInlineStateBlock({
+      variant: 'info',
+      title: 'Loading',
+      message: 'Loading events…'
+    }));
     renderCardsSkeleton(elements, 4);
-  } else if (state.error) {
-    elements.cardsState.classList.add('is-error');
-    elements.cardsState.classList.add('has-inline-error');
-    elements.cardsState.textContent = `Failed to load data: ${state.error}`;
-    if (elements.cardsRibbon) elements.cardsRibbon.replaceChildren();
-  } else if (state.empty) {
-    elements.cardsState.classList.add('is-empty');
-    elements.cardsState.classList.add('cards-inline-note');
-    elements.cardsState.textContent = 'No objects in this time range';
-    if (elements.cardsRibbon) elements.cardsRibbon.replaceChildren();
-  } else {
-    elements.cardsState.textContent = `${state.filteredFeatures.length} objects`;
+    return;
   }
+
+  if (state.error) {
+    elements.cardsState.appendChild(createInlineStateBlock({
+      variant: 'error',
+      title: 'Data unavailable',
+      message: state.error
+    }));
+    if (elements.cardsRibbon) elements.cardsRibbon.replaceChildren();
+    return;
+  }
+
+  if (state.empty) {
+    elements.cardsState.appendChild(createInlineStateBlock({
+      variant: 'warning',
+      title: 'No results',
+      message: 'No objects in this time range.'
+    }));
+    if (elements.cardsRibbon) elements.cardsRibbon.replaceChildren();
+    return;
+  }
+
+  if (state.warnings?.length) {
+    elements.cardsState.appendChild(createInlineStateBlock({
+      variant: 'warning',
+      title: 'Limited data',
+      message: state.warnings[0]
+    }));
+    return;
+  }
+
+  elements.cardsState.textContent = `${state.filteredFeatures.length} objects`;
 }
 
 function hydrateTimeline(elements, years, state) {

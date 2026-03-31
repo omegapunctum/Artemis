@@ -257,7 +257,12 @@ export async function fetchWithAuth(input, options = {}) {
   }
 
   const retryRequest = buildAuthRequest(originalRequest.clone());
-  return fetch(retryRequest);
+  const retryResponse = await fetch(retryRequest);
+  if (retryResponse.status === 401) {
+    authRequired();
+    throw await buildApiError(retryResponse, 'Session expired. Please sign in again.');
+  }
+  return retryResponse;
 }
 
 export const apiFetch = fetchWithAuth;

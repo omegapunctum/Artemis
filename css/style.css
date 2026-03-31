@@ -13,7 +13,20 @@
   --text-muted: #94a3b8;
   --text-soft: #cbd5e1;
   --accent-glow: 0 0 0 3px rgba(56, 189, 248, 0.22);
+  --state-info-bg: rgba(30, 64, 175, 0.2);
+  --state-info-border: rgba(96, 165, 250, 0.42);
+  --state-info-text: #bfdbfe;
+  --state-success-bg: rgba(6, 78, 59, 0.34);
+  --state-success-border: rgba(52, 211, 153, 0.42);
+  --state-success-text: #bbf7d0;
+  --state-warning-bg: rgba(120, 53, 15, 0.3);
+  --state-warning-border: rgba(251, 191, 36, 0.42);
+  --state-warning-text: #fde68a;
+  --state-error-bg: rgba(127, 29, 29, 0.34);
+  --state-error-border: rgba(248, 113, 113, 0.45);
+  --state-error-text: #fecaca;
 }
+
 html, body {
   margin: 0;
   width: 100%;
@@ -413,9 +426,6 @@ button:focus-visible {
   box-shadow: 0 16px 30px rgba(2, 132, 199, 0.2), inset 0 0 0 1px rgba(125, 211, 252, 0.46);
 }
 
-.cards-state.is-empty { color: #fda4af; }
-.cards-state.is-error { color: #fecaca; }
-.cards-state.is-loading { color: #93c5fd; }
 
 .legacy-sidebar { display: none !important; }
 
@@ -425,21 +435,73 @@ button:focus-visible {
   right: 12px;
   top: 78px;
   z-index: 20;
-  background: rgba(153, 27, 27, 0.94);
-  color: #fff;
   border-radius: 10px;
   padding: 10px 12px;
+  border: 1px solid var(--state-error-border);
+  background: var(--state-error-bg);
+  color: var(--state-error-text);
 }
 #loading-indicator {
   position: fixed;
   top: 80px;
   right: 14px;
   z-index: 15;
-  background: rgba(17, 24, 39, 0.84);
-  color: #fff;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 8px 10px;
+  border: 1px solid var(--state-info-border);
+  background: var(--state-info-bg);
+  color: var(--state-info-text);
 }
+.offline-status {
+  position: fixed;
+  left: 50%;
+  top: 78px;
+  transform: translateX(-50%);
+  z-index: 22;
+  border-radius: 999px;
+  padding: 6px 12px;
+  border: 1px solid var(--state-warning-border);
+  background: var(--state-warning-bg);
+  color: var(--state-warning-text);
+  font-size: 12px;
+}
+.app-status-host {
+  position: fixed;
+  right: 12px;
+  top: 78px;
+  z-index: 23;
+  display: grid;
+  gap: 8px;
+}
+.app-system-message {
+  border-radius: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--state-info-border);
+  background: var(--state-info-bg);
+  color: var(--state-info-text);
+  font-size: 12px;
+}
+.app-system-success { border-color: var(--state-success-border); background: var(--state-success-bg); color: var(--state-success-text); }
+.app-system-warning { border-color: var(--state-warning-border); background: var(--state-warning-bg); color: var(--state-warning-text); }
+
+.app-state-block {
+  border-radius: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--state-info-border);
+  background: var(--state-info-bg);
+  color: var(--state-info-text);
+  font-size: 13px;
+  display: grid;
+  gap: 6px;
+}
+.app-state-title { font-weight: 600; font-size: 12px; }
+.app-state-message { font-size: 13px; }
+.app-state-actions { display: flex; gap: 8px; }
+.app-state-action-btn { font-size: 12px; padding: 6px 10px; }
+.app-state-success { border-color: var(--state-success-border); background: var(--state-success-bg); color: var(--state-success-text); }
+.app-state-warning { border-color: var(--state-warning-border); background: var(--state-warning-bg); color: var(--state-warning-text); }
+.app-state-error { border-color: var(--state-error-border); background: var(--state-error-bg); color: var(--state-error-text); }
+
 .status-panel {
   position: fixed;
   right: 12px;
@@ -485,16 +547,8 @@ button:focus-visible {
 .ugc-panel-subtitle { margin: 4px 0 0; color: var(--text-muted); font-size: 12px; text-transform: capitalize; }
 .ugc-inline-note, .ugc-inline-error {
   border-radius: 10px;
-  border: 1px solid var(--glass-border);
-  background: rgba(148, 163, 184, 0.14);
-  color: var(--text-soft);
-  padding: 8px 10px;
+  padding: 0;
   font-size: 13px;
-}
-.ugc-inline-error {
-  border-color: rgba(248,113,113,.45);
-  background: rgba(127, 29, 29, 0.34);
-  color: #fecaca;
 }
 .ugc-my-drafts { border: 1px solid var(--glass-border); border-radius: 12px; padding: 10px; background: rgba(15, 23, 42, 0.42); }
 .ugc-my-drafts-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -594,9 +648,6 @@ button:focus-visible {
 .moderation-review-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .moderation-approve-btn { border-color: rgba(52, 211, 153, 0.6); background: rgba(6, 78, 59, 0.38); }
 .moderation-reject-btn { border-color: rgba(248, 113, 113, 0.56); background: rgba(127, 29, 29, 0.34); }
-.moderation-inline-state, .moderation-inline-error { padding: 8px 10px; border-radius: 10px; font-size: 13px; }
-.moderation-inline-state { background: rgba(30, 64, 175, 0.2); border: 1px solid rgba(96, 165, 250, 0.4); color: #bfdbfe; }
-.moderation-inline-error { background: rgba(127, 29, 29, 0.3); border: 1px solid rgba(248, 113, 113, 0.5); color: #fecaca; }
 .moderation-reject-modal { position: fixed; inset: 0; z-index: 12; background: rgba(2, 6, 23, 0.55); display: grid; place-items: center; padding: 12px; }
 .moderation-reject-card { width: min(500px, calc(100vw - 24px)); padding: 14px; display: grid; gap: 10px; }
 .moderation-reject-card h3 { margin: 0; }

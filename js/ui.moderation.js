@@ -1,5 +1,6 @@
 import { buildApiError, canModerate, fetchWithAuth, getCurrentUser } from './auth.js';
 import { createTextElement, normalizeSafeUrl, setSafeLink, toSafeText } from './safe-dom.js';
+import { createInlineStateBlock, normalizeAppError, showSystemMessage, ensureOnlineAction } from './ux.js';
 
 let moderationInitialized = false;
 
@@ -89,7 +90,7 @@ async function loadModerationQueue() {
       moderationState.selectedDraftId = null;
     } else if (error?.status === 403 || error?.responseStatus === 403) {
       moderationState.queueState = STATUS.FORBIDDEN;
-      moderationState.queueError = 'Moderation access is not available for this account.';
+      moderationState.queueError = 'You do not have access to this action.';
       moderationState.queue = [];
       moderationState.filteredQueue = [];
       moderationState.selectedDraftId = null;
@@ -118,11 +119,12 @@ async function approveSelectedDraft() {
 
     removeDraftFromQueue(String(draft.id));
     moderationState.actionState = STATUS.APPROVE_SUCCESS;
-    moderationState.actionMessage = 'Draft approved successfully.';
+    moderationState.actionMessage = 'Draft approved.';
+    showSystemMessage('Approved', { variant: 'success' });
     renderModerationWorkspace();
   } catch (error) {
     moderationState.actionState = STATUS.ERROR;
-    moderationState.actionError = error?.message || 'Failed to approve draft.';
+    moderationState.actionError = normalizeAppError(error, 'Failed to approve draft.').message;
     renderModerationWorkspace();
   }
 }
@@ -149,15 +151,14 @@ async function rejectSelectedDraft() {
 
     removeDraftFromQueue(String(draft.id));
     moderationState.actionState = STATUS.REJECT_SUCCESS;
-    moderationState.actionMessage = payload
-      ? 'Draft rejected. Reason sent if supported by backend.'
-      : 'Draft rejected successfully.';
+    moderationState.actionMessage = 'Draft rejected.';
     moderationState.rejectReason = '';
     moderationState.activeModal = null;
+    showSystemMessage('Rejected', { variant: 'success' });
     renderModerationWorkspace();
   } catch (error) {
     moderationState.actionState = STATUS.ERROR;
-    moderationState.actionError = error?.message || 'Failed to reject draft.';
+    moderationState.actionError = normalizeAppError(error, 'Failed to reject draft.').message;
     renderModerationWorkspace();
   }
 }
@@ -204,6 +205,7 @@ function onModerationClick(event) {
   }
 
   if (action === 'refresh-queue') {
+    if (!ensureOnlineAction()) return;
     loadModerationQueue().catch(() => {});
     return;
   }
@@ -220,6 +222,7 @@ function onModerationClick(event) {
   }
 
   if (action === 'approve-draft') {
+    if (!ensureOnlineAction()) return;
     approveSelectedDraft();
     return;
   }
@@ -241,6 +244,7 @@ function onModerationClick(event) {
   }
 
   if (action === 'submit-reject') {
+    if (!ensureOnlineAction()) return;
     const reasonInput = document.getElementById('moderation-reject-reason');
     moderationState.rejectReason = String(reasonInput?.value || '').trim();
     rejectSelectedDraft();
@@ -365,7 +369,10 @@ function renderQueueState(node) {
   }
 
   if (moderationState.queueState === STATUS.UNAUTHORIZED || moderationState.queueState === STATUS.FORBIDDEN || moderationState.queueState === STATUS.ERROR) {
-    node.appendChild(createInlineError(moderationState.queueError || 'Moderation queue is unavailable.'));
+    node.appendChild(createInlineError(moderationState.queueError || 'Moderation queue is unavailable.', moderationState.queueState === STATUS.ERROR ? () => {
+      if (!ensureOnlineAction()) return;
+      loadModerationQueue().catch(() => {});
+    } : null));
   }
 }
 
@@ -506,11 +513,17 @@ function renderRejectModal() {
 }
 
 function createInlineState(message) {
-  return createTextElement('div', message, { className: 'moderation-inline-state' });
+  return createInlineStateBlock({ variant: 'info', message });
 }
 
-function createInlineError(message) {
-  return createTextElement('div', message, { className: 'moderation-inline-error' });
+function createInlineError(message, onRetry = null) {
+  return createInlineStateBlock({
+    variant: 'error',
+    title: 'Action unavailable',
+    message,
+    actionLabel: onRetry ? 'Retry' : '',
+    onAction: onRetry
+  });
 }
 
 function createStatusBadge(status) {
