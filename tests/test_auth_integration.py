@@ -115,6 +115,50 @@ class AuthIntegrationTests(unittest.TestCase):
         self.assertIn("email", payload)
         self.assertIn("is_admin", payload)
 
+    def test_draft_endpoints_reject_system_fields_and_allow_valid_payloads(self):
+        access_token, _ = self._create_user_and_login()
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        valid_create_payload = {
+            "name_ru": "Черновик",
+            "date_start": "2026-01-01",
+            "source_url": "https://example.com/source",
+            "description": "Описание",
+        }
+
+        for forbidden_field in ("etl_status", "status", "published_from_draft_id"):
+            payload = {**valid_create_payload, forbidden_field: "forbidden"}
+            response = self.session.post(f"{self.BASE_URL}/api/drafts", headers=headers, json=payload, timeout=5)
+            self.assertEqual(response.status_code, 422)
+
+        create_response = self.session.post(
+            f"{self.BASE_URL}/api/drafts",
+            headers=headers,
+            json=valid_create_payload,
+            timeout=5,
+        )
+        self.assertEqual(create_response.status_code, 201)
+        draft_id = create_response.json()["id"]
+
+        for forbidden_field in ("status", "created_at", "updated_at"):
+            payload = {"description": "Новое описание", forbidden_field: "forbidden"}
+            response = self.session.put(
+                f"{self.BASE_URL}/api/drafts/{draft_id}",
+                headers=headers,
+                json=payload,
+                timeout=5,
+            )
+            self.assertEqual(response.status_code, 422)
+
+        valid_update_response = self.session.put(
+            f"{self.BASE_URL}/api/drafts/{draft_id}",
+            headers=headers,
+            json={"description": "Обновленное описание"},
+            timeout=5,
+        )
+        self.assertEqual(valid_update_response.status_code, 200)
+        self.assertEqual(valid_update_response.json()["description"], "Обновленное описание")
+
 
 if __name__ == "__main__":
     unittest.main()
