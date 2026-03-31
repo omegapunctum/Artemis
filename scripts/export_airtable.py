@@ -388,8 +388,12 @@ def map_record(
                 }
             )
 
-    longitude = validate_coordinate_range(longitude, -180.0, 180.0, record_id, "longitude", errors)
-    latitude = validate_coordinate_range(latitude, -90.0, 90.0, record_id, "latitude", errors)
+    validated_longitude = validate_coordinate_range(longitude, -180.0, 180.0, record_id, "longitude", errors)
+    validated_latitude = validate_coordinate_range(latitude, -90.0, 90.0, record_id, "latitude", errors)
+    longitude_range_error = longitude is not None and validated_longitude is None
+    latitude_range_error = latitude is not None and validated_latitude is None
+    longitude = validated_longitude
+    latitude = validated_latitude
     source_url = safe_str(fields.get("source_url"))
         
     external_id = safe_str(fields.get("external_id"))
@@ -445,7 +449,7 @@ def map_record(
         "date_end": to_date_or_none(fields.get("date_end"), record_id, "date_end", errors),
         "longitude": longitude,
         "latitude": latitude,
-        "_invalid_coordinates": longitude_parse_error or latitude_parse_error,
+        "_invalid_coordinates": longitude_parse_error or latitude_parse_error or longitude_range_error or latitude_range_error,
         "influence_radius_km": to_int_or_none(
             fields.get("influence_radius_km"), record_id, "influence_radius_km", errors
         ),
@@ -604,11 +608,11 @@ def build_geojson_features(mapped_records: Iterable[Dict[str, Any]], warnings: L
     for m in mapped_records:
         lon = m.get("longitude")
         lat = m.get("latitude")
-        if lat is None or lon is None:
-            add_issue(warnings, "warning", m.get("id") or "<missing>", "missing coordinates, skipped in geojson", "geometry")
-            continue
-        else:
-            if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+        geometry = None
+        if lat is not None or lon is not None:
+            if lat is None or lon is None:
+                add_issue(warnings, "warning", m.get("id") or "<missing>", "missing one coordinate", "geometry")
+            elif not (-90 <= lat <= 90 and -180 <= lon <= 180):
                 add_issue(errors, "critical", m.get("id") or "<missing>", "invalid coordinates, skipped in geojson", "geometry")
                 continue
             else:
@@ -646,11 +650,28 @@ def build_geojson_features(mapped_records: Iterable[Dict[str, Any]], warnings: L
                     "tags": m.get("tags"),
                     "validated": m.get("validated"),
                     "date_valid": m.get("date_valid"),
-                    "has_geometry": True,
+                    "has_geometry": geometry is not None,
                 },
             }
         )
     return {"type": "FeatureCollection", "features": features}
+
+
+def get_etl_error(mapped: Dict[str, Any]) -> Optional[str]:
+    source_url = mapped.get("source_url")
+    if not source_url:
+        return "missing_source_url"
+    if mapped.get("_invalid_coordinates"):
+        return "invalid_coordinates"
+    latitude = mapped.get("latitude")
+    longitude = mapped.get("longitude")
+    if latitude is not None and not (-90 <= latitude <= 90):
+        return "invalid_latitude"
+    if longitude is not None and not (-180 <= longitude <= 180):
+        return "invalid_longitude"
+    if not is_valid_iso_date(mapped.get("date_start")):
+        return "invalid_date_start"
+    return None
 
 
 def normalize_hex_color(value: Optional[str]) -> Optional[str]:
@@ -929,43 +950,36 @@ def main() -> int:
     valid_layers = [layer for layer in layers if validate_layer(layer, warnings, errors)]
     valid_layer_ids = {layer["layer_id"] for layer in valid_layers}
 
-    mapped_records: List[Dict[str, Any]] = []
-    rejected_records: List[Dict[str, Any]] = []
+    valid_features: List[Dict[str, Any]] = []
+    rejected_features: List[Dict[str, Any]] = []
     seen_dedupe_keys: set[Tuple[Any, ...]] = set()
     for mapped in candidate_records:
-        prev_errors_len = len(errors)
-        if validate_feature(mapped, valid_layer_ids, warnings, errors):
-            dedupe_key = get_dedupe_key(mapped)
-            if dedupe_key in seen_dedupe_keys:
-                add_issue(errors, "critical", mapped.get("id") or "<missing>", "duplicate", "dedupe")
-                rejected_records.append(
-                    {"id": mapped.get("id") or "<missing>", "name_ru": mapped.get("name_ru"), "reasons": ["duplicate"]}
-                )
-                print(f"REJECT: {mapped.get('name_ru') or '<missing>'} — duplicate ({dedupe_key})")
-                continue
-            seen_dedupe_keys.add(dedupe_key)
-            mapped_records.append(mapped)
-            print(f"OK: {mapped.get('name_ru') or '<missing>'}")
+        if parse_bool(mapped.get("validated")) is not True:
             continue
-        record_id = mapped.get("id") or "<missing>"
-        reasons = [
-            err.get("reason")
-            for err in errors[prev_errors_len:]
-            if err.get("id") == record_id and err.get("severity") == "critical"
-        ]
-        if not reasons:
-            reasons = ["rejected_by_validation"]
-        rejected_records.append({"id": record_id, "name_ru": mapped.get("name_ru"), "reasons": reasons})
-        print(f"REJECT: {mapped.get('name_ru') or '<missing>'} — {', '.join(reasons)}")
-    mapped_records = sort_mapped_records(mapped_records)
-    if args.exclude_without_geometry:
-        mapped_records = [m for m in mapped_records if m.get("longitude") is not None and m.get("latitude") is not None]
 
-    geojson = build_geojson_features(mapped_records, warnings, errors)
+        etl_error = get_etl_error(mapped)
+        if etl_error is not None:
+            rejected_features.append({"id": mapped.get("id") or "<missing>", "name_ru": mapped.get("name_ru"), "etl_error": etl_error})
+            continue
+
+        dedupe_key = get_dedupe_key(mapped)
+        if dedupe_key in seen_dedupe_keys:
+            rejected_features.append(
+                {"id": mapped.get("id") or "<missing>", "name_ru": mapped.get("name_ru"), "etl_error": "duplicate"}
+            )
+            continue
+        seen_dedupe_keys.add(dedupe_key)
+        valid_features.append(mapped)
+
+    valid_features = sort_mapped_records(valid_features)
+    if args.exclude_without_geometry:
+        valid_features = [m for m in valid_features if m.get("longitude") is not None and m.get("latitude") is not None]
+
+    geojson = build_geojson_features(valid_features, warnings, errors)
     validation_report = build_validation_report(
         total_records=len(records),
-        valid_records=len(mapped_records),
-        skipped_records=len(records) - len(mapped_records),
+        valid_records=len(valid_features),
+        skipped_records=len(records) - len(valid_features),
         warnings=warnings,
         errors=errors,
     )
@@ -974,7 +988,7 @@ def main() -> int:
         "timestamp": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "source": "dry-run" if dry_run else "airtable",
         "records_total_source": len(records),
-        "records_exported": len(mapped_records),
+        "records_exported": len(valid_features),
         "records_geojson": len(geojson["features"]),
         "errors": len(errors),
         "warnings": len(warnings),
@@ -984,7 +998,7 @@ def main() -> int:
     try:
         write_json(raw_path, records)
         write_json(geojson_path, geojson)
-        write_json(rejected_path, rejected_records)
+        write_json(rejected_path, rejected_features)
         write_json(layers_path, valid_layers)
         write_json(validation_report_path, validation_report)
         write_json(export_meta_path, export_meta)
@@ -1001,19 +1015,18 @@ def main() -> int:
         return 1
 
     # Финальный вывод — в формате, согласованном с мастер-промптом
-    print(f"VALID: {len(mapped_records)}")
-    print(f"REJECTED: {len(rejected_records)}")
+    print(f"OK: {len(valid_features)} | Errors: {len(errors)} | Rejected: {len(rejected_features)}")
     print(f"LAYERS: {len(valid_layers)}")
-    if rejected_records:
-        preview = rejected_records[:3]
+    if rejected_features:
+        preview = rejected_features[:3]
         print(f"REJECT_PREVIEW: {json.dumps(preview, ensure_ascii=False)}")
-    if len(mapped_records) == 0:
+    if len(valid_features) == 0:
         print("WARNING: valid features = 0")
 
     if args.commit:
         maybe_commit(
             [raw_path, geojson_path, rejected_path, layers_path, validation_report_path, export_meta_path, error_log_path],
-            len(mapped_records),
+            len(valid_features),
         )
 
     return 0
