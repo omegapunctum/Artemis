@@ -162,7 +162,6 @@ export function focusFeatureOnMap(map, feature) {
     zoom: 10,
     essential: true
   });
-  openFeaturePopup(map, feature, coordinates);
   return true;
 }
 

@@ -96,13 +96,13 @@
       <ul id="cards-ribbon" aria-label="Лента карточек"></ul>
     </section>
 
-    <article id="floating-card" class="glass-panel" hidden>
-      <button id="floating-card-close" class="floating-card-close" type="button" aria-label="Close">×</button>
-      <img id="floating-card-image" alt="" loading="lazy" />
-      <h3 id="floating-card-title"></h3>
-      <p id="floating-card-date"></p>
-      <p id="floating-card-description"></p>
-    </article>
+    <aside id="detail-panel" class="glass-panel detail-panel" hidden aria-label="Object details" aria-hidden="true">
+      <header class="detail-panel-head">
+        <h2 class="detail-panel-heading">Details</h2>
+        <button id="detail-panel-close" class="floating-card-close" type="button" aria-label="Close detail panel">×</button>
+      </header>
+      <div id="detail-panel-body" class="detail-panel-body"></div>
+    </aside>
   </div>
 
 <div id="error-banner" hidden></div>

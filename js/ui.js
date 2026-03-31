@@ -1,6 +1,7 @@
 import { loadLayers } from './data.js';
 import { updateMapData, setLayerLookup, focusFeatureOnMap, getMapFeatureCount, getMapBuildDiagnostics, setMapFeatureClickHandler, setMapLayerFilter, setSelectedFeatureId } from './map.js';
 import { debounce } from './ux.js';
+import { normalizeSafeUrl, setSafeLink } from './safe-dom.js';
 
 export async function initUI(map, features) {
   const allFeatures = Array.isArray(features?.features)
@@ -31,12 +32,9 @@ export async function initUI(map, features) {
     timelineAxis: document.getElementById('timeline-axis'),
     cardsRibbon: document.getElementById('cards-ribbon') || document.getElementById('object-list'),
     cardsState: document.getElementById('cards-state'),
-    floatingCard: document.getElementById('floating-card'),
-    floatingCardClose: document.getElementById('floating-card-close'),
-    floatingTitle: document.getElementById('floating-card-title'),
-    floatingDate: document.getElementById('floating-card-date'),
-    floatingDescription: document.getElementById('floating-card-description'),
-    floatingImage: document.getElementById('floating-card-image'),
+    detailPanel: document.getElementById('detail-panel'),
+    detailPanelBody: document.getElementById('detail-panel-body'),
+    detailPanelClose: document.getElementById('detail-panel-close'),
     dateFrom: document.getElementById('date-from'),
     dateTo: document.getElementById('date-to'),
     resultsCount: document.getElementById('results-count'),
@@ -142,19 +140,11 @@ export async function initUI(map, features) {
   setMapFeatureClickHandler(map, (feature, coordinates) => {
     selectFeature(state, elements, map, feature, {
       coordinates,
-      openFloating: true,
+      openDetail: true,
       scrollCard: true
     });
   });
-  map.on('move', () => {
-    const feature = getSelectedFeature(state);
-    if (feature && !elements.floatingCard?.hidden) {
-      const coords = feature?.geometry?.coordinates;
-      if (Array.isArray(coords)) positionFloatingCard(map, elements.floatingCard, coords);
-    }
-  });
-
-  elements.floatingCardClose?.addEventListener('click', () => hideFloatingCard(elements));
+  elements.detailPanelClose?.addEventListener('click', () => clearSelection(state, elements, map));
   document.addEventListener('click', (event) => {
     const target = event.target;
     if (state.overlay.activePrimary) {
@@ -164,8 +154,8 @@ export async function initUI(map, features) {
       const inPanel = panel?.contains(target) || button?.contains(target) || (state.overlay.activePrimary === 'search' && inSearchShell);
       if (!inPanel) closePrimaryPanel(elements, state, state.overlay.activePrimary);
     }
-    if (elements.floatingCard?.hidden) return;
-    const withinFloating = elements.floatingCard.contains(target);
+    if (elements.detailPanel?.hidden) return;
+    const withinFloating = elements.detailPanel.contains(target);
     const withinCard = target.closest?.('.ribbon-card');
     if (!withinFloating && !withinCard) clearSelection(state, elements, map);
   });
@@ -176,7 +166,7 @@ export async function initUI(map, features) {
       closePrimaryPanel(elements, state, state.overlay.activePrimary);
       return;
     }
-    if (!elements.floatingCard?.hidden) clearSelection(state, elements, map);
+    if (!elements.detailPanel?.hidden) clearSelection(state, elements, map);
   });
 
   state.loading = false;
@@ -342,7 +332,7 @@ function renderBookmarksPanel(elements, state, map) {
     meta.textContent = formatRange(props.date_start, props.date_end);
     item.append(title, meta);
     item.addEventListener('click', () => {
-      selectFeature(state, elements, map, bookmark.feature, { centerOnMap: true, openFloating: true, scrollCard: true });
+      selectFeature(state, elements, map, bookmark.feature, { centerOnMap: true, openDetail: true, scrollCard: true });
       closePrimaryPanel(elements, state, 'bookmarks');
     });
     elements.bookmarksPanel.appendChild(item);
@@ -386,7 +376,7 @@ function renderSearchDropdown(elements, state, map) {
     metaNode.textContent = meta;
     item.appendChild(metaNode);
     item.addEventListener('click', () => {
-      selectFeature(state, elements, map, feature, { centerOnMap: true, openFloating: true, scrollCard: true });
+      selectFeature(state, elements, map, feature, { centerOnMap: true, openDetail: true, scrollCard: true });
       closePrimaryPanel(elements, state, 'search');
     });
     elements.searchDropdown.appendChild(item);
@@ -484,49 +474,154 @@ function renderCards(elements, state, map) {
 
     item.append(image, meta);
     item.addEventListener('click', () => {
-      selectFeature(state, elements, map, feature, { centerOnMap: true, openFloating: true, scrollCard: false });
+      selectFeature(state, elements, map, feature, { centerOnMap: true, openDetail: true, scrollCard: false });
     });
     item.addEventListener('keydown', (event) => {
       if (event.key !== 'Enter' && event.key !== ' ') return;
       event.preventDefault();
-      selectFeature(state, elements, map, feature, { centerOnMap: true, openFloating: true, scrollCard: false });
+      selectFeature(state, elements, map, feature, { centerOnMap: true, openDetail: true, scrollCard: false });
     });
 
     list.appendChild(item);
   });
 }
 
-function showFloatingCard(map, elements, feature, coordinates) {
+function showDetailPanel(state, elements, map, feature) {
+  if (!elements.detailPanel || !elements.detailPanelBody) return;
   const props = normalizeProps(feature);
-  elements.floatingTitle.textContent = String(props.name_ru || 'Без названия');
-  elements.floatingDate.textContent = formatRange(props.date_start, props.date_end);
-  elements.floatingDescription.textContent = truncateText(String(props.description || 'Описание отсутствует.'), 180);
-  const safeImage = String(props.image_url || '').trim();
-  elements.floatingImage.hidden = !safeImage;
-  if (safeImage) {
-    elements.floatingImage.src = safeImage;
-    elements.floatingImage.alt = String(props.name_ru || 'Object image');
-  }
-  setPanelOpenState(elements.floatingCard, true);
-  elements.floatingCard.classList.add('is-selected');
+  const layerLabel = state.layerLookup.get(String(props.layer_id || '').trim()) || String(props.layer_id || 'Layer');
+  const dateLabel = formatRangeLabel(props.date_start, props.date_end);
+  const detail = document.createElement('div');
+  detail.className = 'detail-content';
 
-  if (Array.isArray(coordinates)) {
-    positionFloatingCard(map, elements.floatingCard, coordinates);
+  const imageNode = buildImageNode(props, 'Object image', true);
+  imageNode.classList.add('detail-hero-media');
+  detail.appendChild(imageNode);
+
+  const header = document.createElement('section');
+  header.className = 'detail-section detail-header';
+  const title = document.createElement('h3');
+  title.className = 'detail-title';
+  title.textContent = getPrimaryTitle(props);
+  const date = document.createElement('p');
+  date.className = 'detail-date';
+  date.textContent = dateLabel;
+  const badges = document.createElement('div');
+  badges.className = 'detail-badges';
+  badges.append(buildBadge(layerLabel, 'muted'));
+  const confidence = getConfidenceLabel(props.coordinates_confidence);
+  if (confidence) badges.append(buildBadge(confidence, 'accent'));
+  header.append(title, date, badges);
+
+  const descriptionSection = document.createElement('section');
+  descriptionSection.className = 'detail-section';
+  const descriptionTitle = createSectionTitle('Context');
+  const descriptionText = document.createElement('p');
+  descriptionText.className = 'detail-description';
+  const fullDescription = String(props.description || props.title_short || 'Контекст для этого объекта пока отсутствует.');
+  descriptionText.textContent = truncateText(fullDescription, 220);
+  descriptionSection.append(descriptionTitle, descriptionText);
+  if (fullDescription.length > 220) {
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'detail-inline-action';
+    toggle.textContent = 'Expand';
+    toggle.addEventListener('click', () => {
+      const expanded = toggle.dataset.expanded === 'true';
+      toggle.dataset.expanded = expanded ? 'false' : 'true';
+      toggle.textContent = expanded ? 'Expand' : 'Collapse';
+      descriptionText.textContent = expanded ? truncateText(fullDescription, 220) : fullDescription;
+    });
+    descriptionSection.appendChild(toggle);
   }
+
+  const metaSection = document.createElement('section');
+  metaSection.className = 'detail-section';
+  metaSection.appendChild(createSectionTitle('Meta'));
+  appendMetaRow(metaSection, 'Place', props.place_name || props.region || props.country);
+  appendMetaRow(metaSection, 'Coordinates', formatCoordinates(feature?.geometry?.coordinates));
+  appendMetaRow(metaSection, 'Source type', props.source_type || 'Unknown');
+  appendMetaRow(metaSection, 'Source domain', extractDomain(props.source_url));
+  appendMetaRow(metaSection, 'Sequence', props.sequence_order);
+  appendMetaRow(metaSection, 'Dates', dateLabel);
+
+  const sourceSection = document.createElement('section');
+  sourceSection.className = 'detail-section';
+  sourceSection.appendChild(createSectionTitle('Source'));
+  const sourceUrl = normalizeSafeUrl(String(props.source_url || '').trim());
+  if (sourceUrl) {
+    const sourceLink = document.createElement('a');
+    sourceLink.className = 'detail-action-link';
+    setSafeLink(sourceLink, sourceUrl);
+    sourceLink.textContent = 'Open source';
+    sourceSection.appendChild(sourceLink);
+  } else {
+    const unavailable = document.createElement('p');
+    unavailable.className = 'detail-empty';
+    unavailable.textContent = 'Source unavailable';
+    sourceSection.appendChild(unavailable);
+  }
+  if (props.source_license) sourceSection.appendChild(buildBadge(String(props.source_license), 'muted'));
+
+  const relatedSection = document.createElement('section');
+  relatedSection.className = 'detail-section';
+  relatedSection.appendChild(createSectionTitle('Related'));
+  const relatedItems = getRelatedFeatures(state, feature, 3);
+  if (!relatedItems.length) {
+    const empty = document.createElement('p');
+    empty.className = 'detail-empty';
+    empty.textContent = 'No related objects';
+    relatedSection.appendChild(empty);
+  } else {
+    relatedItems.forEach((relatedFeature) => {
+      const relatedProps = normalizeProps(relatedFeature);
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'related-item';
+      const itemTitle = document.createElement('span');
+      itemTitle.className = 'related-title';
+      itemTitle.textContent = getPrimaryTitle(relatedProps);
+      const itemMeta = document.createElement('span');
+      itemMeta.className = 'related-meta';
+      itemMeta.textContent = `${formatRangeLabel(relatedProps.date_start, relatedProps.date_end)} • ${state.layerLookup.get(String(relatedProps.layer_id || '').trim()) || relatedProps.layer_id || 'Layer'}`;
+      item.append(itemTitle, itemMeta);
+      item.addEventListener('click', () => {
+        selectFeature(state, elements, map, relatedFeature, { centerOnMap: true, openDetail: true, scrollCard: true });
+      });
+      relatedSection.appendChild(item);
+    });
+  }
+
+  const actionsSection = document.createElement('section');
+  actionsSection.className = 'detail-section detail-actions';
+  const focusButton = document.createElement('button');
+  focusButton.type = 'button';
+  focusButton.textContent = 'Focus on map';
+  focusButton.addEventListener('click', () => focusFeatureOnMap(map, feature));
+  const sourceButton = document.createElement('button');
+  sourceButton.type = 'button';
+  sourceButton.textContent = 'Open source';
+  sourceButton.disabled = !sourceUrl;
+  if (sourceUrl) {
+    sourceButton.addEventListener('click', () => window.open(sourceUrl, '_blank', 'noopener,noreferrer'));
+  }
+  const noteButton = document.createElement('button');
+  noteButton.type = 'button';
+  noteButton.textContent = 'Add note [TODO]';
+  noteButton.disabled = true;
+  actionsSection.append(focusButton, sourceButton, noteButton);
+
+  detail.append(header, descriptionSection, metaSection, sourceSection, relatedSection, actionsSection);
+  elements.detailPanelBody.replaceChildren(createDetailSkeleton());
+  setPanelOpenState(elements.detailPanel, true);
+  elements.detailPanel.classList.add('is-selected');
+  window.requestAnimationFrame(() => elements.detailPanelBody.replaceChildren(detail));
 }
 
-function positionFloatingCard(map, card, coordinates) {
-  const px = map.project(coordinates);
-  const x = Math.min(Math.max(px.x + 14, 12), window.innerWidth - card.offsetWidth - 12);
-  const y = Math.min(Math.max(px.y - 50, 74), window.innerHeight - card.offsetHeight - 220);
-  card.style.left = `${x}px`;
-  card.style.top = `${y}px`;
-}
-
-function hideFloatingCard(elements) {
-  if (!elements.floatingCard) return;
-  elements.floatingCard.classList.remove('is-selected');
-  setPanelOpenState(elements.floatingCard, false);
+function hideDetailPanel(elements) {
+  if (!elements.detailPanel) return;
+  elements.detailPanel.classList.remove('is-selected');
+  setPanelOpenState(elements.detailPanel, false);
 }
 
 function renderCardsState(elements, state) {
@@ -635,9 +730,8 @@ function selectFeature(state, elements, map, feature, options = {}) {
   renderCards(elements, state, map);
   renderBookmarksPanel(elements, state, map);
   if (options.centerOnMap) focusFeatureOnMap(map, selectedFeature);
-  if (options.openFloating !== false) {
-    const coords = options.coordinates || selectedFeature?.geometry?.coordinates;
-    showFloatingCard(map, elements, selectedFeature, Array.isArray(coords) ? coords : null);
+  if (options.openDetail !== false) {
+    showDetailPanel(state, elements, map, selectedFeature);
   }
   if (options.scrollCard) {
     const selectedNode = elements.cardsRibbon?.querySelector(`.ribbon-card[data-feature-id="${CSS.escape(state.selectedFeatureId)}"]`);
@@ -648,7 +742,7 @@ function selectFeature(state, elements, map, feature, options = {}) {
 function clearSelection(state, elements, map) {
   state.selectedFeatureId = null;
   setSelectedFeatureId(map, null);
-  hideFloatingCard(elements);
+  hideDetailPanel(elements);
   renderCards(elements, state, map);
 }
 
@@ -667,7 +761,7 @@ function renderCardsSkeleton(elements, count = 4) {
 }
 
 function initializeAnimatedPanels(elements) {
-  [elements.searchDropdown, elements.filtersPanel, elements.layersPanel, elements.bookmarksPanel, elements.floatingCard]
+  [elements.searchDropdown, elements.filtersPanel, elements.layersPanel, elements.bookmarksPanel, elements.detailPanel]
     .filter(Boolean)
     .forEach((panel) => {
       panel.classList.remove('is-open', 'is-closing');
@@ -747,34 +841,130 @@ function normalizeTags(tags) {
   return String(tags || '');
 }
 function formatRange(start, end) {
+  return formatRangeLabel(start, end);
+}
+function formatRangeLabel(start, end) {
   const s = parseYear(start);
   const e = parseYear(end);
-  if (Number.isFinite(s) && Number.isFinite(e)) return `${s}—${e}`;
-  if (Number.isFinite(s)) return String(s);
-  if (Number.isFinite(e)) return String(e);
+  if (Number.isFinite(s) && Number.isFinite(e)) return `${formatYearLabel(s)}—${formatYearLabel(e)}`;
+  if (Number.isFinite(s)) return formatYearLabel(s);
+  if (Number.isFinite(e)) return formatYearLabel(e);
   return 'Дата не указана';
+}
+function formatYearLabel(year) {
+  const value = Number(year);
+  if (!Number.isFinite(value)) return 'Unknown';
+  if (value < 0) return `${Math.abs(value)} BCE`;
+  if (value === 0) return '1 BCE/1 CE';
+  return `${value} CE`;
 }
 function truncateText(value, limit) {
   if (value.length <= limit) return value;
   return `${value.slice(0, limit - 1).trimEnd()}…`;
 }
-function buildImageNode(props, fallbackAlt) {
-  const safeImage = String(props.image_url || '').trim();
+function buildImageNode(props, fallbackAlt, large = false) {
+  const safeImage = normalizeSafeUrl(String(props.image_url || '').trim(), { allowRelative: true });
   if (safeImage) {
     const image = document.createElement('img');
     image.src = safeImage;
     image.alt = String(props.name_ru || fallbackAlt);
     image.loading = 'lazy';
+    image.referrerPolicy = 'no-referrer';
     image.addEventListener('error', () => {
-      image.replaceWith(createPlaceholderImage());
+      image.replaceWith(createPlaceholderImage(large));
     }, { once: true });
     return image;
   }
-  return createPlaceholderImage();
+  return createPlaceholderImage(large);
 }
-function createPlaceholderImage() {
+function createPlaceholderImage(large = false) {
   const placeholder = document.createElement('div');
-  placeholder.className = 'img-placeholder';
-  placeholder.textContent = 'No image';
+  placeholder.className = `img-placeholder${large ? ' is-large' : ''}`;
+  placeholder.textContent = 'No image available';
   return placeholder;
+}
+function getPrimaryTitle(props) {
+  return String(props.name_ru || props.name_en || props.title_short || 'Без названия');
+}
+function getConfidenceLabel(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return '';
+  if (normalized === 'exact') return 'Exact coordinates';
+  if (normalized === 'approximate') return 'Approximate coordinates';
+  if (normalized === 'conditional') return 'Conditional coordinates';
+  return normalized;
+}
+function buildBadge(label, tone = '') {
+  const badge = document.createElement('span');
+  badge.className = `detail-badge${tone ? ` is-${tone}` : ''}`;
+  badge.textContent = String(label || 'Unknown');
+  return badge;
+}
+function createSectionTitle(value) {
+  const title = document.createElement('h4');
+  title.className = 'detail-section-title';
+  title.textContent = String(value || '');
+  return title;
+}
+function appendMetaRow(parent, label, value) {
+  if (!parent || value === null || value === undefined || value === '') return;
+  const row = document.createElement('div');
+  row.className = 'detail-meta-row';
+  const key = document.createElement('span');
+  key.className = 'detail-meta-label';
+  key.textContent = String(label || '');
+  const val = document.createElement('span');
+  val.className = 'detail-meta-value';
+  val.textContent = String(value);
+  row.append(key, val);
+  parent.appendChild(row);
+}
+function formatCoordinates(coords) {
+  if (!Array.isArray(coords) || coords.length < 2) return '';
+  const [lng, lat] = coords;
+  if (!Number.isFinite(Number(lng)) || !Number.isFinite(Number(lat))) return '';
+  return `${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}`;
+}
+function extractDomain(value) {
+  const safeUrl = normalizeSafeUrl(String(value || '').trim());
+  if (!safeUrl) return '';
+  try {
+    return new URL(safeUrl).hostname.replace(/^www\./, '');
+  } catch (_error) {
+    return '';
+  }
+}
+function getRelatedFeatures(state, feature, limit = 3) {
+  const currentProps = normalizeProps(feature);
+  const currentId = getFeatureUiId(feature);
+  const currentLayer = String(currentProps.layer_id || '').trim();
+  const currentStart = parseYear(currentProps.date_start ?? currentProps.date_end);
+  const currentEnd = parseYear(currentProps.date_end ?? currentProps.date_start);
+  return state.allFeatures
+    .filter((candidate) => getFeatureUiId(candidate) !== currentId)
+    .map((candidate) => {
+      const props = normalizeProps(candidate);
+      const layerScore = String(props.layer_id || '').trim() === currentLayer ? 2 : 0;
+      const candidateStart = parseYear(props.date_start ?? props.date_end);
+      const candidateEnd = parseYear(props.date_end ?? props.date_start);
+      const hasDates = Number.isFinite(currentStart) && Number.isFinite(currentEnd) && Number.isFinite(candidateStart) && Number.isFinite(candidateEnd);
+      const overlap = hasDates && candidateStart <= currentEnd && candidateEnd >= currentStart;
+      const rangeDistance = hasDates ? Math.abs(((candidateStart + candidateEnd) / 2) - ((currentStart + currentEnd) / 2)) : Number.MAX_SAFE_INTEGER;
+      const timeScore = overlap ? 1 : 0;
+      return { candidate, score: layerScore + timeScore, rangeDistance };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || a.rangeDistance - b.rangeDistance)
+    .slice(0, limit)
+    .map((entry) => entry.candidate);
+}
+function createDetailSkeleton() {
+  const skeleton = document.createElement('div');
+  skeleton.className = 'detail-skeleton';
+  for (let index = 0; index < 5; index += 1) {
+    const line = document.createElement('div');
+    line.className = 'detail-skeleton-line';
+    skeleton.appendChild(line);
+  }
+  return skeleton;
 }
