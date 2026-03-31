@@ -30,11 +30,6 @@
       <ul id="drafts-list"></ul>
     </section>
 
-    <section id="moderation-panel" hidden>
-      <h3>Moderation</h3>
-      <div id="moderation-list"></div>
-    </section>
-
     <section class="filters-panel" aria-label="Фильтры">
       <label for="search-input">Поиск по названию</label>
       <input id="search-input" type="search" placeholder="Введите название" autocomplete="off" />
@@ -63,6 +58,7 @@
       </div>
       <div class="top-actions">
         <button id="ugc-create-btn" type="button" aria-label="Create draft">Create draft</button>
+        <button id="moderation-toggle-btn" type="button" aria-label="Toggle moderation workspace" aria-expanded="false" data-moderation-action="toggle-workspace" hidden>Moderation</button>
         <button id="filters-btn" type="button" aria-label="Toggle filters" aria-expanded="false">Filters</button>
         <button id="layers-btn" type="button" aria-label="Toggle layers" aria-expanded="false">Layers</button>
         <button id="bookmarks-btn" type="button" aria-label="Toggle bookmarks" aria-expanded="false">Bookmarks</button>
@@ -175,6 +171,40 @@
         </div>
       </form>
     </aside>
+
+    <aside id="moderation-workspace" class="glass-panel moderation-workspace" hidden aria-label="Moderation workspace" aria-hidden="true">
+      <header class="moderation-head">
+        <h2>Moderation queue</h2>
+        <div class="moderation-head-actions">
+          <button type="button" data-moderation-action="refresh-queue">Refresh</button>
+          <button type="button" class="floating-card-close" data-moderation-action="close-workspace" aria-label="Close moderation">×</button>
+        </div>
+      </header>
+      <section class="moderation-list-area" aria-label="Pending drafts">
+        <div class="moderation-filters">
+          <input id="moderation-search" type="search" placeholder="Search name/title..." autocomplete="off" />
+          <select id="moderation-sort" aria-label="Sort moderation queue">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+          </select>
+        </div>
+        <div id="moderation-queue-state"></div>
+        <div id="moderation-list" class="moderation-list"></div>
+      </section>
+      <section id="moderation-review" class="moderation-review-area" aria-label="Draft review panel"></section>
+    </aside>
+
+    <div id="moderation-reject-modal" class="moderation-reject-modal" hidden aria-hidden="true">
+      <div class="glass-panel moderation-reject-card" role="dialog" aria-modal="true" aria-label="Reject draft">
+        <h3>Reject draft</h3>
+        <label for="moderation-reject-reason">Reason (optional)</label>
+        <textarea id="moderation-reject-reason" maxlength="1000" placeholder="Add reject reason if backend supports it"></textarea>
+        <div class="moderation-reject-actions">
+          <button type="button" data-moderation-action="submit-reject">Reject</button>
+          <button type="button" data-moderation-action="close-reject-modal">Cancel</button>
+        </div>
+      </div>
+    </div>
   </div>
 
 <div id="error-banner" hidden></div>

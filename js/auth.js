@@ -163,6 +163,13 @@ export function getCurrentUser() {
   };
 }
 
+export function canModerate(user = getCurrentUser()) {
+  if (!user) return false;
+  const role = String(user?.role || '').toLowerCase();
+  const roles = Array.isArray(user?.roles) ? user.roles.map((value) => String(value).toLowerCase()) : [];
+  return Boolean(user?.isAdmin || role === 'admin' || role === 'moderator' || roles.includes('admin') || roles.includes('moderator'));
+}
+
 export async function login(email, password) {
   const response = await requestApi('/auth/login', {
     method: 'POST',
