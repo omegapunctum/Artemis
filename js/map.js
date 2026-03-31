@@ -230,10 +230,10 @@ function loadGeoJSON(map, featureCollection) {
     type: 'circle',
     source: SOURCE_ID,
     paint: {
-      'circle-radius': 12,
-      'circle-color': 'rgba(56, 189, 248, 0.35)',
+      'circle-radius': 13,
+      'circle-color': 'rgba(56, 189, 248, 0.28)',
       'circle-stroke-color': '#38bdf8',
-      'circle-stroke-width': 2.5,
+      'circle-stroke-width': 2.8,
       'circle-opacity': 1
     },
     filter: ['==', ['get', '_ui_id'], '__none__']

@@ -66,6 +66,7 @@ export async function initUI(map, features) {
     bookmarks: [],
     applyState: null
   };
+  initializeAnimatedPanels(elements);
   if (!state.enabledLayerIds.size) {
     allFeatures.forEach((feature) => {
       const layerId = String(normalizeProps(feature).layer_id || '').trim();
@@ -358,7 +359,7 @@ function renderSearchDropdown(elements, state, map) {
   elements.searchDropdown.replaceChildren();
   const shouldShow = Boolean(state.search);
   if (!shouldShow) {
-    elements.searchDropdown.hidden = true;
+    closePrimaryPanel(elements, state, 'search');
     return;
   }
   openPrimaryPanel(elements, state, 'search');
@@ -368,15 +369,15 @@ function renderSearchDropdown(elements, state, map) {
     noResults.className = 'search-no-results';
     noResults.textContent = 'No matches';
     elements.searchDropdown.appendChild(noResults);
-    elements.searchDropdown.hidden = false;
     return;
   }
 
   state.searchResults.forEach((feature) => {
     const props = normalizeProps(feature);
+    const featureId = getFeatureUiId(feature);
     const item = document.createElement('button');
     item.type = 'button';
-    item.className = 'search-result-item';
+    item.className = `search-result-item${state.selectedFeatureId === featureId ? ' is-selected' : ''}`;
     const title = String(props.name_ru || props.name_en || props.title_short || 'Untitled');
     const meta = `${formatRange(props.date_start, props.date_end)} • ${state.layerLookup.get(String(props.layer_id || '').trim()) || props.layer_id || 'Layer'}`;
     item.textContent = title;
@@ -390,8 +391,6 @@ function renderSearchDropdown(elements, state, map) {
     });
     elements.searchDropdown.appendChild(item);
   });
-
-  elements.searchDropdown.hidden = false;
 }
 
 function setupOverlayManager(elements, state) {
@@ -411,7 +410,7 @@ function openPrimaryPanel(elements, state, key) {
     const panel = getPanelByKey(elements, name);
     const button = getButtonByKey(elements, name);
     const isActive = name === key;
-    if (panel) panel.hidden = !isActive;
+    if (panel) setPanelOpenState(panel, isActive);
     if (button) button.setAttribute('aria-expanded', String(isActive));
   });
   state.overlay.activePrimary = key;
@@ -420,7 +419,7 @@ function openPrimaryPanel(elements, state, key) {
 function closePrimaryPanel(elements, state, key) {
   const panel = getPanelByKey(elements, key);
   const button = getButtonByKey(elements, key);
-  if (panel) panel.hidden = true;
+  if (panel) setPanelOpenState(panel, false);
   if (button) button.setAttribute('aria-expanded', 'false');
   if (state.overlay.activePrimary === key) state.overlay.activePrimary = null;
 }
@@ -468,6 +467,7 @@ function renderCards(elements, state, map) {
     const item = document.createElement('li');
     item.className = `ribbon-card${state.selectedFeatureId === featureId ? ' is-selected' : ''}`;
     item.dataset.featureId = featureId;
+    item.tabIndex = 0;
 
     const image = buildImageNode(props, 'Object image');
 
@@ -486,6 +486,11 @@ function renderCards(elements, state, map) {
     item.addEventListener('click', () => {
       selectFeature(state, elements, map, feature, { centerOnMap: true, openFloating: true, scrollCard: false });
     });
+    item.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      selectFeature(state, elements, map, feature, { centerOnMap: true, openFloating: true, scrollCard: false });
+    });
 
     list.appendChild(item);
   });
@@ -502,7 +507,8 @@ function showFloatingCard(map, elements, feature, coordinates) {
     elements.floatingImage.src = safeImage;
     elements.floatingImage.alt = String(props.name_ru || 'Object image');
   }
-  elements.floatingCard.hidden = false;
+  setPanelOpenState(elements.floatingCard, true);
+  elements.floatingCard.classList.add('is-selected');
 
   if (Array.isArray(coordinates)) {
     positionFloatingCard(map, elements.floatingCard, coordinates);
@@ -518,7 +524,9 @@ function positionFloatingCard(map, card, coordinates) {
 }
 
 function hideFloatingCard(elements) {
-  if (elements.floatingCard) elements.floatingCard.hidden = true;
+  if (!elements.floatingCard) return;
+  elements.floatingCard.classList.remove('is-selected');
+  setPanelOpenState(elements.floatingCard, false);
 }
 
 function renderCardsState(elements, state) {
@@ -531,10 +539,11 @@ function renderCardsState(elements, state) {
   } else if (state.error) {
     elements.cardsState.classList.add('is-error');
     elements.cardsState.classList.add('has-inline-error');
-    elements.cardsState.textContent = `Error: ${state.error}`;
+    elements.cardsState.textContent = `Failed to load data: ${state.error}`;
     if (elements.cardsRibbon) elements.cardsRibbon.replaceChildren();
   } else if (state.empty) {
     elements.cardsState.classList.add('is-empty');
+    elements.cardsState.classList.add('cards-inline-note');
     elements.cardsState.textContent = 'No objects in this time range';
     if (elements.cardsRibbon) elements.cardsRibbon.replaceChildren();
   } else {
@@ -655,6 +664,34 @@ function renderCardsSkeleton(elements, count = 4) {
     return item;
   });
   elements.cardsRibbon.replaceChildren(...skeletons);
+}
+
+function initializeAnimatedPanels(elements) {
+  [elements.searchDropdown, elements.filtersPanel, elements.layersPanel, elements.bookmarksPanel, elements.floatingCard]
+    .filter(Boolean)
+    .forEach((panel) => {
+      panel.classList.remove('is-open', 'is-closing');
+      panel.setAttribute('aria-hidden', 'true');
+    });
+}
+
+function setPanelOpenState(panel, open) {
+  if (!panel) return;
+  if (open) {
+    panel.hidden = false;
+    panel.classList.remove('is-closing');
+    panel.classList.add('is-open');
+    panel.setAttribute('aria-hidden', 'false');
+    return;
+  }
+  panel.classList.remove('is-open');
+  panel.classList.add('is-closing');
+  panel.setAttribute('aria-hidden', 'true');
+  window.setTimeout(() => {
+    if (panel.classList.contains('is-open')) return;
+    panel.hidden = true;
+    panel.classList.remove('is-closing');
+  }, 260);
 }
 
 function renderTimelineAxis(elements, years) {
