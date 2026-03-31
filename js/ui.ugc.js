@@ -1,6 +1,6 @@
 import { buildApiError, login, register, logout, getCurrentUser, fetchWithAuth } from './auth.js';
 import { loadLayers } from './data.js';
-import { showError, clearError, showLoading, hideLoading, normalizeAppError, showSystemMessage, ensureOnlineAction, createInlineStateBlock } from './ux.js';
+import { clearError, showLoading, hideLoading, normalizeAppError, showSystemMessage, ensureOnlineAction, createInlineStateBlock } from './ux.js';
 import { setText, toSafeText } from './safe-dom.js';
 
 let ugcInitialized = false;
@@ -54,6 +54,7 @@ export async function initUGCUI() {
 
   const els = getElements();
   if (!els.ugcPanel || !els.form) return;
+  ensureUgcErrorHost(els);
 
   uiState.layers = await loadLayers().catch(() => []);
   hydrateLayerSelect(els.form, uiState.layers);
@@ -349,7 +350,6 @@ async function refreshDrafts(els) {
     const normalized = normalizeAppError(error, 'Failed to load drafts.');
     const message = handleAuthError(error, els) || normalized.message;
     setGlobalError(els, message, { retry: () => refreshDrafts(els) });
-    showError(message);
   } finally {
     hideLoading();
   }
@@ -490,10 +490,11 @@ async function saveDraft(els) {
     }
 
     setFormState(els, 'saved');
+    setGlobalError(els, '');
     showSystemMessage('Draft saved', { variant: 'success' });
     await refreshDrafts(els);
   } catch (error) {
-    const message = handleAuthError(error, els) || normalizeAppError(error, 'Failed to save draft.').message;
+    const message = resolveUgcActionErrorMessage(error, els, 'Failed to save draft.');
     setGlobalError(els, message, { retry: () => saveDraft(els) });
     setFormState(els, 'server');
   } finally {
@@ -539,10 +540,11 @@ async function submitDraft(els) {
 
     upsertDraft(submitted);
     openEditMode(els, { ...submitted, status: 'pending' });
+    setGlobalError(els, '');
     showSystemMessage('Submitted for review', { variant: 'success' });
     await refreshDrafts(els);
   } catch (error) {
-    const message = handleAuthError(error, els) || normalizeAppError(error, 'Failed to submit draft.').message;
+    const message = resolveUgcActionErrorMessage(error, els, 'Failed to submit draft.');
     setGlobalError(els, message, { retry: () => submitDraft(els) });
     setFormState(els, 'server');
   } finally {
@@ -566,9 +568,10 @@ async function deleteActiveDraft(els) {
     uiState.drafts = uiState.drafts.filter((draft) => String(draft.id) !== String(id));
     openCreateMode(els);
     renderDraftList(els);
+    setGlobalError(els, '');
     showSystemMessage('Draft deleted', { variant: 'success' });
   } catch (error) {
-    const message = handleAuthError(error, els) || normalizeAppError(error, 'Failed to delete draft.').message;
+    const message = resolveUgcActionErrorMessage(error, els, 'Failed to delete draft.');
     setGlobalError(els, message, { retry: () => deleteActiveDraft(els) });
   } finally {
     hideLoading();
@@ -749,21 +752,58 @@ function setLoading(container, loading) {
 }
 
 function setGlobalError(els, message, { retry = null } = {}) {
-  const visible = Boolean(message);
-  els.ugcGlobalError.hidden = !visible;
+  const host = ensureUgcErrorHost(els);
+  if (!host) return;
+
+  const safeMessage = String(message || '').trim();
+  const visible = Boolean(safeMessage);
+  host.hidden = !visible;
+  host.classList.toggle('ugc-error-state', visible);
+  host.setAttribute('aria-live', 'polite');
+
   if (!visible) {
-    els.ugcGlobalError.replaceChildren();
+    host.replaceChildren();
     return;
   }
 
   const block = createInlineStateBlock({
     variant: 'error',
     title: 'Unable to complete action',
-    message,
+    message: safeMessage,
     actionLabel: typeof retry === 'function' ? 'Retry' : '',
     onAction: retry
   });
-  els.ugcGlobalError.replaceChildren(block);
+  host.replaceChildren(block);
+}
+
+function ensureUgcErrorHost(els) {
+  if (els.ugcGlobalError) return els.ugcGlobalError;
+  if (!els.ugcPanel) return null;
+
+  const host = document.createElement('div');
+  host.id = 'ugc-global-error';
+  host.className = 'ugc-error-state';
+  host.hidden = true;
+
+  const anchor = els.form || els.ugcDraftsList || els.ugcPanel.firstElementChild;
+  if (anchor?.parentNode) {
+    anchor.parentNode.insertBefore(host, anchor);
+  } else {
+    els.ugcPanel.appendChild(host);
+  }
+
+  els.ugcGlobalError = host;
+  return host;
+}
+
+function resolveUgcActionErrorMessage(error, els, fallbackMessage) {
+  const authMessage = handleAuthError(error, els);
+  if (authMessage) return authMessage;
+
+  const serverMessage = String(error?.message || '').trim();
+  if (serverMessage) return serverMessage;
+
+  return normalizeAppError(error, fallbackMessage).message || fallbackMessage;
 }
 
 function handleAuthError(error, els) {
