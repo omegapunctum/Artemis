@@ -458,24 +458,29 @@ button:focus-visible {
 }
 .offline-status {
   position: fixed;
-  left: 50%;
-  top: 78px;
-  transform: translateX(-50%);
+  left: calc(12px + var(--safe-left));
+  top: calc(78px + var(--safe-top));
   z-index: 22;
-  border-radius: 999px;
-  padding: 6px 12px;
+  border-radius: 14px;
+  padding: 7px 12px;
   border: 1px solid var(--state-warning-border);
   background: var(--state-warning-bg);
   color: var(--state-warning-text);
   font-size: 12px;
+  max-width: min(360px, calc(100vw - 24px - var(--safe-left) - var(--safe-right)));
+  display: grid;
+  gap: 2px;
 }
+.offline-status-title { font-weight: 600; }
+.offline-status-hint { color: #fde68a; opacity: 0.92; font-size: 11px; }
 .app-status-host {
   position: fixed;
   right: 12px;
-  top: 78px;
+  top: calc(78px + var(--safe-top));
   z-index: 23;
   display: grid;
   gap: 8px;
+  width: min(360px, calc(100vw - 24px - var(--safe-left) - var(--safe-right)));
 }
 .app-system-message {
   border-radius: 10px;
@@ -487,6 +492,25 @@ button:focus-visible {
 }
 .app-system-success { border-color: var(--state-success-border); background: var(--state-success-bg); color: var(--state-success-text); }
 .app-system-warning { border-color: var(--state-warning-border); background: var(--state-warning-bg); color: var(--state-warning-text); }
+
+.app-system-banner {
+  border-radius: 14px;
+  padding: 10px;
+  border: 1px solid var(--state-info-border);
+  background: rgba(16, 24, 38, 0.85);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 12px 30px rgba(2, 6, 23, 0.34);
+  display: grid;
+  gap: 8px;
+}
+.app-system-banner-text { margin: 0; color: var(--text-main); font-size: 13px; }
+.app-system-banner-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.app-system-banner-btn {
+  min-height: 30px;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+}
 
 .app-state-block {
   border-radius: 10px;
@@ -757,7 +781,8 @@ button:focus-visible {
   .moderation-mobile-back { display: inline-flex; }
   .moderation-workspace.is-mobile-review .moderation-list-area { display: none; }
   .moderation-workspace:not(.is-mobile-review) .moderation-review-area { display: none; }
-  #error-banner, .offline-status, .app-status-host, #loading-indicator { left: calc(8px + var(--safe-left)); right: calc(8px + var(--safe-right)); top: calc(64px + var(--safe-top)); }
+  #error-banner, .app-status-host, #loading-indicator { left: calc(8px + var(--safe-left)); right: calc(8px + var(--safe-right)); top: calc(64px + var(--safe-top)); width: auto; }
+  .offline-status { left: calc(8px + var(--safe-left)); right: calc(8px + var(--safe-right)); top: calc(64px + var(--safe-top)); max-width: none; }
 }
 
 @media (min-width: 721px) {

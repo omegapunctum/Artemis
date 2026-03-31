@@ -118,7 +118,7 @@ export function isOffline() {
 
 export function ensureOnlineAction() {
   if (!isOffline()) return true;
-  showSystemMessage('You are offline', { variant: 'warning', timeout: 3200 });
+  showSystemMessage('This action requires an internet connection', { variant: 'warning', timeout: 3200 });
   return false;
 }
 

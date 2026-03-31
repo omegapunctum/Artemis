@@ -1,4 +1,4 @@
-import { showError, clearError, showLoading, hideLoading } from './ux.js';
+import { showError, clearError, showLoading, hideLoading, showSystemMessage } from './ux.js';
 
 // Кеш, чтобы не делать повторные запросы к локальным файлам.
 let featuresCache = null;
@@ -6,6 +6,8 @@ let layersCache = null;
 let featuresInFlight = null;
 let layersInFlight = null;
 const DATA_BASE_PATH = 'data/';
+let hasShownCachedMessage = false;
+let hasShownNoCacheMessage = false;
 
 export async function loadFeatures() {
   if (featuresCache) return featuresCache;
@@ -17,8 +19,10 @@ export async function loadFeatures() {
     const requestUrl = new URL(`${DATA_BASE_PATH}features.geojson`, document.baseURI);
     const response = await fetchWithRetry(requestUrl.href);
     if (!response.ok) {
+      notifyCacheState(response);
       throw new Error(`Не удалось загрузить features.geojson: HTTP ${response.status}`);
     }
+    notifyCacheState(response);
 
     featuresCache = await response.json();
     const rawFeatures = Array.isArray(featuresCache?.features) ? featuresCache.features : [];
@@ -86,6 +90,7 @@ export async function loadLayers() {
 async function fetchWithRetry(url, retryDelay = 1000) {
   try {
     const firstResponse = await fetch(url);
+    notifyCacheState(firstResponse);
     if (firstResponse.ok) return firstResponse;
   } catch (_error) {
     // Повторим запрос ниже после короткой паузы.
@@ -94,7 +99,23 @@ async function fetchWithRetry(url, retryDelay = 1000) {
   await new Promise((resolve) => window.setTimeout(resolve, retryDelay));
 
   const secondResponse = await fetch(url);
+  notifyCacheState(secondResponse);
   if (secondResponse.ok) return secondResponse;
 
   throw new Error(`Не удалось загрузить ${url}: HTTP ${secondResponse.status}`);
+}
+
+function notifyCacheState(response) {
+  if (!response) return;
+  const cacheState = String(response.headers?.get('X-Artemis-Cache-State') || '').toLowerCase();
+  if (cacheState === 'fallback' && !hasShownCachedMessage) {
+    hasShownCachedMessage = true;
+    showSystemMessage('Using last available data', { variant: 'warning', timeout: 3200 });
+    return;
+  }
+
+  if (cacheState === 'no-cache' && !hasShownNoCacheMessage) {
+    hasShownNoCacheMessage = true;
+    showSystemMessage('No cached data available', { variant: 'warning', timeout: 3600 });
+  }
 }

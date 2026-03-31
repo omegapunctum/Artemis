@@ -91,6 +91,12 @@ self.addEventListener('activate', (event) => {
   })());
 });
 
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -275,7 +281,7 @@ async function handleDataRequest(request) {
       const cachedResponse = await cache.match(request);
       if (cachedResponse) {
         console.debug('[SW] data network fail -> cache fallback:', request.url);
-        return cachedResponse;
+        return withCacheState(cachedResponse, 'fallback');
       }
       throw networkError;
     }
@@ -286,7 +292,20 @@ async function handleDataRequest(request) {
       message: 'ARTEMIS offline cache is empty for this dataset.'
     }), {
       status: 503,
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Artemis-Cache-State': 'no-cache'
+      }
     });
   }
+}
+
+function withCacheState(response, state) {
+  const headers = new Headers(response.headers);
+  headers.set('X-Artemis-Cache-State', state);
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
 }
