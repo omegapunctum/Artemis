@@ -681,7 +681,14 @@ button:focus-visible {
 .ugc-my-drafts { border: 1px solid var(--glass-border); border-radius: 12px; padding: var(--space-md); background: rgba(15, 23, 42, 0.42); }
 .ugc-my-drafts-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
 .ugc-my-drafts-head h3 { margin: 0; font: var(--font-body); }
-.ugc-empty-state { color: var(--text-muted); font: var(--font-meta); padding: 6px 0; }
+.ugc-empty-state {
+  color: var(--text-muted);
+  font: var(--font-meta);
+  padding: var(--space-sm);
+  border: 1px dashed rgba(148, 163, 184, 0.35);
+  border-radius: var(--radius-md);
+  background: rgba(148, 163, 184, 0.08);
+}
 .ugc-drafts-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 180px; overflow: auto; }
 .ugc-draft-item { border: 1px solid rgba(148,163,184,.24); border-radius: var(--radius-md); padding: var(--space-sm); background: rgba(255,255,255,.03); display: grid; gap: 6px; }
 .ugc-draft-meta { display: flex; gap: var(--space-sm); justify-content: space-between; align-items: center; font: var(--font-meta); color: var(--text-muted); }
