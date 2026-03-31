@@ -431,6 +431,13 @@ def map_record(
         if raw_layer_id and not mapped_layer_id:
             unknown_layer_link = True
 
+    raw_date_start = fields.get("date_start")
+    raw_date_end = fields.get("date_end")
+    raw_date_start_present = raw_date_start not in (None, "")
+    raw_date_end_present = raw_date_end not in (None, "")
+    parsed_date_start = to_date_or_none(raw_date_start, record_id, "date_start", errors)
+    parsed_date_end = to_date_or_none(raw_date_end, record_id, "date_end", errors)
+
     mapped = {
         "id": record_id,
         "airtable_record_id": record_id,
@@ -443,11 +450,15 @@ def map_record(
         "layer_type": normalize_layer_type(fields.get("layer_type_enum") or fields.get("layer_type")),
         "name_ru": safe_str(fields.get("name_ru")),
         "name_en": safe_str(fields.get("name_en")),
-        "date_start": to_date_or_none(fields.get("date_start"), record_id, "date_start", errors),
+        "date_start": parsed_date_start,
         "date_construction_end": to_date_or_none(
             fields.get("date_construction_end"), record_id, "date_construction_end", errors
         ),
-        "date_end": to_date_or_none(fields.get("date_end"), record_id, "date_end", errors),
+        "date_end": parsed_date_end,
+        "_raw_date_start_present": raw_date_start_present,
+        "_invalid_date_start": raw_date_start_present and parsed_date_start is None,
+        "_raw_date_end_present": raw_date_end_present,
+        "_invalid_date_end": raw_date_end_present and parsed_date_end is None,
         "longitude": longitude,
         "latitude": latitude,
         "_invalid_coordinates": longitude_parse_error or latitude_parse_error or longitude_range_error or latitude_range_error,
@@ -662,8 +673,6 @@ def get_etl_error(mapped: Dict[str, Any]) -> Optional[str]:
     source_url = mapped.get("source_url")
     if not source_url:
         return "missing_source_url"
-    if not is_valid_iso_date(mapped.get("date_start")):
-        return "invalid_date_start"
     return None
 
 
@@ -715,7 +724,7 @@ def validate_feature(mapped: Dict[str, Any], layer_ids: set[str], warnings: List
         critical("id", "missing_id")
     if not mapped.get("name_ru"):
         critical("name_ru", "missing_name_ru")
-    if not mapped.get("date_start"):
+    if not mapped.get("_raw_date_start_present"):
         critical("date_start", "missing_date_start")
     validated_value = parse_bool(mapped.get("validated"))
     if validated_value is not True:
@@ -745,7 +754,12 @@ def validate_feature(mapped: Dict[str, Any], layer_ids: set[str], warnings: List
         critical("geometry", "missing_geometry_coordinate")
     elif latitude is not None and longitude is not None and not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
         critical("geometry", "invalid_coordinates")
-    date_valid = is_valid_iso_date(mapped.get("date_start")) and is_valid_iso_date(mapped.get("date_end"))
+    date_valid = (
+        not mapped.get("_invalid_date_start")
+        and not mapped.get("_invalid_date_end")
+        and is_valid_iso_date(mapped.get("date_start"))
+        and is_valid_iso_date(mapped.get("date_end"))
+    )
     mapped["date_valid"] = date_valid
     if not is_valid_license(mapped.get("source_license")):
         critical("source_license", "invalid_license")
