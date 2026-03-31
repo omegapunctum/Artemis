@@ -54,10 +54,22 @@
   </aside>
 
   <div id="app-shell">
-    <header id="top-header" class="glass-panel">
-      <div class="brand">ARTEMIS</div>
-      <input id="global-search" type="search" placeholder="Search events, places, people..." autocomplete="off" />
-      <button id="filters-btn" type="button" aria-label="Toggle filters">Filters</button>
+    <header id="top-header" class="glass-panel" aria-label="Top controls">
+      <div class="brand" aria-label="ARTEMIS logo">ARTEMIS</div>
+      <div class="search-shell">
+        <input id="global-search" type="search" placeholder="Search events, people, places, dates..." autocomplete="off" />
+        <button id="search-clear-btn" class="icon-btn search-clear-btn" type="button" aria-label="Clear search" hidden>×</button>
+        <div id="search-dropdown" class="top-panel search-dropdown" hidden></div>
+      </div>
+      <div class="top-actions">
+        <button id="filters-btn" type="button" aria-label="Toggle filters" aria-expanded="false">Filters</button>
+        <button id="layers-btn" type="button" aria-label="Toggle layers" aria-expanded="false">Layers</button>
+        <button id="bookmarks-btn" type="button" aria-label="Toggle bookmarks" aria-expanded="false">Bookmarks</button>
+        <button id="overflow-btn" class="icon-btn" type="button" aria-label="More actions">⋯</button>
+      </div>
+      <section id="filters-panel" class="glass-panel top-panel" hidden></section>
+      <section id="layers-panel" class="glass-panel top-panel" hidden></section>
+      <section id="bookmarks-panel" class="glass-panel top-panel" hidden></section>
     </header>
 
     <main id="map-container" aria-label="Карта объектов">
