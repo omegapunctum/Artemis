@@ -228,11 +228,24 @@ body { overflow: hidden; }
 }
 .top-actions > button,
 .icon-btn,
+.ui-button,
+.app-system-banner-btn,
+.app-state-action-btn,
+.detail-actions button,
+.ugc-form-actions button,
+.ugc-draft-actions button,
+.floating-card-close {
+  min-height: 36px;
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  transition: transform var(--motion-fast) var(--ease-standard), background var(--motion-normal) var(--ease-standard), border-color var(--motion-normal) var(--ease-standard), box-shadow var(--motion-normal) var(--ease-standard);
+}
+.top-actions > button,
+.icon-btn,
 .ui-button {
-  height: 40px;
+  min-height: 40px;
   border-radius: var(--radius-pill);
   padding: 0 12px;
-  transition: transform var(--motion-fast) var(--ease-standard), background var(--motion-normal) var(--ease-standard), border-color var(--motion-normal) var(--ease-standard), box-shadow var(--motion-normal) var(--ease-standard);
 }
 .icon-btn { min-width: 40px; }
 .top-panel {
@@ -592,9 +605,9 @@ button:focus-visible {
   background: rgba(148, 163, 184, 0.2);
   animation: pulse 1.4s ease infinite;
 }
-.floating-card-close { position: static; min-height: 32px; min-width: 32px; padding: 0; border-radius: 10px; }
+.floating-card-close { position: static; min-width: 36px; padding: 0; }
 .floating-card-close:hover { background: rgba(248, 113, 113, 0.2); border-color: rgba(248, 113, 113, 0.5); }
-.floating-card-close:focus-visible { box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.25); }
+.floating-card-close:focus-visible { box-shadow: var(--accent-glow); }
 .detail-panel.is-selected {
   border-color: rgba(56, 189, 248, 0.65);
   box-shadow: 0 16px 30px rgba(2, 132, 199, 0.2), inset 0 0 0 1px rgba(125, 211, 252, 0.46);
@@ -671,9 +684,6 @@ button:focus-visible {
 .app-system-banner-text { margin: 0; color: var(--text-main); font: var(--font-body); }
 .app-system-banner-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .app-system-banner-btn {
-  min-height: 30px;
-  border-radius: var(--radius-pill);
-  padding: 5px 12px;
   font: var(--font-meta);
 }
 
@@ -684,7 +694,7 @@ button:focus-visible {
 .app-state-title { font: var(--font-meta); }
 .app-state-message { font: var(--font-body); }
 .app-state-actions { display: flex; gap: 8px; }
-.app-state-action-btn { font: var(--font-meta); padding: 6px var(--space-md); }
+.app-state-action-btn { font: var(--font-meta); }
 .app-state-success { border-color: var(--state-success-border); background: var(--state-success-bg); color: var(--state-success-text); }
 .app-state-warning { border-color: var(--state-warning-border); background: var(--state-warning-bg); color: var(--state-warning-text); }
 .app-state-error { border-color: var(--state-error-border); background: var(--state-error-bg); color: var(--state-error-text); }
@@ -914,6 +924,17 @@ button:focus-visible {
 .ui-button-secondary { background: rgba(255, 255, 255, 0.08); }
 .ui-button-danger { border-color: rgba(248, 113, 113, 0.56); background: rgba(127, 29, 29, 0.34); }
 .ui-button-success { border-color: rgba(52, 211, 153, 0.6); background: rgba(6, 78, 59, 0.38); }
+
+:is(.app-system-banner-btn, .app-state-action-btn, .detail-actions button, .ugc-form-actions button, .ugc-draft-actions button, .floating-card-close):focus-visible {
+  outline: none;
+  border-color: rgba(56, 189, 248, 0.82);
+  box-shadow: var(--accent-glow);
+}
+
+:is(.app-system-banner-btn, .app-state-action-btn, .detail-actions button, .ugc-form-actions button, .ugc-draft-actions button)[disabled] {
+  background: var(--state-muted-bg-soft);
+  border-color: rgba(148, 163, 184, 0.24);
+}
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
