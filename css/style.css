@@ -234,6 +234,9 @@ body { overflow: hidden; }
 .detail-actions button,
 .ugc-form-actions button,
 .ugc-draft-actions button,
+.moderation-head-actions button,
+.moderation-review-actions button,
+.moderation-reject-actions button,
 .floating-card-close {
   min-height: 36px;
   border-radius: var(--radius-md);
@@ -775,15 +778,23 @@ button:focus-visible {
 .ugc-draft-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .ugc-status-badge { text-transform: capitalize; padding: 2px 8px; }
 .ugc-status-info { display: grid; justify-items: end; gap: 4px; }
-.ugc-status-draft { background: rgba(30, 64, 175, 0.24); }
-.ugc-status-pending { background: rgba(180, 83, 9, 0.24); }
-.ugc-status-approved { background: rgba(21, 128, 61, 0.24); }
-.ugc-status-rejected { background: rgba(127, 29, 29, 0.32); }
-.ugc-status-unknown { background: rgba(71, 85, 105, 0.3); }
+.ugc-status-draft {
+  border-color: var(--state-info-border);
+  background: var(--state-info-bg);
+  color: var(--state-info-text);
+}
+.ugc-status-pending { color: var(--state-warning-text); }
+.ugc-status-approved { color: var(--state-success-text); }
+.ugc-status-rejected { color: var(--state-error-text); }
+.ugc-status-unknown {
+  border-color: var(--state-muted-border);
+  background: var(--state-muted-bg-soft);
+  color: var(--text-soft);
+}
 .ugc-status-reason {
   display: block;
   max-width: 220px;
-  color: var(--state-error-text);
+  color: var(--text-muted);
   font: var(--font-meta);
   text-align: right;
 }
@@ -868,7 +879,11 @@ button:focus-visible {
 .moderation-item.is-selected { border-color: rgba(56, 189, 248, 0.8); background: rgba(14, 116, 144, 0.22); }
 .moderation-item-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
 .moderation-item-meta { margin: 0; color: var(--text-muted); font: var(--font-meta); }
-.moderation-status-badge { display: inline-flex; align-items: center; text-transform: uppercase; border-color: rgba(251, 191, 36, 0.55); background: rgba(120, 53, 15, 0.35); color: #fde68a; }
+.moderation-status-badge {
+  display: inline-flex;
+  align-items: center;
+  text-transform: capitalize;
+}
 .moderation-review-area { overflow: auto; display: grid; gap: 10px; align-content: start; overscroll-behavior: contain; }
 .moderation-list { overscroll-behavior: contain; }
 .moderation-hero { min-height: 150px; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.25); background: rgba(15, 23, 42, 0.48); overflow: hidden; display: flex; align-items: center; justify-content: center; }
@@ -881,7 +896,12 @@ button:focus-visible {
 .moderation-meta-value,
 .moderation-item-meta { overflow-wrap: anywhere; }
 .moderation-review-sub { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
-.moderation-meta-pill { border-color: rgba(148, 163, 184, 0.35); color: var(--text-soft); font: var(--font-meta); }
+.moderation-meta-pill {
+  border-color: var(--state-muted-border);
+  background: var(--state-muted-bg-soft);
+  color: var(--text-muted);
+  font: var(--font-meta);
+}
 .moderation-review-main { display: grid; gap: 8px; }
 .moderation-review-block { border-radius: var(--radius-md); background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(148, 163, 184, 0.2); padding: var(--space-sm) var(--space-md); }
 .moderation-review-block h4 { margin: 0 0 6px; font: var(--font-caption); text-transform: uppercase; color: #bfdbfe; letter-spacing: .04em; }
@@ -889,6 +909,7 @@ button:focus-visible {
 .moderation-review-meta { display: grid; gap: 6px; border-radius: var(--radius-md); border: 1px solid rgba(148, 163, 184, 0.2); background: rgba(15, 23, 42, 0.42); padding: var(--space-md); }
 .moderation-meta-row { display: grid; grid-template-columns: 180px 1fr; gap: var(--space-sm); font: var(--font-body); align-items: baseline; }
 .moderation-meta-label { color: var(--text-muted); }
+.moderation-meta-value { color: var(--text-soft); }
 .moderation-meta-row a { color: #93c5fd; word-break: break-all; }
 .moderation-review-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .moderation-approve-btn { border-color: rgba(52, 211, 153, 0.6); background: rgba(6, 78, 59, 0.38); }
@@ -925,13 +946,13 @@ button:focus-visible {
 .ui-button-danger { border-color: rgba(248, 113, 113, 0.56); background: rgba(127, 29, 29, 0.34); }
 .ui-button-success { border-color: rgba(52, 211, 153, 0.6); background: rgba(6, 78, 59, 0.38); }
 
-:is(.app-system-banner-btn, .app-state-action-btn, .detail-actions button, .ugc-form-actions button, .ugc-draft-actions button, .floating-card-close):focus-visible {
+:is(.app-system-banner-btn, .app-state-action-btn, .detail-actions button, .ugc-form-actions button, .ugc-draft-actions button, .moderation-head-actions button, .moderation-review-actions button, .moderation-reject-actions button, .floating-card-close):focus-visible {
   outline: none;
   border-color: rgba(56, 189, 248, 0.82);
   box-shadow: var(--accent-glow);
 }
 
-:is(.app-system-banner-btn, .app-state-action-btn, .detail-actions button, .ugc-form-actions button, .ugc-draft-actions button)[disabled] {
+:is(.app-system-banner-btn, .app-state-action-btn, .detail-actions button, .ugc-form-actions button, .ugc-draft-actions button, .moderation-head-actions button, .moderation-review-actions button, .moderation-reject-actions button)[disabled] {
   background: var(--state-muted-bg-soft);
   border-color: rgba(148, 163, 184, 0.24);
 }

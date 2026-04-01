@@ -447,8 +447,11 @@ function renderStatusInfo(draft) {
 function renderStatusBadge(draft) {
   const status = normalizeDraftStatus(draft?.status);
   const badge = document.createElement('span');
-  badge.className = 'ugc-status-badge';
+  badge.className = 'ugc-status-badge ui-badge';
   badge.classList.add(`ugc-status-${status}`);
+  if (status === 'approved') badge.classList.add('is-success');
+  if (status === 'rejected') badge.classList.add('is-error');
+  if (status === 'pending') badge.classList.add('is-warning');
 
   setText(badge, DRAFT_STATUS_LABELS[status] || DRAFT_STATUS_LABELS.unknown);
   return badge;
