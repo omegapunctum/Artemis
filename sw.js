@@ -101,22 +101,25 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
   const hasAuthHeader = request.headers.has('Authorization');
+  const isNonGetRequest = request.method !== 'GET';
+  const isCredentialedRequest = request.credentials === 'include';
+  const isPrivateApiRequest = hasAuthHeader || isPrivateRequest(url);
 
-  if (request.method !== 'GET') {
+  if (isNonGetRequest) {
     console.debug('[SW] skip non-GET:', request.method, url.pathname);
     event.respondWith(fetch(request));
     return;
   }
 
   // Русский комментарий: запросы с cookie/credentials не кэшируем.
-  if (request.credentials === 'include') {
+  if (isCredentialedRequest) {
     console.debug('[SW] skip credentialed request:', url.pathname);
     event.respondWith(fetch(request));
     return;
   }
 
   // Русский комментарий: приватные/auth-запросы не кэшируем, чтобы не сохранять приватные ответы.
-  if (hasAuthHeader || isPrivateRequest(url)) {
+  if (isPrivateApiRequest) {
     console.debug('[SW] skip private/auth request:', url.pathname);
     event.respondWith(fetch(request));
     return;
@@ -266,6 +269,12 @@ function trimBasePath(pathname) {
 }
 
 async function handleDataRequest(request) {
+  const requestUrl = new URL(request.url);
+  if (request.credentials === 'include' || isPrivateRequest(requestUrl)) {
+    console.debug('[SW] data request bypass cache:', requestUrl.pathname);
+    return fetch(request);
+  }
+
   try {
     const cache = await caches.open(DATA_CACHE);
     try {
