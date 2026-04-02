@@ -1,6 +1,6 @@
 import { loadLayers } from './data.js';
 import { updateMapData, setLayerLookup, focusFeatureOnMap, getMapFeatureCount, getMapBuildDiagnostics, setMapFeatureClickHandler, setMapFeatureHoverHandler, setMapLayerFilter, setSelectedFeatureId, setHoveredFeatureId } from './map.js';
-import { debounce, createInlineStateBlock } from './ux.js';
+import { debounce, createInlineStateBlock, showSystemMessage } from './ux.js';
 import { normalizeSafeUrl, setSafeLink } from './safe-dom.js';
 
 let globalDataErrorRetryHandler = null;
@@ -75,6 +75,8 @@ export async function initUI(map, features) {
     searchHelperState: document.getElementById('search-helper-state'),
     searchSuggestions: document.getElementById('search-suggestions'),
     searchNoResultsState: document.getElementById('search-no-results-state'),
+    searchNoResultsText: document.getElementById('search-no-results-text'),
+    searchNoResultsReset: document.getElementById('search-no-results-reset'),
     searchDropdown: document.getElementById('search-dropdown'),
     filtersBtn: document.getElementById('filters-btn'),
     layersBtn: document.getElementById('layers-btn'),
@@ -94,6 +96,7 @@ export async function initUI(map, features) {
     timelineKnobStart: document.getElementById('timeline-knob-start'),
     timelineKnobEnd: document.getElementById('timeline-knob-end'),
     timelineAxis: document.getElementById('timeline-axis'),
+    timelineTrackWrap: document.querySelector('#timeline .timeline-track-wrap'),
     cardsRibbon: document.getElementById('cards-ribbon') || document.getElementById('object-list'),
     cardsState: document.getElementById('cards-state'),
     detailPanel: document.getElementById('detail-panel'),
@@ -125,6 +128,7 @@ export async function initUI(map, features) {
     selectedFeatureId: null,
     hoveredFeatureId: null,
     enabledLayerIds: new Set(layers.filter((layer) => layer?.is_enabled !== false).map((layer) => String(layer.layer_id || layer.id || '').trim()).filter(Boolean)),
+    defaultEnabledLayerIds: new Set(layers.filter((layer) => layer?.is_enabled !== false).map((layer) => String(layer.layer_id || layer.id || '').trim()).filter(Boolean)),
     confidenceFilter: 'all',
     overlay: { activePrimary: null, activeModal: null },
     viewport: { mode: 'desktop', isMobile: false, isTablet: false },
@@ -190,31 +194,33 @@ export async function initUI(map, features) {
     }
   });
   elements.searchClearBtn?.addEventListener('click', () => {
-    if (elements.searchInput) elements.searchInput.value = '';
-    state.search = '';
-    toggleSearchClear(elements, state);
-    closePrimaryPanel(elements, state, 'search');
+    clearSearchState(elements, state, { closePanel: true, notify: true });
+    applyState();
+  });
+  elements.searchNoResultsReset?.addEventListener('click', () => {
+    clearSearchState(elements, state, { closePanel: false, notify: true });
     applyState();
   });
   setupSearchSuggestions(elements);
   toggleSearchClear(elements, state);
 
   elements.timelineStart?.addEventListener('input', () => {
-    state.currentStartYear = Math.min(Number(elements.timelineStart.value), state.currentEndYear);
-    elements.timelineStart.value = String(state.currentStartYear);
-    syncLegacyDateInputs(elements, state);
-    updateTimelineLabel(elements, state);
-    updateTimelineViz(elements, state);
-    applyState();
+    applyTimelineRange(elements, state, {
+      start: Number(elements.timelineStart.value),
+      end: state.currentEndYear,
+      snap: false,
+      commit: true
+    });
   });
   elements.timelineEnd?.addEventListener('input', () => {
-    state.currentEndYear = Math.max(Number(elements.timelineEnd.value), state.currentStartYear);
-    elements.timelineEnd.value = String(state.currentEndYear);
-    syncLegacyDateInputs(elements, state);
-    updateTimelineLabel(elements, state);
-    updateTimelineViz(elements, state);
-    applyState();
+    applyTimelineRange(elements, state, {
+      start: state.currentStartYear,
+      end: Number(elements.timelineEnd.value),
+      snap: false,
+      commit: true
+    });
   });
+  setupTimelinePointerInteractions(elements, state);
 
   elements.filtersBtn?.addEventListener('click', () => togglePrimaryPanel(elements, state, 'filters', elements.filtersBtn));
   elements.layersBtn?.addEventListener('click', () => togglePrimaryPanel(elements, state, 'layers', elements.layersBtn));
@@ -353,18 +359,9 @@ function renderFiltersPanel(elements, state, layers, confidenceValues) {
   resetBtn.textContent = 'Reset';
   resetBtn.disabled = activeFiltersTotal === 0;
   resetBtn.addEventListener('click', () => {
-    state.search = '';
-    if (elements.searchInput) elements.searchInput.value = '';
-    state.confidenceFilter = 'all';
-    state.enabledLayerIds = new Set(state.layerLookup.keys());
-    state.currentStartYear = Number(elements.timelineStart?.min ?? state.currentStartYear);
-    state.currentEndYear = Number(elements.timelineEnd?.max ?? state.currentEndYear);
-    if (elements.timelineStart) elements.timelineStart.value = String(state.currentStartYear);
-    if (elements.timelineEnd) elements.timelineEnd.value = String(state.currentEndYear);
-    toggleSearchClear(elements, state);
-    updateTimelineLabel(elements, state);
-    updateTimelineViz(elements, state);
+    resetExploreConstraints(elements, state);
     state.applyState?.();
+    showSystemMessage('Фильтры сброшены', { variant: 'success', timeout: 2200 });
   });
   filterSummary.append(activeFiltersBadge, resetBtn);
 
@@ -410,7 +407,23 @@ function renderLayersPanel(elements, state, layers) {
   const title = document.createElement('h3');
   title.className = 'panel-title';
   title.textContent = 'Layers';
-  elements.layersPanel.appendChild(title);
+  const layersChanged = hasLayerCustomization(state);
+  const info = document.createElement('p');
+  info.className = 'status-summary';
+  info.textContent = layersChanged
+    ? 'Layer visibility customized'
+    : 'Default layer visibility';
+  const restoreBtn = document.createElement('button');
+  restoreBtn.type = 'button';
+  restoreBtn.className = 'ui-button ui-button-secondary';
+  restoreBtn.textContent = 'Restore defaults';
+  restoreBtn.disabled = !layersChanged;
+  restoreBtn.addEventListener('click', () => {
+    restoreDefaultLayers(state);
+    state.applyState?.();
+    showSystemMessage('Слои восстановлены по умолчанию', { variant: 'success', timeout: 2200 });
+  });
+  elements.layersPanel.append(title, info, restoreBtn);
 
   (layers || []).forEach((layer) => {
     const id = String(layer?.layer_id || layer?.id || '').trim();
@@ -514,10 +527,7 @@ function renderSearchDropdown(elements, state, map) {
     clearBtn.className = 'ui-button ui-button-secondary';
     clearBtn.textContent = 'Clear search';
     clearBtn.addEventListener('click', () => {
-      if (elements.searchInput) elements.searchInput.value = '';
-      state.search = '';
-      toggleSearchClear(elements, state);
-      closePrimaryPanel(elements, state, 'search');
+      clearSearchState(elements, state, { closePanel: true, notify: true });
       state.applyState?.();
     });
     elements.searchDropdown.appendChild(noResults);
@@ -640,10 +650,35 @@ function toggleSearchClear(elements, state) {
   updateSearchEntryState(elements, hasSearch);
 }
 
+function clearSearchState(elements, state, { closePanel = false, notify = false } = {}) {
+  if (elements.searchInput) elements.searchInput.value = '';
+  state.search = '';
+  toggleSearchClear(elements, state);
+  if (closePanel) closePrimaryPanel(elements, state, 'search');
+  if (notify) showSystemMessage('Поиск очищен', { variant: 'success', timeout: 2000 });
+}
+
+function restoreDefaultLayers(state) {
+  state.enabledLayerIds = new Set(state.defaultEnabledLayerIds);
+}
+
+function resetExploreConstraints(elements, state, { keepSearch = false } = {}) {
+  if (!keepSearch) clearSearchState(elements, state, { closePanel: true, notify: false });
+  state.confidenceFilter = 'all';
+  restoreDefaultLayers(state);
+  state.currentStartYear = Number(elements.timelineStart?.min ?? state.currentStartYear);
+  state.currentEndYear = Number(elements.timelineEnd?.max ?? state.currentEndYear);
+  if (elements.timelineStart) elements.timelineStart.value = String(state.currentStartYear);
+  if (elements.timelineEnd) elements.timelineEnd.value = String(state.currentEndYear);
+  updateTimelineLabel(elements, state);
+  updateTimelineViz(elements, state);
+}
+
 function updateSearchEntryState(elements, hasSearch) {
   const shell = elements?.searchShell;
   const helper = elements?.searchHelperState;
   const suggestions = elements?.searchSuggestions;
+  const query = String(elements?.searchInput?.value || '').trim();
   if (shell?.classList) {
     shell.classList.toggle('is-search-active', hasSearch);
   }
@@ -652,7 +687,7 @@ function updateSearchEntryState(elements, hasSearch) {
   }
   if (!helper) return;
   helper.textContent = hasSearch
-    ? 'Применён текстовый фильтр. Результаты обновлены.'
+    ? `Поиск активен: «${query || 'запрос'}».`
     : 'Ищите места, события и объекты.';
 }
 
@@ -673,6 +708,8 @@ function setupSearchSuggestions(elements) {
 function updateSearchNoResultsState(elements, state) {
   const noResults = elements?.searchNoResultsState;
   if (!noResults) return;
+  const noResultsText = elements?.searchNoResultsText;
+  const noResultsReset = elements?.searchNoResultsReset;
 
   const hasSearch = Boolean(state?.search);
   const canMeasureResults = Array.isArray(state?.searchResults);
@@ -680,7 +717,10 @@ function updateSearchNoResultsState(elements, state) {
   const shouldShow = hasSearch && canMeasureResults && isEmpty;
   noResults.hidden = !shouldShow;
   if (shouldShow) {
-    noResults.textContent = `Ничего не найдено для «${state.search}». Измените запрос или очистите поиск.`;
+    if (noResultsText) noResultsText.textContent = `Ничего не найдено для «${state.search}».`;
+    if (noResultsReset) noResultsReset.hidden = false;
+  } else if (noResultsReset) {
+    noResultsReset.hidden = true;
   }
 }
 
@@ -784,27 +824,103 @@ function showDetailPanel(state, elements, map, feature) {
   if (!elements.detailPanel.hidden && state.detailOpenFeatureId === featureId) return;
 
   const props = normalizeProps(feature);
-  const layerLabel = state.layerLookup.get(String(props.layer_id || '').trim()) || String(props.layer_id || '');
+  const layerLabel = state.layerLookup.get(String(props.layer_id || '').trim()) || String(props.layer_id || '').trim();
   const dateLabel = formatRangeLabel(props.date_start, props.date_end);
-  const detail = document.createElement('div');
-  detail.className = 'detail-content';
   const title = getPrimaryTitle(props);
+  const secondaryTitle = String(props.name_en || '').trim();
   const description = String(props.description || props.title_short || '').trim();
   const sourceUrl = normalizeSafeUrl(String(props.source_url || '').trim());
+  const sourceDomain = extractDomain(sourceUrl);
+  const confidenceLabel = getConfidenceLabel(props.coordinates_confidence);
+  const coordinatesLabel = formatCoordinates(feature?.geometry?.coordinates);
 
-  detail.appendChild(createDetailRow('Название', title));
-  if (dateLabel !== 'Дата не указана') detail.appendChild(createDetailRow('Дата / период', dateLabel));
-  if (layerLabel) detail.appendChild(createDetailRow('Слой / тип', layerLabel));
-  if (description) detail.appendChild(createDetailRow('Описание', description));
-  if (sourceUrl) {
-    const row = createDetailRow('Источник');
-    const link = document.createElement('a');
-    link.className = 'detail-action-link';
-    link.textContent = sourceUrl;
-    setSafeLink(link, sourceUrl);
-    row.querySelector('.detail-meta-value')?.appendChild(link);
-    detail.appendChild(row);
+  const detail = document.createElement('article');
+  detail.className = 'detail-content';
+
+  const mediaSection = document.createElement('section');
+  mediaSection.className = 'detail-media-block';
+  const mediaNode = buildImageNode(props, title, true);
+  mediaNode.classList.add('detail-hero-media');
+  mediaSection.appendChild(mediaNode);
+  const mediaCaption = document.createElement('p');
+  mediaCaption.className = 'detail-media-caption';
+  mediaCaption.textContent = mediaNode.classList.contains('img-placeholder')
+    ? 'Изображение отсутствует'
+    : 'Изображение объекта';
+  mediaSection.appendChild(mediaCaption);
+  detail.appendChild(mediaSection);
+
+  const titleSection = document.createElement('section');
+  titleSection.className = 'detail-section detail-title-block';
+  const titleNode = document.createElement('h3');
+  titleNode.className = 'detail-title';
+  titleNode.textContent = title;
+  titleSection.appendChild(titleNode);
+  if (secondaryTitle && secondaryTitle !== title) {
+    const subtitleNode = document.createElement('p');
+    subtitleNode.className = 'detail-subtitle';
+    subtitleNode.textContent = secondaryTitle;
+    titleSection.appendChild(subtitleNode);
   }
+  const metaChips = document.createElement('div');
+  metaChips.className = 'detail-badges';
+  if (layerLabel) metaChips.appendChild(buildBadge(layerLabel));
+  if (dateLabel && dateLabel !== 'Дата не указана') metaChips.appendChild(buildBadge(dateLabel, 'accent'));
+  if (confidenceLabel) metaChips.appendChild(buildBadge(confidenceLabel));
+  if (metaChips.childElementCount) titleSection.appendChild(metaChips);
+  detail.appendChild(titleSection);
+
+  const metaSection = document.createElement('section');
+  metaSection.className = 'detail-section detail-meta-block';
+  metaSection.appendChild(createSectionTitle('Сводка'));
+  appendMetaRow(metaSection, 'Период', dateLabel);
+  if (layerLabel) appendMetaRow(metaSection, 'Слой / тип', layerLabel);
+  if (coordinatesLabel) appendMetaRow(metaSection, 'Координаты', coordinatesLabel);
+  if (metaSection.querySelector('.detail-meta-row')) detail.appendChild(metaSection);
+
+  const descriptionSection = document.createElement('section');
+  descriptionSection.className = 'detail-section';
+  descriptionSection.appendChild(createSectionTitle('Описание'));
+  const descriptionNode = document.createElement('p');
+  descriptionNode.className = 'detail-description';
+  descriptionNode.textContent = description || 'Описание пока отсутствует.';
+  if (!description) descriptionNode.classList.add('is-empty');
+  descriptionSection.appendChild(descriptionNode);
+  detail.appendChild(descriptionSection);
+
+  if (sourceUrl || sourceDomain) {
+    const sourceSection = document.createElement('section');
+    sourceSection.className = 'detail-section detail-source-block';
+    sourceSection.appendChild(createSectionTitle('Источник'));
+    if (sourceDomain) appendMetaRow(sourceSection, 'Платформа', sourceDomain);
+    if (sourceUrl) {
+      const sourceRow = document.createElement('div');
+      sourceRow.className = 'detail-meta-row detail-source-link-row';
+      const sourceLabel = document.createElement('span');
+      sourceLabel.className = 'detail-meta-label';
+      sourceLabel.textContent = 'External link';
+      const sourceValue = document.createElement('span');
+      sourceValue.className = 'detail-meta-value';
+      const link = document.createElement('a');
+      link.className = 'detail-action-link';
+      link.textContent = 'Открыть источник';
+      setSafeLink(link, sourceUrl);
+      sourceValue.appendChild(link);
+      sourceRow.append(sourceLabel, sourceValue);
+      sourceSection.appendChild(sourceRow);
+    }
+    detail.appendChild(sourceSection);
+  }
+
+  const technicalSection = document.createElement('section');
+  technicalSection.className = 'detail-section detail-technical-block';
+  technicalSection.appendChild(createSectionTitle('Техническая информация'));
+  if (props.name_ru && props.name_en && props.name_ru !== props.name_en) {
+    appendMetaRow(technicalSection, 'Название (EN)', props.name_en);
+  }
+  if (props.layer_id) appendMetaRow(technicalSection, 'Layer ID', props.layer_id);
+  if (props.coordinates_confidence) appendMetaRow(technicalSection, 'Coordinates confidence', props.coordinates_confidence);
+  if (technicalSection.querySelector('.detail-meta-row')) detail.appendChild(technicalSection);
 
   elements.detailPanelBody.replaceChildren();
   setPanelOpenState(elements.detailPanel, true);
@@ -864,10 +980,13 @@ function renderCardsState(elements, state) {
   }
 
   if (state.empty) {
+    const emptyContext = buildEmptyStateContext(state, elements);
     elements.cardsState.appendChild(createInlineStateBlock({
       variant: 'warning',
-      title: 'No results',
-      message: 'No objects in this time range.'
+      title: emptyContext.title,
+      message: emptyContext.message,
+      actionLabel: emptyContext.actionLabel,
+      onAction: emptyContext.onAction
     }));
     if (elements.cardsRibbon) elements.cardsRibbon.replaceChildren();
     return;
@@ -882,7 +1001,7 @@ function renderCardsState(elements, state) {
     return;
   }
 
-  elements.cardsState.textContent = `${state.filteredFeatures.length} objects`;
+  elements.cardsState.textContent = buildResultFeedbackLabel(state);
 }
 
 function hydrateTimeline(elements, years, state) {
@@ -901,7 +1020,10 @@ function hydrateTimeline(elements, years, state) {
 
 function updateTimelineLabel(elements, state) {
   if (elements.timelineLabel) elements.timelineLabel.textContent = 'Selected range';
-  if (elements.timelineCapsule) elements.timelineCapsule.textContent = `${state.currentStartYear}–${state.currentEndYear}`;
+  if (elements.timelineCapsule) {
+    elements.timelineCapsule.textContent = `${state.currentStartYear} — ${state.currentEndYear}`;
+    elements.timelineCapsule.dataset.range = `${state.currentStartYear}:${state.currentEndYear}`;
+  }
 }
 
 function updateTimelineViz(elements, state) {
@@ -913,8 +1035,161 @@ function updateTimelineViz(elements, state) {
   const right = ((state.currentEndYear - min) / span) * 100;
   elements.timelineActiveRange.style.left = `${left}%`;
   elements.timelineActiveRange.style.right = `${100 - right}%`;
+  elements.timelineTrackWrap?.style.setProperty('--timeline-left', `${left}%`);
+  elements.timelineTrackWrap?.style.setProperty('--timeline-right', `${right}%`);
   if (elements.timelineKnobStart) elements.timelineKnobStart.style.left = `${left}%`;
   if (elements.timelineKnobEnd) elements.timelineKnobEnd.style.left = `${right}%`;
+}
+
+
+function applyTimelineRange(elements, state, {
+  start = state.currentStartYear,
+  end = state.currentEndYear,
+  snap = false,
+  commit = false
+} = {}) {
+  const min = Number(elements.timelineStart?.min ?? state.yearBounds?.min ?? start);
+  const max = Number(elements.timelineStart?.max ?? state.yearBounds?.max ?? end);
+  const step = Number(elements.timelineStart?.step || 1);
+  const snapStep = snap ? getTimelineSnapStep(min, max) : step;
+  const normalize = (value) => {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return min;
+    const rounded = Math.round(num / snapStep) * snapStep;
+    return Math.min(max, Math.max(min, rounded));
+  };
+
+  const normalizedStart = normalize(start);
+  const normalizedEnd = normalize(end);
+  state.currentStartYear = Math.min(normalizedStart, normalizedEnd);
+  state.currentEndYear = Math.max(normalizedStart, normalizedEnd);
+
+  if (elements.timelineStart) elements.timelineStart.value = String(state.currentStartYear);
+  if (elements.timelineEnd) elements.timelineEnd.value = String(state.currentEndYear);
+  syncLegacyDateInputs(elements, state);
+  updateTimelineLabel(elements, state);
+  updateTimelineViz(elements, state);
+  if (commit) state.applyState?.();
+}
+
+function setupTimelinePointerInteractions(elements, state) {
+  const track = elements.timelineTrackWrap;
+  if (!track || !elements.timelineStart || !elements.timelineEnd) return;
+
+  let activeHandle = null;
+  let activePointerId = null;
+  let queuedStart = null;
+  let queuedEnd = null;
+  let frameId = null;
+
+  const scheduleApply = () => {
+    if (frameId !== null) return;
+    frameId = window.requestAnimationFrame(() => {
+      frameId = null;
+      if (queuedStart === null || queuedEnd === null) return;
+      applyTimelineRange(elements, state, {
+        start: queuedStart,
+        end: queuedEnd,
+        snap: true,
+        commit: true
+      });
+    });
+  };
+
+  const getYearByPointer = (clientX) => {
+    const rect = track.getBoundingClientRect();
+    const min = Number(elements.timelineStart.min);
+    const max = Number(elements.timelineStart.max);
+    const span = Math.max(1, max - min);
+    const clampedX = Math.min(rect.right, Math.max(rect.left, clientX));
+    const ratio = rect.width > 0 ? (clampedX - rect.left) / rect.width : 0;
+    return min + (ratio * span);
+  };
+
+  const queueByPointer = (clientX) => {
+    const year = getYearByPointer(clientX);
+    if (activeHandle === 'start') {
+      queuedStart = year;
+      queuedEnd = state.currentEndYear;
+    } else {
+      queuedStart = state.currentStartYear;
+      queuedEnd = year;
+    }
+    scheduleApply();
+  };
+
+  const setDraggingState = (isDragging) => {
+    track.classList.toggle('is-dragging', isDragging);
+    elements.timelineKnobStart?.classList.toggle('is-active', isDragging && activeHandle === 'start');
+    elements.timelineKnobEnd?.classList.toggle('is-active', isDragging && activeHandle === 'end');
+  };
+
+  const startDrag = (handle, event) => {
+    activeHandle = handle;
+    activePointerId = event.pointerId;
+    track.setPointerCapture?.(event.pointerId);
+    setDraggingState(true);
+    queueByPointer(event.clientX);
+  };
+
+  const stopDrag = () => {
+    if (activePointerId !== null) {
+      track.releasePointerCapture?.(activePointerId);
+    }
+    activePointerId = null;
+    activeHandle = null;
+    queuedStart = null;
+    queuedEnd = null;
+    if (frameId !== null) {
+      window.cancelAnimationFrame(frameId);
+      frameId = null;
+    }
+    setDraggingState(false);
+  };
+
+  const pickClosestHandle = (clientX) => {
+    const rect = track.getBoundingClientRect();
+    const left = Number(elements.timelineActiveRange?.style.left?.replace('%', '') || 0);
+    const right = 100 - Number(elements.timelineActiveRange?.style.right?.replace('%', '') || 100);
+    const startX = rect.left + ((left / 100) * rect.width);
+    const endX = rect.left + ((right / 100) * rect.width);
+    return Math.abs(clientX - startX) <= Math.abs(clientX - endX) ? 'start' : 'end';
+  };
+
+  [elements.timelineStart, elements.timelineEnd].forEach((input) => {
+    input.style.pointerEvents = 'none';
+    input.tabIndex = -1;
+  });
+
+  elements.timelineKnobStart?.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    startDrag('start', event);
+  });
+  elements.timelineKnobEnd?.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    startDrag('end', event);
+  });
+
+  track.addEventListener('pointerdown', (event) => {
+    if (event.target === elements.timelineKnobStart || event.target === elements.timelineKnobEnd) return;
+    event.preventDefault();
+    startDrag(pickClosestHandle(event.clientX), event);
+  });
+  track.addEventListener('pointermove', (event) => {
+    if (activePointerId !== event.pointerId || !activeHandle) return;
+    queueByPointer(event.clientX);
+  });
+  track.addEventListener('pointerup', stopDrag);
+  track.addEventListener('pointercancel', stopDrag);
+  track.addEventListener('lostpointercapture', stopDrag);
+}
+
+function getTimelineSnapStep(minYear, maxYear) {
+  const span = Math.max(1, Number(maxYear) - Number(minYear));
+  if (span > 4000) return 100;
+  if (span > 1000) return 50;
+  if (span > 400) return 10;
+  return 1;
 }
 
 function syncLegacyDateInputs(elements, state) {
@@ -1175,7 +1450,7 @@ function buildImageNode(props, fallbackAlt, large = false) {
 function createPlaceholderImage(large = false) {
   const placeholder = document.createElement('div');
   placeholder.className = `img-placeholder${large ? ' is-large' : ''}`;
-  placeholder.textContent = 'No image available';
+  placeholder.textContent = 'Изображение отсутствует';
   return placeholder;
 }
 function getPrimaryTitle(props) {
@@ -1331,6 +1606,18 @@ function updateFilterFeedback(elements, state) {
     button.dataset.activeCount = total > 0 ? String(total) : '';
     button.classList.toggle('has-active-filters', total > 0);
   });
+  if (elements.layersBtn) {
+    elements.layersBtn.classList.toggle('is-layer-engaged', hasLayerCustomization(state));
+  }
+  if (elements.layersEntryHelper) {
+    if (hasLayerCustomization(state)) {
+      elements.layersEntryHelper.textContent = 'Слои изменены';
+      elements.layersEntryHelper.classList.add('is-visited');
+    } else {
+      elements.layersEntryHelper.textContent = total > 0 ? 'Есть активные ограничения' : 'Выберите, что показывать на карте.';
+      elements.layersEntryHelper.classList.remove('is-visited');
+    }
+  }
 }
 
 function getActiveFiltersCount(state) {
@@ -1339,6 +1626,69 @@ function getActiveFiltersCount(state) {
   const hasTimelineFilter = state.currentStartYear !== yearMin || state.currentEndYear !== yearMax;
   return Number(Boolean(state.search))
     + Number(state.confidenceFilter !== 'all')
-    + Number(state.enabledLayerIds.size !== state.layerLookup.size)
+    + Number(hasLayerCustomization(state))
     + Number(hasTimelineFilter);
+}
+
+function hasLayerCustomization(state) {
+  if (!(state?.defaultEnabledLayerIds instanceof Set) || !(state?.enabledLayerIds instanceof Set)) return false;
+  if (state.defaultEnabledLayerIds.size !== state.enabledLayerIds.size) return true;
+  for (const id of state.defaultEnabledLayerIds) {
+    if (!state.enabledLayerIds.has(id)) return true;
+  }
+  return false;
+}
+
+function buildResultFeedbackLabel(state) {
+  const constraints = [];
+  if (state.search) constraints.push(`поиск: «${state.search}»`);
+  if (hasLayerCustomization(state)) constraints.push('слои');
+  if (state.confidenceFilter !== 'all') constraints.push(`confidence: ${state.confidenceFilter}`);
+  const yearMin = Number(state.yearBounds?.min ?? state.currentStartYear);
+  const yearMax = Number(state.yearBounds?.max ?? state.currentEndYear);
+  if (state.currentStartYear !== yearMin || state.currentEndYear !== yearMax) {
+    constraints.push(`период ${state.currentStartYear}—${state.currentEndYear}`);
+  }
+  const suffix = constraints.length ? ` · Ограничения: ${constraints.join(', ')}` : '';
+  return `${state.filteredFeatures.length} objects в ленте и на карте${suffix}`;
+}
+
+function buildEmptyStateContext(state, elements) {
+  if (!state?.applyState) {
+    return { title: 'No results', message: 'Подходящие объекты не найдены.', actionLabel: '', onAction: null };
+  }
+  if (!state.enabledLayerIds.size) {
+    return {
+      title: 'Все слои выключены',
+      message: 'Включите хотя бы один слой, чтобы увидеть объекты.',
+      actionLabel: 'Восстановить слои',
+      onAction: () => {
+        restoreDefaultLayers(state);
+        state.applyState?.();
+        showSystemMessage('Слои восстановлены по умолчанию', { variant: 'success', timeout: 2200 });
+      }
+    };
+  }
+  if (state.search) {
+    return {
+      title: 'Ничего не найдено',
+      message: `Запрос «${state.search}» не дал результатов в текущих ограничениях.`,
+      actionLabel: 'Очистить поиск',
+      onAction: () => {
+        clearSearchState(elements, state, { closePanel: false, notify: false });
+        state.applyState?.();
+        showSystemMessage('Поиск очищен', { variant: 'success', timeout: 2000 });
+      }
+    };
+  }
+  return {
+    title: 'Нет объектов в выборке',
+    message: 'Сужение фильтрами/таймлайном исключило все объекты.',
+    actionLabel: 'Сбросить ограничения',
+    onAction: () => {
+      resetExploreConstraints(elements, state);
+      state.applyState?.();
+      showSystemMessage('Ограничения сброшены', { variant: 'success', timeout: 2200 });
+    }
+  };
 }
