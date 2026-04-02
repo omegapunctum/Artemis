@@ -65,12 +65,14 @@
         <div id="search-dropdown" class="top-panel search-dropdown" hidden></div>
       </div>
       <div class="top-actions">
-        <button id="ugc-create-btn" class="ui-button ui-button-primary" type="button" aria-label="Create draft">Create draft</button>
+        <button id="ugc-create-btn" class="ui-button ui-button-secondary" type="button" aria-label="Create draft">Create draft</button>
         <button id="moderation-toggle-btn" type="button" aria-label="Toggle moderation workspace" aria-expanded="false" data-moderation-action="toggle-workspace" hidden>Moderation</button>
-        <button id="filters-btn" type="button" aria-label="Toggle filters" aria-expanded="false">Filters</button>
-        <button id="layers-btn" type="button" aria-label="Toggle layers" aria-expanded="false">Layers</button>
-        <p id="layers-entry-helper" class="layers-entry-helper">Выберите, что показывать на карте.</p>
-        <button id="bookmarks-btn" type="button" aria-label="Toggle bookmarks" aria-expanded="false">Bookmarks</button>
+        <div class="top-actions-cluster" role="group" aria-label="Map controls">
+          <button id="filters-btn" type="button" aria-label="Toggle filters" aria-expanded="false">Filters</button>
+          <button id="layers-btn" type="button" aria-label="Toggle layers" aria-expanded="false">Layers</button>
+          <button id="bookmarks-btn" type="button" aria-label="Toggle bookmarks" aria-expanded="false">Bookmarks</button>
+          <p id="layers-entry-helper" class="layers-entry-helper">Выберите, что показывать на карте.</p>
+        </div>
         <button id="overflow-btn" class="icon-btn" type="button" aria-label="More actions">⋯</button>
       </div>
       <section id="filters-panel" class="glass-panel top-panel" hidden></section>
@@ -246,9 +248,9 @@
   <div id="app-status-host" class="app-status-host" aria-live="polite" aria-atomic="false"></div>
 
 <div id="error-banner" hidden></div>
-  <div id="loading-indicator" hidden>Loading...</div>
 
   <div id="status" class="status-panel" role="status" aria-live="polite">
+    <div id="loading-indicator" class="status-inline-loading" hidden>Loading...</div>
     <div id="status-loading" class="status-loading">Инициализация приложения…</div>
     <div id="status-message">Ожидание загрузки…</div>
     <div id="status-error" class="status-error" hidden></div>

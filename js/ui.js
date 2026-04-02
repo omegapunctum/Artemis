@@ -94,6 +94,7 @@ export async function initUI(map, features) {
     timelineKnobStart: document.getElementById('timeline-knob-start'),
     timelineKnobEnd: document.getElementById('timeline-knob-end'),
     timelineAxis: document.getElementById('timeline-axis'),
+    timelineTrackWrap: document.querySelector('#timeline .timeline-track-wrap'),
     cardsRibbon: document.getElementById('cards-ribbon') || document.getElementById('object-list'),
     cardsState: document.getElementById('cards-state'),
     detailPanel: document.getElementById('detail-panel'),
@@ -200,21 +201,22 @@ export async function initUI(map, features) {
   toggleSearchClear(elements, state);
 
   elements.timelineStart?.addEventListener('input', () => {
-    state.currentStartYear = Math.min(Number(elements.timelineStart.value), state.currentEndYear);
-    elements.timelineStart.value = String(state.currentStartYear);
-    syncLegacyDateInputs(elements, state);
-    updateTimelineLabel(elements, state);
-    updateTimelineViz(elements, state);
-    applyState();
+    applyTimelineRange(elements, state, {
+      start: Number(elements.timelineStart.value),
+      end: state.currentEndYear,
+      snap: false,
+      commit: true
+    });
   });
   elements.timelineEnd?.addEventListener('input', () => {
-    state.currentEndYear = Math.max(Number(elements.timelineEnd.value), state.currentStartYear);
-    elements.timelineEnd.value = String(state.currentEndYear);
-    syncLegacyDateInputs(elements, state);
-    updateTimelineLabel(elements, state);
-    updateTimelineViz(elements, state);
-    applyState();
+    applyTimelineRange(elements, state, {
+      start: state.currentStartYear,
+      end: Number(elements.timelineEnd.value),
+      snap: false,
+      commit: true
+    });
   });
+  setupTimelinePointerInteractions(elements, state);
 
   elements.filtersBtn?.addEventListener('click', () => togglePrimaryPanel(elements, state, 'filters', elements.filtersBtn));
   elements.layersBtn?.addEventListener('click', () => togglePrimaryPanel(elements, state, 'layers', elements.layersBtn));
@@ -784,27 +786,103 @@ function showDetailPanel(state, elements, map, feature) {
   if (!elements.detailPanel.hidden && state.detailOpenFeatureId === featureId) return;
 
   const props = normalizeProps(feature);
-  const layerLabel = state.layerLookup.get(String(props.layer_id || '').trim()) || String(props.layer_id || '');
+  const layerLabel = state.layerLookup.get(String(props.layer_id || '').trim()) || String(props.layer_id || '').trim();
   const dateLabel = formatRangeLabel(props.date_start, props.date_end);
-  const detail = document.createElement('div');
-  detail.className = 'detail-content';
   const title = getPrimaryTitle(props);
+  const secondaryTitle = String(props.name_en || '').trim();
   const description = String(props.description || props.title_short || '').trim();
   const sourceUrl = normalizeSafeUrl(String(props.source_url || '').trim());
+  const sourceDomain = extractDomain(sourceUrl);
+  const confidenceLabel = getConfidenceLabel(props.coordinates_confidence);
+  const coordinatesLabel = formatCoordinates(feature?.geometry?.coordinates);
 
-  detail.appendChild(createDetailRow('Название', title));
-  if (dateLabel !== 'Дата не указана') detail.appendChild(createDetailRow('Дата / период', dateLabel));
-  if (layerLabel) detail.appendChild(createDetailRow('Слой / тип', layerLabel));
-  if (description) detail.appendChild(createDetailRow('Описание', description));
-  if (sourceUrl) {
-    const row = createDetailRow('Источник');
-    const link = document.createElement('a');
-    link.className = 'detail-action-link';
-    link.textContent = sourceUrl;
-    setSafeLink(link, sourceUrl);
-    row.querySelector('.detail-meta-value')?.appendChild(link);
-    detail.appendChild(row);
+  const detail = document.createElement('article');
+  detail.className = 'detail-content';
+
+  const mediaSection = document.createElement('section');
+  mediaSection.className = 'detail-media-block';
+  const mediaNode = buildImageNode(props, title, true);
+  mediaNode.classList.add('detail-hero-media');
+  mediaSection.appendChild(mediaNode);
+  const mediaCaption = document.createElement('p');
+  mediaCaption.className = 'detail-media-caption';
+  mediaCaption.textContent = mediaNode.classList.contains('img-placeholder')
+    ? 'Изображение отсутствует'
+    : 'Изображение объекта';
+  mediaSection.appendChild(mediaCaption);
+  detail.appendChild(mediaSection);
+
+  const titleSection = document.createElement('section');
+  titleSection.className = 'detail-section detail-title-block';
+  const titleNode = document.createElement('h3');
+  titleNode.className = 'detail-title';
+  titleNode.textContent = title;
+  titleSection.appendChild(titleNode);
+  if (secondaryTitle && secondaryTitle !== title) {
+    const subtitleNode = document.createElement('p');
+    subtitleNode.className = 'detail-subtitle';
+    subtitleNode.textContent = secondaryTitle;
+    titleSection.appendChild(subtitleNode);
   }
+  const metaChips = document.createElement('div');
+  metaChips.className = 'detail-badges';
+  if (layerLabel) metaChips.appendChild(buildBadge(layerLabel));
+  if (dateLabel && dateLabel !== 'Дата не указана') metaChips.appendChild(buildBadge(dateLabel, 'accent'));
+  if (confidenceLabel) metaChips.appendChild(buildBadge(confidenceLabel));
+  if (metaChips.childElementCount) titleSection.appendChild(metaChips);
+  detail.appendChild(titleSection);
+
+  const metaSection = document.createElement('section');
+  metaSection.className = 'detail-section detail-meta-block';
+  metaSection.appendChild(createSectionTitle('Сводка'));
+  appendMetaRow(metaSection, 'Период', dateLabel);
+  if (layerLabel) appendMetaRow(metaSection, 'Слой / тип', layerLabel);
+  if (coordinatesLabel) appendMetaRow(metaSection, 'Координаты', coordinatesLabel);
+  if (metaSection.querySelector('.detail-meta-row')) detail.appendChild(metaSection);
+
+  const descriptionSection = document.createElement('section');
+  descriptionSection.className = 'detail-section';
+  descriptionSection.appendChild(createSectionTitle('Описание'));
+  const descriptionNode = document.createElement('p');
+  descriptionNode.className = 'detail-description';
+  descriptionNode.textContent = description || 'Описание пока отсутствует.';
+  if (!description) descriptionNode.classList.add('is-empty');
+  descriptionSection.appendChild(descriptionNode);
+  detail.appendChild(descriptionSection);
+
+  if (sourceUrl || sourceDomain) {
+    const sourceSection = document.createElement('section');
+    sourceSection.className = 'detail-section detail-source-block';
+    sourceSection.appendChild(createSectionTitle('Источник'));
+    if (sourceDomain) appendMetaRow(sourceSection, 'Платформа', sourceDomain);
+    if (sourceUrl) {
+      const sourceRow = document.createElement('div');
+      sourceRow.className = 'detail-meta-row detail-source-link-row';
+      const sourceLabel = document.createElement('span');
+      sourceLabel.className = 'detail-meta-label';
+      sourceLabel.textContent = 'External link';
+      const sourceValue = document.createElement('span');
+      sourceValue.className = 'detail-meta-value';
+      const link = document.createElement('a');
+      link.className = 'detail-action-link';
+      link.textContent = 'Открыть источник';
+      setSafeLink(link, sourceUrl);
+      sourceValue.appendChild(link);
+      sourceRow.append(sourceLabel, sourceValue);
+      sourceSection.appendChild(sourceRow);
+    }
+    detail.appendChild(sourceSection);
+  }
+
+  const technicalSection = document.createElement('section');
+  technicalSection.className = 'detail-section detail-technical-block';
+  technicalSection.appendChild(createSectionTitle('Техническая информация'));
+  if (props.name_ru && props.name_en && props.name_ru !== props.name_en) {
+    appendMetaRow(technicalSection, 'Название (EN)', props.name_en);
+  }
+  if (props.layer_id) appendMetaRow(technicalSection, 'Layer ID', props.layer_id);
+  if (props.coordinates_confidence) appendMetaRow(technicalSection, 'Coordinates confidence', props.coordinates_confidence);
+  if (technicalSection.querySelector('.detail-meta-row')) detail.appendChild(technicalSection);
 
   elements.detailPanelBody.replaceChildren();
   setPanelOpenState(elements.detailPanel, true);
@@ -901,7 +979,10 @@ function hydrateTimeline(elements, years, state) {
 
 function updateTimelineLabel(elements, state) {
   if (elements.timelineLabel) elements.timelineLabel.textContent = 'Selected range';
-  if (elements.timelineCapsule) elements.timelineCapsule.textContent = `${state.currentStartYear}–${state.currentEndYear}`;
+  if (elements.timelineCapsule) {
+    elements.timelineCapsule.textContent = `${state.currentStartYear} — ${state.currentEndYear}`;
+    elements.timelineCapsule.dataset.range = `${state.currentStartYear}:${state.currentEndYear}`;
+  }
 }
 
 function updateTimelineViz(elements, state) {
@@ -913,8 +994,161 @@ function updateTimelineViz(elements, state) {
   const right = ((state.currentEndYear - min) / span) * 100;
   elements.timelineActiveRange.style.left = `${left}%`;
   elements.timelineActiveRange.style.right = `${100 - right}%`;
+  elements.timelineTrackWrap?.style.setProperty('--timeline-left', `${left}%`);
+  elements.timelineTrackWrap?.style.setProperty('--timeline-right', `${right}%`);
   if (elements.timelineKnobStart) elements.timelineKnobStart.style.left = `${left}%`;
   if (elements.timelineKnobEnd) elements.timelineKnobEnd.style.left = `${right}%`;
+}
+
+
+function applyTimelineRange(elements, state, {
+  start = state.currentStartYear,
+  end = state.currentEndYear,
+  snap = false,
+  commit = false
+} = {}) {
+  const min = Number(elements.timelineStart?.min ?? state.yearBounds?.min ?? start);
+  const max = Number(elements.timelineStart?.max ?? state.yearBounds?.max ?? end);
+  const step = Number(elements.timelineStart?.step || 1);
+  const snapStep = snap ? getTimelineSnapStep(min, max) : step;
+  const normalize = (value) => {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return min;
+    const rounded = Math.round(num / snapStep) * snapStep;
+    return Math.min(max, Math.max(min, rounded));
+  };
+
+  const normalizedStart = normalize(start);
+  const normalizedEnd = normalize(end);
+  state.currentStartYear = Math.min(normalizedStart, normalizedEnd);
+  state.currentEndYear = Math.max(normalizedStart, normalizedEnd);
+
+  if (elements.timelineStart) elements.timelineStart.value = String(state.currentStartYear);
+  if (elements.timelineEnd) elements.timelineEnd.value = String(state.currentEndYear);
+  syncLegacyDateInputs(elements, state);
+  updateTimelineLabel(elements, state);
+  updateTimelineViz(elements, state);
+  if (commit) state.applyState?.();
+}
+
+function setupTimelinePointerInteractions(elements, state) {
+  const track = elements.timelineTrackWrap;
+  if (!track || !elements.timelineStart || !elements.timelineEnd) return;
+
+  let activeHandle = null;
+  let activePointerId = null;
+  let queuedStart = null;
+  let queuedEnd = null;
+  let frameId = null;
+
+  const scheduleApply = () => {
+    if (frameId !== null) return;
+    frameId = window.requestAnimationFrame(() => {
+      frameId = null;
+      if (queuedStart === null || queuedEnd === null) return;
+      applyTimelineRange(elements, state, {
+        start: queuedStart,
+        end: queuedEnd,
+        snap: true,
+        commit: true
+      });
+    });
+  };
+
+  const getYearByPointer = (clientX) => {
+    const rect = track.getBoundingClientRect();
+    const min = Number(elements.timelineStart.min);
+    const max = Number(elements.timelineStart.max);
+    const span = Math.max(1, max - min);
+    const clampedX = Math.min(rect.right, Math.max(rect.left, clientX));
+    const ratio = rect.width > 0 ? (clampedX - rect.left) / rect.width : 0;
+    return min + (ratio * span);
+  };
+
+  const queueByPointer = (clientX) => {
+    const year = getYearByPointer(clientX);
+    if (activeHandle === 'start') {
+      queuedStart = year;
+      queuedEnd = state.currentEndYear;
+    } else {
+      queuedStart = state.currentStartYear;
+      queuedEnd = year;
+    }
+    scheduleApply();
+  };
+
+  const setDraggingState = (isDragging) => {
+    track.classList.toggle('is-dragging', isDragging);
+    elements.timelineKnobStart?.classList.toggle('is-active', isDragging && activeHandle === 'start');
+    elements.timelineKnobEnd?.classList.toggle('is-active', isDragging && activeHandle === 'end');
+  };
+
+  const startDrag = (handle, event) => {
+    activeHandle = handle;
+    activePointerId = event.pointerId;
+    track.setPointerCapture?.(event.pointerId);
+    setDraggingState(true);
+    queueByPointer(event.clientX);
+  };
+
+  const stopDrag = () => {
+    if (activePointerId !== null) {
+      track.releasePointerCapture?.(activePointerId);
+    }
+    activePointerId = null;
+    activeHandle = null;
+    queuedStart = null;
+    queuedEnd = null;
+    if (frameId !== null) {
+      window.cancelAnimationFrame(frameId);
+      frameId = null;
+    }
+    setDraggingState(false);
+  };
+
+  const pickClosestHandle = (clientX) => {
+    const rect = track.getBoundingClientRect();
+    const left = Number(elements.timelineActiveRange?.style.left?.replace('%', '') || 0);
+    const right = 100 - Number(elements.timelineActiveRange?.style.right?.replace('%', '') || 100);
+    const startX = rect.left + ((left / 100) * rect.width);
+    const endX = rect.left + ((right / 100) * rect.width);
+    return Math.abs(clientX - startX) <= Math.abs(clientX - endX) ? 'start' : 'end';
+  };
+
+  [elements.timelineStart, elements.timelineEnd].forEach((input) => {
+    input.style.pointerEvents = 'none';
+    input.tabIndex = -1;
+  });
+
+  elements.timelineKnobStart?.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    startDrag('start', event);
+  });
+  elements.timelineKnobEnd?.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    startDrag('end', event);
+  });
+
+  track.addEventListener('pointerdown', (event) => {
+    if (event.target === elements.timelineKnobStart || event.target === elements.timelineKnobEnd) return;
+    event.preventDefault();
+    startDrag(pickClosestHandle(event.clientX), event);
+  });
+  track.addEventListener('pointermove', (event) => {
+    if (activePointerId !== event.pointerId || !activeHandle) return;
+    queueByPointer(event.clientX);
+  });
+  track.addEventListener('pointerup', stopDrag);
+  track.addEventListener('pointercancel', stopDrag);
+  track.addEventListener('lostpointercapture', stopDrag);
+}
+
+function getTimelineSnapStep(minYear, maxYear) {
+  const span = Math.max(1, Number(maxYear) - Number(minYear));
+  if (span > 4000) return 100;
+  if (span > 1000) return 50;
+  if (span > 400) return 10;
+  return 1;
 }
 
 function syncLegacyDateInputs(elements, state) {
@@ -1175,7 +1409,7 @@ function buildImageNode(props, fallbackAlt, large = false) {
 function createPlaceholderImage(large = false) {
   const placeholder = document.createElement('div');
   placeholder.className = `img-placeholder${large ? ' is-large' : ''}`;
-  placeholder.textContent = 'No image available';
+  placeholder.textContent = 'Изображение отсутствует';
   return placeholder;
 }
 function getPrimaryTitle(props) {
