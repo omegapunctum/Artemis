@@ -71,9 +71,14 @@ export async function initUI(map, features) {
   const elements = {
     searchInput: document.getElementById('global-search') || document.getElementById('search-input'),
     searchClearBtn: document.getElementById('search-clear-btn'),
+    searchShell: document.querySelector('.search-shell'),
+    searchHelperState: document.getElementById('search-helper-state'),
+    searchSuggestions: document.getElementById('search-suggestions'),
+    searchNoResultsState: document.getElementById('search-no-results-state'),
     searchDropdown: document.getElementById('search-dropdown'),
     filtersBtn: document.getElementById('filters-btn'),
     layersBtn: document.getElementById('layers-btn'),
+    layersEntryHelper: document.getElementById('layers-entry-helper'),
     bookmarksBtn: document.getElementById('bookmarks-btn'),
     filtersPanel: document.getElementById('filters-panel'),
     layersPanel: document.getElementById('layers-panel'),
@@ -101,7 +106,9 @@ export async function initUI(map, features) {
     sourceCount: document.getElementById('source-count'),
     pointValidCount: document.getElementById('point-valid-count'),
     activeFiltersCount: document.getElementById('active-filters-count'),
-    statusMessage: document.getElementById('status-message')
+    statusMessage: document.getElementById('status-message'),
+    onboardingOverlay: document.getElementById('onboarding-overlay'),
+    onboardingDismissBtn: document.getElementById('onboarding-dismiss-btn')
   };
 
   const years = collectYearBounds(allFeatures);
@@ -122,12 +129,15 @@ export async function initUI(map, features) {
     overlay: { activePrimary: null, activeModal: null },
     viewport: { mode: 'desktop', isMobile: false, isTablet: false },
     detailSheetExpanded: false,
+    detailOpenFeatureId: null,
+    detailRenderFrameId: null,
     searchResults: [],
     bookmarks: [],
     applyState: null,
     warnings: []
   };
   initializeAnimatedPanels(elements);
+  setupOnboardingOverlay(elements);
   if (!state.enabledLayerIds.size) {
     allFeatures.forEach((feature) => {
       const layerId = String(normalizeProps(feature).layer_id || '').trim();
@@ -137,6 +147,7 @@ export async function initUI(map, features) {
 
   hydrateTimeline(elements, years, state);
   setupOverlayManager(elements, state, map);
+  setupLayerEntryHint(elements);
   setupResponsiveUi(elements, state, map);
   renderTopPanels(elements, state, layers, confidenceValues, map);
   renderCardsState(elements, state);
@@ -153,6 +164,7 @@ export async function initUI(map, features) {
     }
     setSelectedFeatureId(map, state.selectedFeatureId);
     state.searchResults = buildSearchResults(state.filteredFeatures, state.search);
+    updateSearchNoResultsState(elements, state);
     renderSearchDropdown(elements, state, map);
     renderTopPanels(elements, state, layers, confidenceValues, map);
     renderCards(elements, state, map);
@@ -182,6 +194,8 @@ export async function initUI(map, features) {
     closePrimaryPanel(elements, state, 'search');
     applyState();
   });
+  setupSearchSuggestions(elements);
+  toggleSearchClear(elements, state);
 
   elements.timelineStart?.addEventListener('input', () => {
     state.currentStartYear = Math.min(Number(elements.timelineStart.value), state.currentEndYear);
@@ -224,7 +238,7 @@ export async function initUI(map, features) {
     }
     syncMapHoveredCardState(elements, state.hoveredFeatureId);
   });
-  elements.detailPanelClose?.addEventListener('click', () => closeDetailView(elements));
+  elements.detailPanelClose?.addEventListener('click', () => closeDetailView(state, elements));
   document.getElementById('detail-panel-expand')?.addEventListener('click', () => toggleDetailSheetState(state, elements));
   document.addEventListener('click', (event) => {
     const target = event.target;
@@ -238,7 +252,7 @@ export async function initUI(map, features) {
     if (elements.detailPanel?.hidden) return;
     const withinFloating = elements.detailPanel.contains(target);
     const withinCard = target.closest?.('.ribbon-card');
-    if (!withinFloating && !withinCard) closeDetailView(elements);
+    if (!withinFloating && !withinCard) closeDetailView(state, elements);
     if (elements.topActions?.classList.contains('is-expanded')) {
       const inTopActions = elements.topActions.contains(target) || elements.overflowBtn?.contains(target);
       if (!inTopActions) {
@@ -267,6 +281,24 @@ export async function initUI(map, features) {
       return { listCount: state.filteredFeatures.length, mapCount: getMapFeatureCount(map) };
     }
   };
+}
+
+function setupOnboardingOverlay(elements) {
+  const overlay = elements?.onboardingOverlay;
+  const dismissBtn = elements?.onboardingDismissBtn;
+  if (!overlay || !dismissBtn) return;
+
+  let dismissedInPageSession = false;
+  const closeOverlay = () => {
+    if (dismissedInPageSession) return;
+    dismissedInPageSession = true;
+    overlay.hidden = true;
+    overlay.setAttribute('aria-hidden', 'true');
+  };
+
+  overlay.hidden = false;
+  overlay.setAttribute('aria-hidden', 'false');
+  dismissBtn.addEventListener('click', closeOverlay);
 }
 
 function isFeatureVisible(feature, state) {
@@ -487,7 +519,7 @@ function setupOverlayManager(elements, state, map) {
       return;
     }
     if (source === 'primary') {
-      hideDetailPanel(elements);
+      hideDetailPanel(elements, state);
       return;
     }
     if (source === 'ugc' || source === 'moderation') {
@@ -495,6 +527,20 @@ function setupOverlayManager(elements, state, map) {
       clearSelection(state, elements, map);
     }
   });
+}
+
+function setupLayerEntryHint(elements) {
+  const helper = elements?.layersEntryHelper;
+  const layersBtn = elements?.layersBtn;
+  if (!helper || !layersBtn) return;
+
+  const markVisited = () => {
+    helper.classList.add('is-visited');
+    layersBtn.classList.add('is-layer-engaged');
+  };
+
+  layersBtn.addEventListener('click', markVisited, { once: true });
+  elements.layersPanel?.addEventListener('change', markVisited, { once: true });
 }
 
 function togglePrimaryPanel(elements, state, key, trigger = null) {
@@ -544,7 +590,50 @@ function getButtonByKey(elements, key) {
 
 function toggleSearchClear(elements, state) {
   if (!elements.searchClearBtn) return;
-  elements.searchClearBtn.hidden = !state.search;
+  const hasSearch = Boolean(state.search);
+  elements.searchClearBtn.hidden = !hasSearch;
+  updateSearchEntryState(elements, hasSearch);
+}
+
+function updateSearchEntryState(elements, hasSearch) {
+  const shell = elements?.searchShell;
+  const helper = elements?.searchHelperState;
+  const suggestions = elements?.searchSuggestions;
+  if (shell?.classList) {
+    shell.classList.toggle('is-search-active', hasSearch);
+  }
+  if (suggestions) {
+    suggestions.hidden = hasSearch;
+  }
+  if (!helper) return;
+  helper.textContent = hasSearch
+    ? 'Идёт поиск по карте…'
+    : 'Ищите места, события и объекты.';
+}
+
+function setupSearchSuggestions(elements) {
+  const container = elements?.searchSuggestions;
+  if (!container) return;
+  container.addEventListener('click', (event) => {
+    const button = event.target?.closest?.('[data-query]');
+    if (!button) return;
+    const input = elements?.searchInput;
+    if (!input) return;
+    input.value = String(button.dataset.query || '').trim();
+    input.focus();
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+}
+
+function updateSearchNoResultsState(elements, state) {
+  const noResults = elements?.searchNoResultsState;
+  if (!noResults) return;
+
+  const hasSearch = Boolean(state?.search);
+  const canMeasureResults = Array.isArray(state?.searchResults);
+  const isEmpty = canMeasureResults && state.searchResults.length === 0;
+  const shouldShow = hasSearch && canMeasureResults && isEmpty;
+  noResults.hidden = !shouldShow;
 }
 
 function renderCards(elements, state, map) {
@@ -635,6 +724,17 @@ function syncMapHoveredCardState(elements, hoveredFeatureId) {
 
 function showDetailPanel(state, elements, map, feature) {
   if (!elements.detailPanel || !elements.detailPanelBody) return;
+  if (!feature) {
+    hideDetailPanel(elements, state);
+    return;
+  }
+  const featureId = getFeatureUiId(feature);
+  if (!featureId) {
+    hideDetailPanel(elements, state);
+    return;
+  }
+  if (!elements.detailPanel.hidden && state.detailOpenFeatureId === featureId) return;
+
   const props = normalizeProps(feature);
   const layerLabel = state.layerLookup.get(String(props.layer_id || '').trim()) || String(props.layer_id || '');
   const dateLabel = formatRangeLabel(props.date_start, props.date_end);
@@ -669,11 +769,23 @@ function showDetailPanel(state, elements, map, feature) {
     elements.detailPanel.classList.remove('is-mobile-sheet', 'is-expanded');
   }
   document.dispatchEvent(new CustomEvent('artemis:overlay-open', { detail: { source: 'detail' } }));
-  window.requestAnimationFrame(() => elements.detailPanelBody.replaceChildren(detail));
+  if (Number.isInteger(state.detailRenderFrameId)) {
+    window.cancelAnimationFrame(state.detailRenderFrameId);
+  }
+  state.detailOpenFeatureId = featureId;
+  state.detailRenderFrameId = window.requestAnimationFrame(() => {
+    elements.detailPanelBody.replaceChildren(detail);
+    state.detailRenderFrameId = null;
+  });
 }
 
-function hideDetailPanel(elements) {
+function hideDetailPanel(elements, state = null) {
   if (!elements.detailPanel) return;
+  if (state && Number.isInteger(state.detailRenderFrameId)) {
+    window.cancelAnimationFrame(state.detailRenderFrameId);
+    state.detailRenderFrameId = null;
+  }
+  if (state) state.detailOpenFeatureId = null;
   elements.detailPanel.classList.remove('is-selected');
   setPanelOpenState(elements.detailPanel, false);
 }
@@ -822,7 +934,7 @@ function selectFeature(state, elements, map, feature, options = {}) {
 function clearSelection(state, elements, map) {
   state.selectedFeatureId = null;
   setSelectedFeatureId(map, null);
-  hideDetailPanel(elements);
+  hideDetailPanel(elements, state);
   syncSelectedCardState(elements, null);
   renderCards(elements, state, map);
 }
@@ -840,8 +952,8 @@ function clearHoveredFeature(state, map) {
   setHoveredFeatureId(map, null);
 }
 
-function closeDetailView(elements) {
-  hideDetailPanel(elements);
+function closeDetailView(state, elements) {
+  hideDetailPanel(elements, state);
 }
 
 function getSelectedFeature(state) {

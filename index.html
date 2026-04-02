@@ -54,6 +54,14 @@
       <div class="search-shell">
         <input id="global-search" type="search" placeholder="Search events, people, places, dates..." autocomplete="off" />
         <button id="search-clear-btn" class="icon-btn search-clear-btn" type="button" aria-label="Clear search" hidden>×</button>
+        <p id="search-helper-state" class="search-helper-state" aria-live="polite">Ищите места, события и объекты.</p>
+        <div id="search-suggestions" class="search-suggestions" aria-label="Примеры поисковых запросов">
+          <button type="button" class="search-suggestion-chip" data-query="место">место</button>
+          <button type="button" class="search-suggestion-chip" data-query="событие">событие</button>
+          <button type="button" class="search-suggestion-chip" data-query="объект">объект</button>
+          <button type="button" class="search-suggestion-chip" data-query="период">период</button>
+        </div>
+        <p id="search-no-results-state" class="search-no-results-state" hidden aria-live="polite">Ничего не найдено. Попробуйте изменить запрос.</p>
         <div id="search-dropdown" class="top-panel search-dropdown" hidden></div>
       </div>
       <div class="top-actions">
@@ -61,6 +69,7 @@
         <button id="moderation-toggle-btn" type="button" aria-label="Toggle moderation workspace" aria-expanded="false" data-moderation-action="toggle-workspace" hidden>Moderation</button>
         <button id="filters-btn" type="button" aria-label="Toggle filters" aria-expanded="false">Filters</button>
         <button id="layers-btn" type="button" aria-label="Toggle layers" aria-expanded="false">Layers</button>
+        <p id="layers-entry-helper" class="layers-entry-helper">Выберите, что показывать на карте.</p>
         <button id="bookmarks-btn" type="button" aria-label="Toggle bookmarks" aria-expanded="false">Bookmarks</button>
         <button id="overflow-btn" class="icon-btn" type="button" aria-label="More actions">⋯</button>
       </div>
@@ -72,6 +81,18 @@
     <main id="map-container" aria-label="Карта объектов">
       <div id="map"></div>
     </main>
+    <section id="onboarding-overlay" class="onboarding-overlay" aria-live="polite">
+      <div class="onboarding-card glass-panel" role="note" aria-label="Подсказка для первого входа">
+        <h2 class="onboarding-title">Быстрый старт</h2>
+        <ul class="onboarding-list">
+          <li>Исследуйте карту и перемещайтесь по ней.</li>
+          <li>Используйте поиск для быстрого перехода к объектам.</li>
+          <li>Переключайте слои, чтобы сравнивать данные.</li>
+          <li>Меняйте период на таймлайне внизу экрана.</li>
+        </ul>
+        <button id="onboarding-dismiss-btn" class="ui-button ui-button-primary" type="button">Понятно</button>
+      </div>
+    </section>
     <section id="global-data-loading" class="global-data-loading glass-panel" aria-live="polite" aria-hidden="false">
       <p id="global-data-loading-text" class="global-data-loading-text">Загрузка карты…</p>
     </section>
