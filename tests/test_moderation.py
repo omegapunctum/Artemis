@@ -198,7 +198,7 @@ class ModerationFlowTests(unittest.TestCase):
         self.assertEqual(id_a, id_b)
         self.assertNotEqual(id_a, id_c)
 
-    def test_find_existing_uses_normalized_id_after_external_id(self):
+    def test_find_existing_uses_normalized_id_before_external_id(self):
         user = self.make_user('dedupe@example.com')
         draft = create_draft(
             self.db,
@@ -217,14 +217,14 @@ class ModerationFlowTests(unittest.TestCase):
 
         with patch('app.moderation.service._get_airtable_config', return_value=('token', 'base', 'Features')), patch(
             'app.moderation.service._find_airtable_record_by_formula',
-            side_effect=[None, {'id': 'rec-normalized', 'fields': {}}],
+            return_value={'id': 'rec-normalized', 'fields': {}},
         ) as find_formula:
             record = find_existing_airtable_feature(draft, fields=fields)
 
         self.assertIsNotNone(record)
         self.assertEqual(record['id'], 'rec-normalized')
-        self.assertEqual(find_formula.call_count, 2)
-        self.assertIn('{normalized_id}', find_formula.call_args_list[1].args[2])
+        self.assertEqual(find_formula.call_count, 1)
+        self.assertIn('{normalized_id}', find_formula.call_args_list[0].args[2])
 
     def test_draft_response_schema_includes_status(self):
         payload = DraftResponse.model_validate(

@@ -18,6 +18,11 @@ function authRequired() {
   window.dispatchEvent(new CustomEvent('artemis:auth-required'));
 }
 
+function handleAuthFailure() {
+  clearAuth();
+  authRequired();
+}
+
 function normalizePath(path) {
   const cleanedPath = String(path || '').trim();
   if (!cleanedPath) return '/';
@@ -217,8 +222,23 @@ export async function refreshToken() {
 
   try {
     return await refreshPromise;
+  } catch (error) {
+    clearAuth();
+    throw error;
   } finally {
     refreshPromise = null;
+  }
+}
+
+function shouldAttemptRefresh(request) {
+  try {
+    const url = new URL(request.url, window.location.origin);
+    return !url.pathname.endsWith('/auth/login')
+      && !url.pathname.endsWith('/auth/register')
+      && !url.pathname.endsWith('/auth/refresh')
+      && !url.pathname.endsWith('/auth/logout');
+  } catch (_error) {
+    return true;
   }
 }
 
@@ -249,17 +269,22 @@ export async function fetchWithAuth(input, options = {}) {
     return response;
   }
 
+  if (!shouldAttemptRefresh(originalRequest)) {
+    handleAuthFailure();
+    throw await buildApiError(response, 'Session expired. Please sign in again.');
+  }
+
   try {
     await refreshToken();
   } catch (error) {
-    authRequired();
+    handleAuthFailure();
     throw error;
   }
 
   const retryRequest = buildAuthRequest(originalRequest.clone());
   const retryResponse = await fetch(retryRequest);
   if (retryResponse.status === 401) {
-    authRequired();
+    handleAuthFailure();
     throw await buildApiError(retryResponse, 'Session expired. Please sign in again.');
   }
   return retryResponse;

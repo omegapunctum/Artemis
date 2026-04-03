@@ -1,6 +1,7 @@
 import unittest
 
 from scripts.export_airtable import (
+    get_canonical_publish_id,
     get_dedupe_key,
     get_origin_key,
     map_layers,
@@ -53,6 +54,15 @@ class ExportAirtableIdempotencyTests(unittest.TestCase):
         mapped = {"name_ru": "Test", "latitude": 1.0, "longitude": 2.0}
         self.assertEqual(get_dedupe_key(mapped), ("Test", 1.0, 2.0))
 
+    def test_canonical_publish_id_prefers_normalized_id(self):
+        mapped = {
+            "normalized_id": "norm-1",
+            "airtable_record_id": "recAAA",
+            "external_id": "draft:100",
+            "source_draft_id": "draft:100",
+        }
+        self.assertEqual(get_canonical_publish_id(mapped), "norm-1")
+
     def test_map_layer_linked_record_to_public_layer_id(self):
         linked_map, _ = map_layers(
             [
@@ -74,13 +84,13 @@ class ExportAirtableIdempotencyTests(unittest.TestCase):
         )
         self.assertEqual(mapped["layer_id"], "roman_empire")
 
-    def test_coordinates_source_is_non_fatal(self):
+    def test_coordinates_source_invalid_is_rejected(self):
         mapped = self._build_mapped()
         warnings = []
         errors = []
         is_valid = validate_feature(mapped, {"roman_empire"}, warnings, errors)
-        self.assertTrue(is_valid)
-        self.assertFalse([e for e in errors if e.get("severity") == "critical"])
+        self.assertFalse(is_valid)
+        self.assertTrue(any(e.get("reason") == "invalid_coordinates_source" for e in errors))
 
     def test_missing_id_rejected(self):
         warnings = []

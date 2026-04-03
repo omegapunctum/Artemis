@@ -33,6 +33,8 @@ DEFAULT_COORDINATES_SOURCE = "ugc"
 DEFAULT_SOURCE_URL = "https://ugc.local/source"
 DEFAULT_SOURCE_LICENSE = "CC BY"
 AIRTABLE_EXTERNAL_ID_FIELD = os.getenv("AIRTABLE_EXTERNAL_ID_FIELD", "external_id")
+AIRTABLE_NORMALIZED_ID_FIELD = "normalized_id"
+AIRTABLE_SOURCE_DRAFT_ID_FIELD = "source_draft_id"
 PUBLISH_STATUS_PENDING = "pending"
 PUBLISH_STATUS_PUBLISHED = "published"
 PUBLISH_STATUS_FAILED = "failed"
@@ -210,20 +212,24 @@ def find_existing_airtable_feature(draft: Draft, fields: dict[str, Any] | None =
         return {"id": draft.airtable_record_id, "fields": build_airtable_fields(draft)}
 
     token, base_id, table_name = _get_airtable_config()
+    resolved_fields = fields or build_airtable_fields(draft)
     external_id = get_draft_external_id(draft)
-    normalized_id = (fields or build_airtable_fields(draft)).get("normalized_id")
+    normalized_id = resolved_fields.get(AIRTABLE_NORMALIZED_ID_FIELD)
     url = _build_airtable_table_url(base_id, table_name)
+
+    # Canonical publish identity contract:
+    # 1) normalized_id is the primary identity for publish idempotency.
+    # 2) external/source ids are source references and backward-compatible fallbacks.
+    if normalized_id:
+        normalized_formula = f"{{{AIRTABLE_NORMALIZED_ID_FIELD}}}='{_escape_airtable_formula_value(str(normalized_id))}'"
+        by_normalized_id = _find_airtable_record_by_formula(url, token, normalized_formula)
+        if by_normalized_id:
+            return by_normalized_id
 
     external_formula = f"{{{AIRTABLE_EXTERNAL_ID_FIELD}}}='{_escape_airtable_formula_value(external_id)}'"
     by_external_id = _find_airtable_record_by_formula(url, token, external_formula)
     if by_external_id:
         return by_external_id
-
-    if normalized_id:
-        normalized_formula = f"{{normalized_id}}='{_escape_airtable_formula_value(str(normalized_id))}'"
-        by_normalized_id = _find_airtable_record_by_formula(url, token, normalized_formula)
-        if by_normalized_id:
-            return by_normalized_id
 
     return None
 
@@ -284,7 +290,8 @@ def build_airtable_fields(draft: Draft) -> dict[str, Any]:
 
     fields: dict[str, Any] = {
         AIRTABLE_EXTERNAL_ID_FIELD: get_draft_external_id(draft),
-        "normalized_id": normalized_id,
+        AIRTABLE_SOURCE_DRAFT_ID_FIELD: get_draft_external_id(draft),
+        AIRTABLE_NORMALIZED_ID_FIELD: normalized_id,
         "name_ru": draft_payload.get("name_ru") or draft.title,
         "description": draft_payload.get("description") if "description" in draft_payload else draft.description,
         "image_url": image_url,
