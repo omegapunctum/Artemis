@@ -1,5 +1,8 @@
 let loadingCounter = 0;
 let messageTimerId = null;
+let lastConnectivityState = null;
+let lastConnectivityNotifiedAt = 0;
+const CONNECTIVITY_MESSAGE_COOLDOWN_MS = 5000;
 
 const ERROR_MESSAGES = {
   network: 'Network error. Please check your connection and try again.',
@@ -110,6 +113,23 @@ export function setOfflineState(offline) {
   const badge = document.getElementById('offline-status');
   if (!badge) return;
   badge.hidden = !offline;
+}
+
+export function notifyConnectivityState(isOnline, { force = false } = {}) {
+  const normalized = Boolean(isOnline);
+  const now = Date.now();
+  const isDuplicateState = lastConnectivityState === normalized;
+  const inCooldown = now - lastConnectivityNotifiedAt < CONNECTIVITY_MESSAGE_COOLDOWN_MS;
+
+  if (!force && isDuplicateState && inCooldown) return;
+
+  lastConnectivityState = normalized;
+  lastConnectivityNotifiedAt = now;
+  if (normalized) {
+    showSystemMessage('Соединение восстановлено', { variant: 'success', timeout: 2600 });
+  } else {
+    showSystemMessage('Вы офлайн', { variant: 'warning', timeout: 3200 });
+  }
 }
 
 export function isOffline() {

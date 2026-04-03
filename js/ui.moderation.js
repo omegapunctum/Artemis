@@ -126,6 +126,7 @@ async function approveSelectedDraft() {
   } catch (error) {
     moderationState.actionState = STATUS.ERROR;
     moderationState.actionError = normalizeAppError(error, 'Failed to approve draft.').message;
+    showSystemMessage(moderationState.actionError, { variant: 'warning' });
     renderModerationWorkspace();
   }
 }
@@ -160,6 +161,7 @@ async function rejectSelectedDraft() {
   } catch (error) {
     moderationState.actionState = STATUS.ERROR;
     moderationState.actionError = normalizeAppError(error, 'Failed to reject draft.').message;
+    showSystemMessage(moderationState.actionError, { variant: 'warning' });
     renderModerationWorkspace();
   }
 }
@@ -232,7 +234,10 @@ function onModerationClick(event) {
     if (moderationState.isOpen) {
       document.dispatchEvent(new CustomEvent('artemis:overlay-open', { detail: { source: 'moderation' } }));
       if (moderationState.queueState === STATUS.IDLE) {
-        loadModerationQueue().catch(() => {});
+        loadModerationQueue().catch((error) => {
+          const message = normalizeAppError(error, 'Failed to load moderation queue.').message;
+          showSystemMessage(message, { variant: 'warning' });
+        });
       }
     }
     renderModerationWorkspace();
@@ -249,7 +254,10 @@ function onModerationClick(event) {
 
   if (action === 'refresh-queue') {
     if (!ensureOnlineAction()) return;
-    loadModerationQueue().catch(() => {});
+    loadModerationQueue().catch((error) => {
+      const message = normalizeAppError(error, 'Failed to load moderation queue.').message;
+      showSystemMessage(message, { variant: 'warning' });
+    });
     return;
   }
 
@@ -419,12 +427,12 @@ function renderQueueState(node) {
   }
 
   if (moderationState.queueState === STATUS.LOADING_QUEUE) {
-    node.appendChild(createInlineState('Loading moderation queue…'));
+    node.appendChild(createInlineState('Loading moderation queue… Please wait.'));
     return;
   }
 
   if (moderationState.queueState === STATUS.QUEUE_EMPTY) {
-    node.appendChild(createInlineState('No drafts pending review.'));
+    node.appendChild(createInlineState('Moderation queue is empty. New submitted drafts will appear here.'));
     return;
   }
 
@@ -489,7 +497,7 @@ function renderReviewPanel(container) {
   if (!moderationState.isOpen || !moderationState.isAllowed) return;
 
   if (!moderationState.queue.length) {
-    container.appendChild(createInlineState('Select a draft from the queue to review details.'));
+    container.appendChild(createInlineState('No draft selected for review. Choose an item from the left list when available.'));
     return;
   }
 

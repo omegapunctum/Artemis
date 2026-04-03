@@ -98,6 +98,7 @@ class MvpContractStaticTests(unittest.TestCase):
     def test_service_worker_does_not_cache_api_routes(self):
         source = Path("sw.js").read_text(encoding="utf-8")
         self.assertIn("isPrivateRequest(url)", source)
+        self.assertIn("normalizedPath.startsWith('api/')", source)
         self.assertIn("api/auth", source)
         self.assertIn("api/me", source)
         self.assertIn("event.respondWith(fetch(request));", source)

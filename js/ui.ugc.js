@@ -154,6 +154,7 @@ function bindAuth(els) {
       else await login(email, password);
 
       clearError();
+      setGlobalError(els, '');
       closeModal(els.loginModal);
       syncAuthUI(els);
       await refreshDrafts(els);
@@ -165,7 +166,9 @@ function bindAuth(els) {
         uiState.pendingAfterLogin = null;
       }
     } catch (error) {
-      showError(error.message || 'Authentication failed.');
+      const message = normalizeAppError(error, 'Authentication failed.').message;
+      setGlobalError(els, message);
+      showSystemMessage(message, { variant: 'warning' });
     } finally {
       setLoading(els.loginForm, false);
     }
@@ -352,6 +355,11 @@ async function refreshDrafts(els) {
 
   showLoading();
   setGlobalError(els, '');
+  toggleDraftsEmptyState(els, true, {
+    variant: 'info',
+    title: 'Loading drafts',
+    message: 'Fetching your latest drafts…'
+  });
   try {
     const data = await requestDraftApi(['/api/drafts/my', '/drafts/my', '/drafts'], { method: 'GET' }, 'Failed to load drafts.');
     uiState.drafts = Array.isArray(data) ? data : [];
@@ -361,6 +369,7 @@ async function refreshDrafts(els) {
     const normalized = normalizeAppError(error, 'Failed to load drafts.');
     const message = handleAuthError(error, els) || normalized.message;
     setGlobalError(els, message, { retry: () => refreshDrafts(els) });
+    showSystemMessage(message, { variant: 'warning' });
     toggleDraftsEmptyState(els, false);
   } finally {
     hideLoading();
@@ -378,7 +387,11 @@ function renderDraftList(els) {
 
   if (!uiState.drafts.length) {
     const hasError = Boolean(String(els.ugcGlobalError?.textContent || '').trim());
-    toggleDraftsEmptyState(els, !hasError, 'No drafts yet.');
+    toggleDraftsEmptyState(els, !hasError, {
+      variant: 'info',
+      title: 'No drafts yet',
+      message: 'Start with “Create draft”, then save your progress to see it here.'
+    });
     return;
   }
 
@@ -417,16 +430,23 @@ function renderDraftList(els) {
   });
 }
 
-function toggleDraftsEmptyState(els, visible, message = '') {
+function toggleDraftsEmptyState(els, visible, options = {}) {
   const emptyNode = els.ugcDraftsEmpty;
   if (!emptyNode) return;
 
   emptyNode.hidden = !visible;
   if (!visible) return;
+  const config = typeof options === 'string'
+    ? { variant: 'info', title: 'Empty state', message: options }
+    : {
+      variant: options.variant || 'info',
+      title: options.title || 'Empty state',
+      message: options.message || 'No drafts yet.'
+    };
   emptyNode.replaceChildren(createInlineStateBlock({
-    variant: 'info',
-    title: 'Empty state',
-    message: message || 'No drafts yet.'
+    variant: config.variant,
+    title: config.title,
+    message: config.message
   }));
 }
 
@@ -525,6 +545,8 @@ async function saveDraft(els) {
   renderFieldErrors(els.form, els.fieldErrors, validation.errors);
   if (!validation.valid) {
     setFormState(els, 'validation');
+    setGlobalError(els, 'Please fix highlighted fields before saving.');
+    showSystemMessage('Validation failed. Check highlighted fields.', { variant: 'warning' });
     return;
   }
 
@@ -560,6 +582,7 @@ async function saveDraft(els) {
     const message = resolveUgcActionErrorMessage(error, els, 'Failed to save draft.');
     setGlobalError(els, message, { retry: () => saveDraft(els) });
     setFormState(els, 'server');
+    showSystemMessage(message, { variant: 'warning' });
   } finally {
     hideLoading();
     setUgcBusyState(els, false);
@@ -613,6 +636,7 @@ async function submitDraft(els) {
     const message = resolveUgcActionErrorMessage(error, els, 'Failed to submit draft.');
     setGlobalError(els, message, { retry: () => submitDraft(els) });
     setFormState(els, 'server');
+    showSystemMessage(message, { variant: 'warning' });
   } finally {
     hideLoading();
     setUgcBusyState(els, false);
@@ -642,6 +666,7 @@ async function deleteActiveDraft(els) {
   } catch (error) {
     const message = resolveUgcActionErrorMessage(error, els, 'Failed to delete draft.');
     setGlobalError(els, message, { retry: () => deleteActiveDraft(els) });
+    showSystemMessage(message, { variant: 'warning' });
   } finally {
     hideLoading();
     setUgcBusyState(els, false);
@@ -681,6 +706,7 @@ function requireAuthForUgc(els) {
   uiState.pendingAfterLogin = 'open-ugc';
   openModal(els.loginModal);
   setGlobalError(els, 'Please login to continue.');
+  showSystemMessage('Please login to continue.', { variant: 'warning' });
   return false;
 }
 
@@ -854,13 +880,17 @@ function setGlobalError(els, message, { retry = null } = {}) {
   host.setAttribute('role', 'alert');
 
   if (!visible) {
-    setText(host, '');
-    host.removeAttribute('data-retry');
+    host.replaceChildren();
     return;
   }
 
-  setText(host, safeMessage);
-  host.dataset.retry = typeof retry === 'function' ? 'true' : 'false';
+  host.replaceChildren(createInlineStateBlock({
+    variant: 'error',
+    title: 'Action required',
+    message: safeMessage,
+    actionLabel: typeof retry === 'function' ? 'Retry' : '',
+    onAction: retry
+  }));
 }
 
 function ensureUgcErrorHost(els) {

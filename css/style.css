@@ -1045,6 +1045,12 @@ button:focus-visible {
   line-height: 1.4;
   white-space: pre-wrap;
 }
+.ugc-error-banner .app-state-block {
+  gap: 8px;
+}
+.ugc-error-banner .app-state-title {
+  font-weight: 600;
+}
 .ugc-inline-note, .ugc-inline-error {
   border-radius: 10px;
   padding: 0;
@@ -1200,6 +1206,9 @@ button:focus-visible {
 .moderation-meta-value { color: var(--text-soft); }
 .moderation-meta-row a { color: #93c5fd; word-break: break-all; }
 .moderation-review-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.moderation-review-actions .app-state-block {
+  width: 100%;
+}
 .moderation-approve-btn { border-color: rgba(52, 211, 153, 0.6); background: rgba(6, 78, 59, 0.38); }
 .moderation-reject-btn { border-color: rgba(248, 113, 113, 0.56); background: rgba(127, 29, 29, 0.34); }
 .moderation-reject-modal { position: fixed; inset: 0; z-index: var(--z-modal); background: rgba(2, 6, 23, 0.55); display: grid; place-items: center; padding: 12px; }

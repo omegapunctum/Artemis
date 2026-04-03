@@ -1,9 +1,10 @@
 {
   "name": "ARTEMIS",
   "short_name": "ARTEMIS",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
   "background_color": "#f3f4f6",
   "theme_color": "#2563eb",
   "icons": [

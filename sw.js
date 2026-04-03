@@ -1,4 +1,4 @@
-const CACHE_VERSION = '2026-04-03-v6';
+const CACHE_VERSION = '2026-04-03-v7';
 const STATIC_CACHE = `artemis-static-${CACHE_VERSION}`;
 const DATA_CACHE = `artemis-data-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `artemis-runtime-${CACHE_VERSION}`;
@@ -156,6 +156,7 @@ function isPrivateRequest(url) {
     'api/uploads'
   ];
   const normalizedPath = trimBasePath(url.pathname);
+  if (normalizedPath === 'api' || normalizedPath.startsWith('api/')) return true;
 
   return [
     ...privatePaths
@@ -204,7 +205,10 @@ async function handleNavigationRequest(request) {
     console.debug('[SW] navigation network failed, fallback to cached shell');
     const cache = await caches.open(STATIC_CACHE);
     const fallback = await cache.match(INDEX_URL);
-    if (fallback) return fallback;
+    if (fallback) {
+      notifyClients({ type: 'ARTEMIS_NAVIGATION_OFFLINE_FALLBACK' });
+      return fallback;
+    }
     return Response.error();
   }
 }
@@ -277,25 +281,35 @@ async function handleDataRequest(request) {
 
   try {
     const cache = await caches.open(DATA_CACHE);
-    try {
-      const networkResponse = await fetch(request);
-      if (networkResponse.ok) {
-        if (isCacheableResponse(networkResponse)) {
-      await cache.put(request, networkResponse.clone());
-    }
+    const cachedResponse = await cache.match(request);
+
+    const networkFetch = fetch(request).then(async (networkResponse) => {
+      if (networkResponse.ok && isCacheableResponse(networkResponse)) {
+        await cache.put(request, networkResponse.clone());
       }
+      return networkResponse;
+    });
+
+    if (cachedResponse) {
+      networkFetch.catch(() => {});
+      return withCacheState(cachedResponse, 'stale');
+    }
+
+    const networkResponse = await networkFetch;
+    if (networkResponse.ok) {
       console.debug('[SW] data network hit:', request.url);
       return networkResponse;
-    } catch (networkError) {
-      const cachedResponse = await cache.match(request);
-      if (cachedResponse) {
-        console.debug('[SW] data network fail -> cache fallback:', request.url);
-        return withCacheState(cachedResponse, 'fallback');
-      }
-      throw networkError;
     }
+    return networkResponse;
   } catch (error) {
+    const cache = await caches.open(DATA_CACHE);
+    const cachedResponse = await cache.match(request);
+    if (cachedResponse) {
+      notifyClients({ type: 'ARTEMIS_DATA_CACHE_FALLBACK' });
+      return withCacheState(cachedResponse, 'fallback');
+    }
     console.debug('[SW] data unavailable offline:', request.url);
+    notifyClients({ type: 'ARTEMIS_DATA_CACHE_MISS' });
     return new Response(JSON.stringify({
       error: 'offline',
       message: 'ARTEMIS offline cache is empty for this dataset.'
@@ -317,4 +331,10 @@ function withCacheState(response, state) {
     statusText: response.statusText,
     headers
   });
+}
+
+function notifyClients(payload) {
+  self.clients.matchAll({ includeUncontrolled: true, type: 'window' }).then((clients) => {
+    clients.forEach((client) => client.postMessage(payload));
+  }).catch(() => {});
 }

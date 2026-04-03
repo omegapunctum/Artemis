@@ -1,4 +1,4 @@
-import { clearError, setOfflineState, showSystemMessage } from './ux.js';
+import { clearError, setOfflineState, showSystemMessage, notifyConnectivityState } from './ux.js';
 
 let deferredPrompt = null;
 let installDismissed = false;
@@ -7,6 +7,8 @@ let iosFallbackShown = false;
 let activeBannerKey = '';
 let pendingUpdateRegistration = null;
 let isUpdating = false;
+let wasOffline = false;
+let refreshInFlight = false;
 
 export function initPWA() {
   setupInstallPrompt();
@@ -63,22 +65,56 @@ function setupInstallPrompt() {
 function setupConnectivityHandlers() {
   window.addEventListener('online', handleOnline);
   window.addEventListener('offline', handleOffline);
+  navigator.serviceWorker?.addEventListener?.('message', handleServiceWorkerMessage);
 
   if (!navigator.onLine) {
     handleOffline();
+  } else {
+    setOfflineState(false);
   }
 }
 
 function handleOffline() {
+  wasOffline = true;
   setOfflineState(true);
   clearError();
+  notifyConnectivityState(false);
   showSystemMessage('Showing cached data when available', { variant: 'warning', timeout: 3000 });
 }
 
 function handleOnline() {
   setOfflineState(false);
   clearError();
-  showSystemMessage('Connection restored', { variant: 'success' });
+  notifyConnectivityState(true);
+  if (wasOffline) {
+    wasOffline = false;
+    softRefreshDataCaches();
+  }
+}
+
+function handleServiceWorkerMessage(event) {
+  const payload = event?.data;
+  if (!payload || typeof payload !== 'object') return;
+  if (payload.type === 'ARTEMIS_DATA_CACHE_FALLBACK') {
+    showSystemMessage('Network unavailable, showing cached data', { variant: 'warning', timeout: 3200 });
+  } else if (payload.type === 'ARTEMIS_DATA_CACHE_MISS') {
+    showSystemMessage('Offline cache is empty for requested data', { variant: 'warning', timeout: 3600 });
+  } else if (payload.type === 'ARTEMIS_NAVIGATION_OFFLINE_FALLBACK') {
+    showSystemMessage('Opened offline version from cache', { variant: 'warning', timeout: 3000 });
+  }
+}
+
+async function softRefreshDataCaches() {
+  if (refreshInFlight || !navigator.onLine) return;
+  refreshInFlight = true;
+  try {
+    const requests = ['data/features.geojson', 'data/layers.json'].map((path) =>
+      fetch(new URL(path, document.baseURI).href, { cache: 'no-store' })
+    );
+    await Promise.allSettled(requests);
+  } finally {
+    refreshInFlight = false;
+  }
 }
 
 async function registerServiceWorker() {
