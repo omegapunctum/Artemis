@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-03T08:36:30Z",
+  "timestamp": "2026-04-03T14:28:11Z",
   "source": "airtable",
   "records_total_source": 19,
   "records_exported": 0,
@@ -12,5 +12,5 @@
   "warning_stats": {
     "using legacy fallback field": 76
   },
-  "duration_seconds": 2.335
+  "duration_seconds": 2.226
 }
