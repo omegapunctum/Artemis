@@ -61,14 +61,23 @@ def save_draft_image(db: Session, draft: Draft, user: User, file: UploadFile, re
     return image_url
 
 
+def _collect_active_upload_urls(db: Session) -> set[str]:
+    active_urls: set[str] = set()
+    rows = db.query(Draft.image_url, Draft.payload).all()
+    for image_url, payload in rows:
+        if image_url:
+            active_urls.add(str(image_url))
+        if isinstance(payload, dict):
+            payload_image_url = payload.get("image_url")
+            if payload_image_url:
+                active_urls.add(str(payload_image_url))
+    return active_urls
+
+
 def cleanup_orphan_uploads(db: Session, *, now: datetime | None = None, max_age_hours: int = ORPHAN_MAX_AGE_HOURS) -> int:
     reference_now = now or datetime.now(timezone.utc)
     threshold = reference_now - timedelta(hours=max_age_hours)
-    active_urls = {
-        str(url)
-        for (url,) in db.query(Draft.image_url).filter(Draft.image_url.isnot(None)).all()
-        if url
-    }
+    active_urls = _collect_active_upload_urls(db)
 
     removed_count = 0
     for file_path in UPLOADS_ROOT.rglob("*"):

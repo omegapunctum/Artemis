@@ -30,10 +30,15 @@ def upload_file(
     file: UploadFile = File(...),
     license: str = Form(...),
     _: None = Depends(rate_limit(10, 60, prefix="upload-file", include_path=True)),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     request.state.user_id = current_user.id
     try:
+        removed = cleanup_orphan_uploads(db)
+        if removed:
+            log_event(logging.INFO, 'upload.cleanup.orphans_removed', path=request.url.path, request_id=request.state.request_id, removed=removed)
+
         image_url, normalized_license = save_uploaded_file(current_user, file, license)
     except HTTPException:
         raise
