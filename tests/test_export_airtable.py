@@ -1,6 +1,7 @@
 import unittest
 
 from scripts.export_airtable import (
+    get_canonical_publish_id,
     get_dedupe_key,
     get_origin_key,
     map_layers,
@@ -52,6 +53,15 @@ class ExportAirtableIdempotencyTests(unittest.TestCase):
     def test_dedupe_key_fallback_without_origin(self):
         mapped = {"name_ru": "Test", "latitude": 1.0, "longitude": 2.0}
         self.assertEqual(get_dedupe_key(mapped), ("Test", 1.0, 2.0))
+
+    def test_canonical_publish_id_prefers_normalized_id(self):
+        mapped = {
+            "normalized_id": "norm-1",
+            "airtable_record_id": "recAAA",
+            "external_id": "draft:100",
+            "source_draft_id": "draft:100",
+        }
+        self.assertEqual(get_canonical_publish_id(mapped), "norm-1")
 
     def test_map_layer_linked_record_to_public_layer_id(self):
         linked_map, _ = map_layers(

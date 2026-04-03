@@ -3,7 +3,7 @@ import json
 import logging
 from pathlib import Path
 
-from scripts.export_airtable import get_dedupe_key, get_origin_key, validate_feature
+from scripts.export_airtable import get_canonical_publish_id, get_dedupe_key, get_origin_key, validate_feature
 
 
 class MvpContractStaticTests(unittest.TestCase):
@@ -53,6 +53,7 @@ class MvpContractStaticTests(unittest.TestCase):
         }
         warnings, errors = [], []
         self.assertEqual(get_origin_key(mapped), 'draft:10')
+        self.assertEqual(get_canonical_publish_id(mapped), 'recAAA')
         self.assertEqual(get_dedupe_key(mapped), ('Feature', 50.4, 30.5))
         self.assertTrue(validate_feature(mapped, {'roman_empire'}, warnings, errors))
 

@@ -88,13 +88,47 @@ def log_error(error_log_path: Path, payload: Dict[str, Any]) -> None:
         print(f"Не удалось записать ошибку в лог: {exc}", file=sys.stderr)
 
 
+def append_diagnostic(
+    issues: List[Dict[str, Any]],
+    *,
+    record_id: str,
+    field: str,
+    error: Optional[str] = None,
+    warning: Optional[str] = None,
+    value: Any = None,
+    severity: Optional[str] = None,
+    reason: Optional[str] = None,
+) -> None:
+    """Добавляет diagnostics payload в унифицированном формате, сохраняя legacy ключи."""
+    normalized_id = record_id or "<missing>"
+    payload: Dict[str, Any] = {
+        "id": normalized_id,
+        "record_id": normalized_id,
+        "field": field,
+    }
+    if error is not None:
+        payload["error"] = error
+    if warning is not None:
+        payload["warning"] = warning
+    if value is not None:
+        payload["value"] = value
+
+    derived_reason = reason or error or warning
+    if derived_reason is not None:
+        payload["reason"] = derived_reason
+    resolved_severity = severity or ("critical" if error is not None else "warning" if warning is not None else None)
+    if resolved_severity is not None:
+        payload["severity"] = resolved_severity
+    issues.append(payload)
+
+
 def to_date_or_none(value: Any, record_id: str, field: str, errors: List[Dict[str, Any]]) -> Optional[str]:
     if value in (None, ""):
         return None
     value_str = str(value).strip()
     if DATE_RE.match(value_str):
         return value_str
-    errors.append({"record_id": record_id, "field": field, "error": f"invalid date: {value}", "value": value})
+    append_diagnostic(errors, record_id=record_id, field=field, error=f"invalid date: {value}", value=value)
     return None
 
 
@@ -104,7 +138,7 @@ def to_float_or_none(value: Any, record_id: str, field: str, errors: List[Dict[s
     try:
         return float(value)
     except (TypeError, ValueError):
-        errors.append({"record_id": record_id, "field": field, "error": f"invalid float: {value}", "value": value})
+        append_diagnostic(errors, record_id=record_id, field=field, error=f"invalid float: {value}", value=value)
         return None
 
 
@@ -123,7 +157,7 @@ def to_int_or_none(value: Any, record_id: str, field: str, errors: List[Dict[str
     try:
         return int(value)
     except (TypeError, ValueError):
-        errors.append({"record_id": record_id, "field": field, "error": f"invalid int: {value}", "value": value})
+        append_diagnostic(errors, record_id=record_id, field=field, error=f"invalid int: {value}", value=value)
         return None
 
 
@@ -135,7 +169,7 @@ def to_bool_or_none(value: Any, record_id: str, field: str, errors: List[Dict[st
         return True
     if normalized in FALSE_SET:
         return False
-    errors.append({"record_id": record_id, "field": field, "error": f"invalid bool: {value}", "value": value})
+    append_diagnostic(errors, record_id=record_id, field=field, error=f"invalid bool: {value}", value=value)
     return None
 
 
@@ -262,14 +296,15 @@ def validate_coordinate_range(
         return None
     if minimum <= value <= maximum:
         return value
-    errors.append(
-        {
-            "record_id": record_id,
-            "field": field,
-            "error": f"out of range [{minimum}, {maximum}]",
-            "warning": "invalid coordinates",
-            "value": value,
-        }
+    append_diagnostic(
+        errors,
+        record_id=record_id,
+        field=field,
+        error=f"out of range [{minimum}, {maximum}]",
+        warning="invalid coordinates",
+        value=value,
+        severity="critical",
+        reason="invalid_coordinates",
     )
     return None
 
@@ -336,8 +371,12 @@ def map_record(
     if longitude in (None, ""):
         legacy_longitude = fields.get("longitude")
         if legacy_longitude not in (None, ""):
-            errors.append(
-                {"record_id": record_id, "field": "longitude", "warning": "using legacy fallback field", "value": legacy_longitude}
+            append_diagnostic(
+                errors,
+                record_id=record_id,
+                field="longitude",
+                warning="using legacy fallback field",
+                value=legacy_longitude,
             )
         longitude = to_float_or_none(legacy_longitude, record_id, "longitude", errors)
         if legacy_longitude not in (None, "") and longitude is None:
@@ -349,8 +388,12 @@ def map_record(
     if latitude in (None, ""):
         legacy_latitude = fields.get("latitude")
         if legacy_latitude not in (None, ""):
-            errors.append(
-                {"record_id": record_id, "field": "latitude", "warning": "using legacy fallback field", "value": legacy_latitude}
+            append_diagnostic(
+                errors,
+                record_id=record_id,
+                field="latitude",
+                warning="using legacy fallback field",
+                value=legacy_latitude,
             )
         latitude = to_float_or_none(legacy_latitude, record_id, "latitude", errors)
         if legacy_latitude not in (None, "") and latitude is None:
@@ -361,39 +404,37 @@ def map_record(
         validated_raw = fields.get("validated_bool")
     validated = parse_bool(validated_raw)
     if validated is None and validated_raw not in (None, ""):
-        errors.append({"record_id": record_id, "field": "validated", "error": "invalid bool", "value": validated_raw})
+        append_diagnostic(errors, record_id=record_id, field="validated", error="invalid bool", value=validated_raw)
 
     is_active_raw = fields.get("is_active")
     if is_active_raw in (None, ""):
         is_active_raw = fields.get("is_active_bool")
     is_active = parse_bool(is_active_raw)
     if is_active is None and is_active_raw not in (None, ""):
-        errors.append({"record_id": record_id, "field": "is_active", "error": "invalid bool", "value": is_active_raw})
+        append_diagnostic(errors, record_id=record_id, field="is_active", error="invalid bool", value=is_active_raw)
 
     source_license = normalize_source_license(fields.get("source_license_enum"))
     if source_license is None:
         source_license = normalize_source_license(fields.get("source_license"))
         if source_license is not None:
-            errors.append(
-                {
-                    "record_id": record_id,
-                    "field": "source_license",
-                    "warning": "using legacy fallback field",
-                    "value": source_license,
-                }
+            append_diagnostic(
+                errors,
+                record_id=record_id,
+                field="source_license",
+                warning="using legacy fallback field",
+                value=source_license,
             )
 
     coordinates_confidence = normalize_coordinates_confidence(fields.get("coordinates_confidence_enum"))
     if coordinates_confidence is None:
         coordinates_confidence = normalize_coordinates_confidence(fields.get("coordinates_confidence"))
         if coordinates_confidence is not None:
-            errors.append(
-                {
-                    "record_id": record_id,
-                    "field": "coordinates_confidence",
-                    "warning": "using legacy fallback field",
-                    "value": coordinates_confidence,
-                }
+            append_diagnostic(
+                errors,
+                record_id=record_id,
+                field="coordinates_confidence",
+                warning="using legacy fallback field",
+                value=coordinates_confidence,
             )
 
     validated_longitude = validate_coordinate_range(longitude, -180.0, 180.0, record_id, "longitude", errors)
@@ -427,8 +468,12 @@ def map_record(
         invalid_layer_link = True
 
     if layer_id_used_legacy_fallback:
-        errors.append(
-            {"record_id": record_id, "field": "layer_id", "warning": "using legacy string fallback", "value": raw_layer_id}
+        append_diagnostic(
+            errors,
+            record_id=record_id,
+            field="layer_id",
+            warning="using legacy string fallback",
+            value=raw_layer_id,
         )
 
     mapped_layer_id = raw_layer_id
@@ -448,6 +493,7 @@ def map_record(
     mapped = {
         "id": record_id,
         "airtable_record_id": record_id,
+        "normalized_id": safe_str(fields.get("normalized_id")),
         "external_id": external_id,
         "source_draft_id": source_draft_id,
         "layer_id": mapped_layer_id,
@@ -492,7 +538,20 @@ def map_record(
 
 
 def get_origin_key(mapped: Dict[str, Any]) -> Optional[str]:
-    for field in ("external_id", "airtable_record_id", "source_draft_id"):
+    # Source reference identity (non-canonical for publish dedupe).
+    for field in ("external_id", "source_draft_id", "airtable_record_id"):
+        value = mapped.get(field)
+        if value:
+            return str(value)
+    return None
+
+
+def get_canonical_publish_id(mapped: Dict[str, Any]) -> Optional[str]:
+    # Canonical publish identity contract:
+    # 1) normalized_id (primary)
+    # 2) airtable_record_id (backward-compat fallback for old rows)
+    # 3) source references (external/source draft ids)
+    for field in ("normalized_id", "airtable_record_id", "external_id", "source_draft_id"):
         value = mapped.get(field)
         if value:
             return str(value)
@@ -644,6 +703,8 @@ def build_geojson_features(mapped_records: Iterable[Dict[str, Any]], warnings: L
                 "geometry": geometry,
                 "properties": {
                     "id": m.get("id"),
+                    "normalized_id": m.get("normalized_id"),
+                    "canonical_publish_id": get_canonical_publish_id(m),
                     "airtable_record_id": m.get("airtable_record_id"),
                     "external_id": m.get("external_id"),
                     "source_draft_id": m.get("source_draft_id"),
