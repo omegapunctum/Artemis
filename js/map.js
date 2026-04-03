@@ -65,7 +65,7 @@ function hasPointGeometry(feature) {
 export function initMap(containerId, features) {
   const map = new maplibregl.Map({
     container: containerId,
-    style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+    style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
     center: [37.6176, 55.7558],
     zoom: 4
   });
@@ -200,9 +200,11 @@ function loadGeoJSON(map, featureCollection) {
       source: SOURCE_ID,
       filter: ['has', 'point_count'],
       paint: {
-        'circle-color': '#3b82f6',
+        'circle-color': '#60a5fa',
         'circle-radius': ['step', ['get', 'point_count'], 14, 25, 20, 100, 26],
-        'circle-opacity': 0.84
+        'circle-opacity': 0.9,
+        'circle-stroke-color': '#dbeafe',
+        'circle-stroke-width': 1.5
       }
     });
 
@@ -216,7 +218,7 @@ function loadGeoJSON(map, featureCollection) {
         'text-size': 12
       },
       paint: {
-        'text-color': '#ffffff'
+        'text-color': '#e2e8f0'
       }
     });
   }
@@ -228,10 +230,10 @@ function loadGeoJSON(map, featureCollection) {
     source: SOURCE_ID,
     paint: {
       'circle-radius': 8,
-      'circle-color': '#d9786d',        // ярко-красный — сразу видно
-      'circle-stroke-color': '#ffffff',
-      'circle-stroke-width': 2,
-      'circle-opacity': 0.95
+      'circle-color': '#f59e0b',
+      'circle-stroke-color': '#0f172a',
+      'circle-stroke-width': 2.2,
+      'circle-opacity': 0.96
     }
   };
 

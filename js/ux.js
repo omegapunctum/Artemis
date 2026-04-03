@@ -138,16 +138,18 @@ export function clearError() {
 
 export function showLoading() {
   const indicator = document.getElementById('loading-indicator');
-  if (!indicator) return;
   loadingCounter += 1;
-  indicator.hidden = false;
+  if (indicator) indicator.hidden = true;
+  const statusLoading = document.getElementById('status-loading');
+  if (statusLoading) statusLoading.hidden = false;
 }
 
 export function hideLoading() {
   const indicator = document.getElementById('loading-indicator');
-  if (!indicator) return;
   loadingCounter = Math.max(0, loadingCounter - 1);
-  indicator.hidden = loadingCounter > 0;
+  if (indicator) indicator.hidden = true;
+  const statusLoading = document.getElementById('status-loading');
+  if (statusLoading && loadingCounter === 0) statusLoading.hidden = true;
 }
 
 export function setButtonBusy(button, busy, labels = {}) {

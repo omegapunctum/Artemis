@@ -756,6 +756,9 @@ button:focus-visible {
   transform: translateX(10px) scale(0.985);
   transition: opacity var(--motion-normal) var(--ease-standard), transform var(--motion-soft) var(--ease-standard), visibility 0ms linear var(--motion-soft);
   will-change: opacity, transform;
+  background: rgba(8, 13, 24, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  box-shadow: 0 24px 42px rgba(2, 6, 23, 0.58);
 }
 .detail-panel[hidden] { pointer-events: none; }
 .detail-panel.is-open {
@@ -808,8 +811,8 @@ button:focus-visible {
   border: 1px solid rgba(148, 163, 184, 0.24);
 }
 .detail-section {
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: rgba(15, 23, 42, 0.42);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(15, 23, 42, 0.58);
   border-radius: 12px;
   padding: 12px;
   display: grid;
@@ -832,7 +835,7 @@ button:focus-visible {
 .detail-subtitle {
   margin: 0;
   font: 500 13px/1.45 Inter, Arial, sans-serif;
-  color: #cbd5e1;
+  color: #dbe5f3;
 }
 .detail-date { margin: 0; font: var(--font-meta); color: #bfdbfe; }
 .detail-section-title { margin: 0; font: var(--font-caption); text-transform: uppercase; color: #cbd5e1; letter-spacing: 0.06em; }
@@ -865,8 +868,8 @@ button:focus-visible {
   gap: 12px;
   font: var(--font-meta);
 }
-.detail-meta-label { color: #94a3b8; min-width: 110px; }
-.detail-meta-value { color: #f1f5f9; text-align: left; line-height: 1.55; flex: 1; }
+.detail-meta-label { color: #a9bbd1; min-width: 110px; }
+.detail-meta-value { color: #f8fbff; text-align: left; line-height: 1.55; flex: 1; }
 .detail-min-row { gap: 8px; }
 .detail-min-row .detail-meta-value { text-align: left; font: 500 13px/1.6 Inter, Arial, sans-serif; color: #e2e8f0; }
 .detail-min-row .detail-action-link { overflow-wrap: anywhere; }
@@ -923,15 +926,7 @@ button:focus-visible {
   color: var(--state-error-text);
 }
 #loading-indicator {
-  position: static;
-  z-index: auto;
-  border-radius: var(--radius-pill);
-  padding: 4px 10px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  background: rgba(148, 163, 184, 0.12);
-  color: #dbeafe;
-  font: var(--font-caption);
-  width: fit-content;
+  display: none !important;
 }
 .status-inline-loading { margin: 0 0 6px auto; }
 .offline-status {

@@ -1,8 +1,8 @@
-const CACHE_VERSION = '2026-04-02-v5';
+const CACHE_VERSION = '2026-04-03-v6';
 const STATIC_CACHE = `artemis-static-${CACHE_VERSION}`;
 const DATA_CACHE = `artemis-data-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `artemis-runtime-${CACHE_VERSION}`;
-const MAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+const MAP_STYLE_URL = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
 const MAPLIBRE_SCRIPT_URL = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js';
 const MAPLIBRE_STYLE_URL = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css';
 const OFFLINE_STYLE = {
@@ -15,7 +15,7 @@ const OFFLINE_STYLE = {
     {
       id: 'background',
       type: 'background',
-      paint: { 'background-color': '#e5e7eb' }
+      paint: { 'background-color': '#0b1220' }
     }
   ]
 };
