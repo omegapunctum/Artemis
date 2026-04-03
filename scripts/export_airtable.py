@@ -834,7 +834,7 @@ def validate_feature(mapped: Dict[str, Any], layer_ids: set[str], warnings: List
     if mapped.get("coordinates_confidence") not in ALLOWED_COORDINATES_CONFIDENCE:
         critical("coordinates_confidence", "invalid_coordinates_confidence")
     if mapped.get("coordinates_source") and mapped.get("coordinates_source") not in ALLOWED_COORDINATES_SOURCES:
-        warning("coordinates_source", "invalid_coordinates_source")
+        critical("coordinates_source", "invalid_coordinates_source")
     if mapped.get("image_url") and not is_valid_url(mapped.get("image_url")):
         critical("image_url", "invalid_image_url")
     layer_id = mapped.get("layer_id")

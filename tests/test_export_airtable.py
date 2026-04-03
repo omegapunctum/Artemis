@@ -84,13 +84,13 @@ class ExportAirtableIdempotencyTests(unittest.TestCase):
         )
         self.assertEqual(mapped["layer_id"], "roman_empire")
 
-    def test_coordinates_source_is_non_fatal(self):
+    def test_coordinates_source_invalid_is_rejected(self):
         mapped = self._build_mapped()
         warnings = []
         errors = []
         is_valid = validate_feature(mapped, {"roman_empire"}, warnings, errors)
-        self.assertTrue(is_valid)
-        self.assertFalse([e for e in errors if e.get("severity") == "critical"])
+        self.assertFalse(is_valid)
+        self.assertTrue(any(e.get("reason") == "invalid_coordinates_source" for e in errors))
 
     def test_missing_id_rejected(self):
         warnings = []
