@@ -44,7 +44,7 @@ jobs:
             exit 1
           fi
 
-      - name: Release guard: validate features.geojson
+      - name: "Release guard: validate features.geojson"
         run: |
           python - <<'PY'
           import json
