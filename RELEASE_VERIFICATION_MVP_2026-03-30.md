@@ -3,8 +3,8 @@
 ## Canonical backend entrypoint
 - Production backend runtime: `uvicorn app.main:app`
 - Canonical API base path: `/api/*`
-- Transitional shim: `api/main.py` (only compatibility import, no own routes).
-- Transitional removal plan: delete `api/main.py` after deployment/runtime configs stop referencing `api.main:app`.
+- Transitional shim was present during migration (compatibility import, no own routes).
+- Transitional removal plan completed after deployment/runtime configs migrated.
 
 ## Legacy consolidation result
 
@@ -22,7 +22,7 @@
   - `api/models.py`
   - `api/schemas.py`
   - `api/routes/*`
-- Kept only compatibility shim `api/main.py` with explicit `[TODO: legacy cleanup reason]` marker.
+- Kept only compatibility shim during migration with explicit legacy cleanup marker.
 
 ## Smoke checks (manual + automated)
 
@@ -41,7 +41,7 @@
 7. Service worker private/auth API bypass cache
 
 ## Known risks
-1. Transitional `api/main.py` shim can hide stale infra config until cleanup is completed.
+1. Transitional compatibility shim can hide stale infra config until cleanup is completed.
 2. End-to-end browser smoke (offline/auth UI edge scenarios) remains manual.
 3. Airtable publish behavior in real network depends on valid external env config.
 

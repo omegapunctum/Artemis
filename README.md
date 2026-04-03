@@ -47,8 +47,7 @@ Vanilla JavaScript (no frameworks):
 - Upload API (images)
 - Moderation API (review + publish)
 - Airtable integration (publish pipeline)
-
-> Legacy note: `api/main.py` is a temporary compatibility shim for old runtime configs and should be removed after infra migration.
+- Upload lifecycle cleanup: orphan `/uploads/*` files are cleaned safely when drafts are updated/deleted and by periodic orphan scan.
 
 ### CI/CD
 - GitHub Actions
@@ -84,13 +83,17 @@ Vanilla JavaScript (no frameworks):
 ### Requirements
 - Python 3.11+
 - FastAPI backend
+- Dependencies are pinned in `requirements.txt` for reproducible local/CI/prod environments.
+
+Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
 ### Run backend
 ```bash
 uvicorn app.main:app --reload --port 8001
 ```
-
-Do not run backend via `api.main:app` — `api/` is legacy compatibility only.
 
 ### Run frontend
 ```bash

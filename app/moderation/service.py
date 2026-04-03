@@ -29,7 +29,7 @@ DEFAULT_MODERATOR_EMAILS_ENV = "MODERATOR_EMAILS"
 DEFAULT_LAYER_ID = "ugc"
 DEFAULT_LAYER_TYPE = "point"
 DEFAULT_COORDINATES_CONFIDENCE = "exact"
-DEFAULT_COORDINATES_SOURCE = "ugc"
+DEFAULT_COORDINATES_SOURCE = "expert estimate"
 DEFAULT_SOURCE_URL = "https://ugc.local/source"
 DEFAULT_SOURCE_LICENSE = "CC BY"
 AIRTABLE_EXTERNAL_ID_FIELD = os.getenv("AIRTABLE_EXTERNAL_ID_FIELD", "external_id")
@@ -42,6 +42,17 @@ PUBLISH_STATUS_FAILED = "failed"
 logger = logging.getLogger(__name__)
 _publish_locks: dict[int, threading.Lock] = {}
 _publish_locks_guard = threading.Lock()
+
+
+def normalize_coordinates_source(value: Any) -> str:
+    raw = str(value).strip() if value is not None else ""
+    if not raw:
+        return DEFAULT_COORDINATES_SOURCE
+
+    aliases = {
+        "ugc": "expert estimate",
+    }
+    return aliases.get(raw.lower(), raw)
 
 
 def is_moderator(user: User) -> bool:
@@ -300,7 +311,7 @@ def build_airtable_fields(draft: Draft) -> dict[str, Any]:
         "layer_id": DEFAULT_LAYER_ID,
         "layer_type": draft_payload.get("layer_type") or DEFAULT_LAYER_TYPE,
         "coordinates_confidence": draft_payload.get("coordinates_confidence") or DEFAULT_COORDINATES_CONFIDENCE,
-        "coordinates_source": draft_payload.get("coordinates_source") or DEFAULT_COORDINATES_SOURCE,
+        "coordinates_source": normalize_coordinates_source(draft_payload.get("coordinates_source")),
         "name_en": draft_payload.get("name_en"),
         "date_start": draft_payload.get("date_start"),
         "date_end": None,

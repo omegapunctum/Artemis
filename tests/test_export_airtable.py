@@ -1,6 +1,9 @@
 import unittest
 
 from scripts.export_airtable import (
+    aggregate_issues,
+    build_geojson_features,
+    build_validation_report,
     get_canonical_publish_id,
     get_dedupe_key,
     get_origin_key,
@@ -21,7 +24,7 @@ class ExportAirtableIdempotencyTests(unittest.TestCase):
             "latitude": 10.0,
             "_invalid_coordinates": False,
             "source_license": "CC BY",
-            "coordinates_source": "UNESCO / Wikipedia",
+            "coordinates_source": "expert estimate",
             "layer_id": "roman_empire",
             "coordinates_confidence": "exact",
             "layer_type": "biography",
@@ -85,12 +88,20 @@ class ExportAirtableIdempotencyTests(unittest.TestCase):
         self.assertEqual(mapped["layer_id"], "roman_empire")
 
     def test_coordinates_source_invalid_is_rejected(self):
-        mapped = self._build_mapped()
+        mapped = self._build_mapped(coordinates_source="Unknown source")
         warnings = []
         errors = []
         is_valid = validate_feature(mapped, {"roman_empire"}, warnings, errors)
         self.assertFalse(is_valid)
         self.assertTrue(any(e.get("reason") == "invalid_coordinates_source" for e in errors))
+
+    def test_coordinates_source_allowed_is_not_rejected(self):
+        mapped = self._build_mapped(coordinates_source="expert estimate")
+        warnings = []
+        errors = []
+        is_valid = validate_feature(mapped, {"roman_empire"}, warnings, errors)
+        self.assertTrue(is_valid)
+        self.assertFalse(any(e.get("reason") == "invalid_coordinates_source" for e in errors))
 
     def test_missing_id_rejected(self):
         warnings = []
@@ -155,6 +166,110 @@ class ExportAirtableIdempotencyTests(unittest.TestCase):
         errors = []
         self.assertFalse(validate_feature(self._build_mapped(latitude=None), {"roman_empire"}, warnings, errors))
         self.assertTrue(any(e.get("reason") == "missing_geometry_coordinate" for e in errors))
+
+
+class ExportAirtablePipelineTests(unittest.TestCase):
+    def _feature_record(self, *, record_id: str, validated: bool = True, coordinates_source: str = "UNESCO / Wikipedia"):
+        return {
+            "id": record_id,
+            "fields": {
+                "layer_id": ["recLayer1"],
+                "layer_type_enum": "biography",
+                "name_ru": f"Запись {record_id}",
+                "date_start": "1348",
+                "longitude": 10.0,
+                "latitude": 10.0,
+                "validated": validated,
+                "source_license_enum": "CC BY",
+                "coordinates_confidence_enum": "exact",
+                "source_url": "https://example.com/source",
+                "coordinates_source": coordinates_source,
+            },
+        }
+
+    def _run_pipeline(self, records):
+        warnings = []
+        errors = []
+        linked_layers, layers = map_layers(
+            [{"id": "recLayer1", "fields": {"layer_id": "roman_empire", "name_ru": "Рим", "color_hex": "#112233", "is_enabled": True}}]
+        )
+        mapped = [map_record(record, warnings, linked_layers) for record in records]
+        valid_layer_ids = {layer["layer_id"] for layer in layers}
+
+        valid_features = []
+        rejected = []
+        for item in mapped:
+            if item.get("validated") is not True:
+                rejected.append({"id": item.get("id"), "reasons": ["not_validated"]})
+                continue
+            record_errors_start = len(errors)
+            if not validate_feature(item, valid_layer_ids, warnings, errors):
+                reasons = [
+                    issue.get("reason")
+                    for issue in errors[record_errors_start:]
+                    if issue.get("severity") == "critical" and issue.get("id") == (item.get("id") or "<missing>")
+                ]
+                rejected.append({"id": item.get("id"), "reasons": reasons or ["validation_failed"]})
+                continue
+            valid_features.append(item)
+
+        geojson = build_geojson_features(valid_features, warnings, errors)
+        validation_report = build_validation_report(
+            total_records=len(records),
+            valid_records=len(valid_features),
+            skipped_records=len(records) - len(valid_features),
+            warnings=warnings,
+            errors=errors,
+        )
+        export_meta = {
+            "records_total_source": len(records),
+            "records_exported": len(valid_features),
+            "records_geojson": len(geojson["features"]),
+            "errors": len(errors),
+            "warnings": len(warnings),
+            "error_stats": aggregate_issues(errors),
+            "warning_stats": aggregate_issues(warnings),
+        }
+        return geojson, rejected, validation_report, export_meta
+
+    def test_happy_path_validated_record_is_in_geojson(self):
+        geojson, rejected, report, meta = self._run_pipeline([self._feature_record(record_id="recA")])
+        self.assertEqual(geojson["type"], "FeatureCollection")
+        self.assertEqual(len(geojson["features"]), 1)
+        self.assertEqual(geojson["features"][0]["id"], "recA")
+        self.assertEqual(rejected, [])
+        self.assertEqual(report["valid_records"], 1)
+        self.assertEqual(meta["records_geojson"], 1)
+
+    def test_mixed_path_has_validated_and_rejected(self):
+        geojson, rejected, report, meta = self._run_pipeline(
+            [
+                self._feature_record(record_id="recA"),
+                self._feature_record(record_id="recB", coordinates_source="broken-source"),
+            ]
+        )
+        self.assertEqual(len(geojson["features"]), 1)
+        self.assertEqual(len(rejected), 1)
+        self.assertEqual(rejected[0]["id"], "recB")
+        self.assertIn("invalid_coordinates_source", rejected[0]["reasons"])
+        self.assertEqual(report["valid_records"], 1)
+        self.assertEqual(report["skipped_records"], 1)
+        self.assertEqual(meta["records_exported"], 1)
+        self.assertEqual(meta["records_total_source"], 2)
+
+    def test_empty_valid_path_keeps_empty_geojson_and_consistent_meta(self):
+        geojson, rejected, report, meta = self._run_pipeline(
+            [self._feature_record(record_id="recA", coordinates_source="broken-source")]
+        )
+        self.assertEqual(geojson["features"], [])
+        self.assertEqual(len(rejected), 1)
+        self.assertEqual(report["total_records"], 1)
+        self.assertEqual(report["valid_records"], 0)
+        self.assertEqual(report["skipped_records"], 1)
+        self.assertEqual(meta["records_total_source"], 1)
+        self.assertEqual(meta["records_exported"], 0)
+        self.assertEqual(meta["records_geojson"], 0)
+        self.assertEqual(meta["error_stats"].get("invalid_coordinates_source"), 1)
 
 
 if __name__ == "__main__":

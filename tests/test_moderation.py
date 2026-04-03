@@ -29,6 +29,7 @@ from app.moderation.service import (  # noqa: E402
     reject_draft,
     submit_draft_for_review,
 )
+from scripts.export_airtable import build_geojson_features, validate_feature  # noqa: E402
 
 init_auth_db()
 init_drafts_db()
@@ -178,6 +179,66 @@ class ModerationFlowTests(unittest.TestCase):
         self.assertIsNone(payload['image_url'])
         self.assertEqual(payload['layer_id'], 'ugc')
         self.assertEqual(payload['external_id'], 'draft:None')
+        self.assertEqual(payload['coordinates_source'], 'expert estimate')
+
+    def test_build_airtable_fields_normalizes_legacy_coordinates_source(self):
+        user = self.make_user('legacy-source@example.com')
+        draft = create_draft(
+            self.db,
+            user,
+            'Legacy source',
+            'Desc',
+            {'type': 'Point', 'coordinates': [37.6173, 55.7558]},
+            payload={
+                'name_ru': 'Legacy source',
+                'date_start': '1500',
+                'source_url': 'https://example.com/source',
+                'layer_type': 'biography',
+                'source_license': 'CC BY',
+                'coordinates_confidence': 'exact',
+                'coordinates_source': 'ugc',
+            },
+        )
+        mapped = build_airtable_fields(draft)
+        self.assertEqual(mapped['coordinates_source'], 'expert estimate')
+
+        warnings = []
+        errors = []
+        validate_feature(mapped, {'ugc'}, warnings, errors)
+        self.assertFalse(any(e.get('reason') == 'invalid_coordinates_source' for e in errors))
+
+    def test_publish_payload_passes_etl_and_is_exported_to_geojson(self):
+        user = self.make_user('contract-e2e@example.com')
+        draft = create_draft(
+            self.db,
+            user,
+            'Contract feature',
+            'Desc',
+            {'type': 'Point', 'coordinates': [37.6173, 55.7558]},
+            payload={
+                'name_ru': 'Contract feature',
+                'date_start': '1500',
+                'source_url': 'https://example.com/source',
+                'layer_type': 'biography',
+                'source_license': 'CC BY',
+                'coordinates_confidence': 'exact',
+            },
+        )
+        mapped = build_airtable_fields(draft)
+        mapped["_raw_date_start_present"] = True
+        mapped["_invalid_coordinates"] = False
+        mapped["validated"] = True
+        mapped["id"] = mapped["external_id"]
+        mapped["airtable_record_id"] = mapped["external_id"]
+
+        warnings = []
+        errors = []
+        self.assertTrue(validate_feature(mapped, {'ugc'}, warnings, errors))
+
+        geojson = build_geojson_features([mapped], warnings, errors)
+        self.assertEqual(geojson["type"], "FeatureCollection")
+        self.assertEqual(len(geojson["features"]), 1)
+        self.assertEqual(geojson["features"][0]["properties"]["id"], mapped["id"])
 
     def test_normalized_id_same_payload_same_hash_slight_change_new_hash(self):
         user = self.make_user('hash@example.com')

@@ -24,7 +24,10 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install requests
+        run: pip install -r requirements.txt pytest
+
+      - name: Run pytest
+        run: pytest tests/
 
       - name: Ensure data directory exists
         run: mkdir -p data

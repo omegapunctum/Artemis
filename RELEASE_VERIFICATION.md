@@ -1,7 +1,7 @@
 # MVP Release Verification
 
 ## Checked blocks
-- [x] Canonical backend entrypoint: `app.main:app` (не `api.main:app`)
+- [x] Canonical backend entrypoint: `app.main:app`
 - [x] Auth flow: login/refresh/logout + single 401 retry path
 - [x] Moderation/publish identity: `normalized_id` as canonical key, source ids as references
 - [x] Export pipeline: `features.geojson`, `rejected.json`, `validation_report.json` generation

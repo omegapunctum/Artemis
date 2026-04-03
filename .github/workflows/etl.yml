@@ -20,7 +20,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests
+          pip install -r requirements.txt pytest
+
+      - name: Run pytest
+        run: |
+          pytest tests/
 
       - name: Run dry-run export
         run: |

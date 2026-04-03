@@ -220,8 +220,18 @@ def is_valid_url(value: Optional[str]) -> bool:
 
 def normalize_coordinates_source(value: Any) -> Optional[str]:
     if isinstance(value, list):
-        return safe_str(value[0]) if value else None
-    return safe_str(value)
+        raw = safe_str(value[0]) if value else None
+    else:
+        raw = safe_str(value)
+    if raw is None:
+        return None
+
+    normalized = " ".join(raw.split())
+    aliases = {
+        "unesco / wikipedia": "Wikipedia",
+        "unesco/wikipedia": "Wikipedia",
+    }
+    return aliases.get(normalized.lower(), normalized)
 
 
 def normalize_single_select(value: Any) -> Optional[str]:

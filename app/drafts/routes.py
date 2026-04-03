@@ -9,6 +9,7 @@ from app.drafts.schemas import DraftCreate, DraftResponse, DraftUpdate
 from app.drafts.service import Draft, create_draft, delete_draft, get_user_draft, list_drafts, update_draft
 from app.observability import internal_error_response, log_event
 from app.security.rate_limit import rate_limit
+from app.uploads.service import cleanup_unreferenced_upload_urls, collect_draft_upload_urls
 
 router = APIRouter(prefix="/drafts", tags=["drafts"])
 
@@ -188,6 +189,7 @@ def update_draft_endpoint(
     request.state.user_id = current_user.id
     try:
         draft = get_user_draft(db, draft_id, current_user)
+        previous_upload_urls = collect_draft_upload_urls(draft)
         payload_changes = _serialize_draft_payload(payload.model_dump(exclude_unset=True))
         requested_status = payload_changes.pop("status", None)
 
@@ -213,6 +215,8 @@ def update_draft_endpoint(
             allow_system_fields = True
 
         updated = update_draft(db, draft, changes=storage_changes, allow_system_fields=allow_system_fields)
+        updated_upload_urls = collect_draft_upload_urls(updated)
+        cleanup_unreferenced_upload_urls(db, previous_upload_urls - updated_upload_urls)
         log_event(logging.INFO, 'draft.update', route=request.url.path, request_id=request.state.request_id, user_id=current_user.id, draft_id=updated.id)
         return serialize_draft_for_ui(updated)
     except HTTPException:
@@ -233,7 +237,9 @@ def delete_draft_endpoint(
     request.state.user_id = current_user.id
     try:
         draft = get_user_draft(db, draft_id, current_user)
+        upload_urls = collect_draft_upload_urls(draft)
         delete_draft(db, draft)
+        cleanup_unreferenced_upload_urls(db, upload_urls)
         log_event(logging.INFO, 'draft.delete', route=request.url.path, request_id=request.state.request_id, user_id=current_user.id, draft_id=draft_id)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except HTTPException:

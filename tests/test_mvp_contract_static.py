@@ -3,7 +3,7 @@ import json
 import logging
 from pathlib import Path
 
-from scripts.export_airtable import get_canonical_publish_id, get_dedupe_key, get_origin_key, validate_feature
+from scripts.export_airtable import build_geojson_features, get_canonical_publish_id, get_dedupe_key, get_origin_key, validate_feature
 
 
 class MvpContractStaticTests(unittest.TestCase):
@@ -67,6 +67,33 @@ class MvpContractStaticTests(unittest.TestCase):
         payload = json.loads(content)
         self.assertEqual(payload.get("type"), "FeatureCollection")
         self.assertIsInstance(payload.get("features"), list)
+
+    def test_validated_layer_not_empty_when_valid_input_exists(self):
+        mapped_valid = {
+            'id': 'recValid',
+            'airtable_record_id': 'recValid',
+            'external_id': 'draft:42',
+            'source_draft_id': 'draft:42',
+            'normalized_id': 'norm42',
+            'name_ru': 'Feature',
+            'validated': True,
+            'source_url': 'https://example.com/source',
+            'source_license': 'CC BY',
+            'coordinates_confidence': 'exact',
+            'coordinates_source': 'Wikipedia',
+            'layer_id': 'roman_empire',
+            'layer_type': 'biography',
+            'date_start': '1900',
+            '_raw_date_start_present': True,
+            'longitude': 30.5,
+            'latitude': 50.4,
+            '_invalid_coordinates': False,
+        }
+        warnings, errors = [], []
+        self.assertTrue(validate_feature(mapped_valid, {'roman_empire'}, warnings, errors))
+        geojson = build_geojson_features([mapped_valid], warnings, errors)
+        self.assertEqual(geojson.get("type"), "FeatureCollection")
+        self.assertGreater(len(geojson.get("features", [])), 0)
 
     def test_service_worker_does_not_cache_api_routes(self):
         source = Path("sw.js").read_text(encoding="utf-8")

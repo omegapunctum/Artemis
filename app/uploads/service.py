@@ -18,6 +18,7 @@ ALLOWED_CONTENT_TYPES = {
 ALLOWED_LICENSES = {"CC0", "CC BY", "CC BY-SA", "PD"}
 UPLOADS_ROOT = Path("uploads")
 ORPHAN_MAX_AGE_HOURS = 24
+UPLOADS_URL_PREFIX = "/uploads/"
 
 
 def _save_file_for_user(user: User, file: UploadFile) -> str:
@@ -56,22 +57,86 @@ def save_uploaded_file(user: User, file: UploadFile, license_value: str | None) 
 
 
 def save_draft_image(db: Session, draft: Draft, user: User, file: UploadFile, request=None) -> str:
+    before_urls = collect_draft_upload_urls(draft)
     image_url = _save_file_for_user(user, file)
-    update_draft(db, draft, changes={"image_url": image_url})
+    updated = update_draft(db, draft, changes={"image_url": image_url})
+    after_urls = collect_draft_upload_urls(updated)
+    cleanup_unreferenced_upload_urls(db, before_urls - after_urls)
     return image_url
+
+
+def _extract_upload_url(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+    candidate = value.strip()
+    if not candidate.startswith(UPLOADS_URL_PREFIX):
+        return None
+    return candidate
+
+
+def collect_draft_upload_urls(draft: Draft | None) -> set[str]:
+    urls: set[str] = set()
+    if draft is None:
+        return urls
+
+    image_url = _extract_upload_url(getattr(draft, "image_url", None))
+    if image_url:
+        urls.add(image_url)
+
+    payload = getattr(draft, "payload", None)
+    if isinstance(payload, dict):
+        payload_image_url = _extract_upload_url(payload.get("image_url"))
+        if payload_image_url:
+            urls.add(payload_image_url)
+    return urls
 
 
 def _collect_active_upload_urls(db: Session) -> set[str]:
     active_urls: set[str] = set()
     rows = db.query(Draft.image_url, Draft.payload).all()
     for image_url, payload in rows:
-        if image_url:
-            active_urls.add(str(image_url))
+        normalized_image_url = _extract_upload_url(image_url)
+        if normalized_image_url:
+            active_urls.add(normalized_image_url)
         if isinstance(payload, dict):
-            payload_image_url = payload.get("image_url")
+            payload_image_url = _extract_upload_url(payload.get("image_url"))
             if payload_image_url:
-                active_urls.add(str(payload_image_url))
+                active_urls.add(payload_image_url)
     return active_urls
+
+
+def _upload_url_to_path(upload_url: str) -> Path | None:
+    if not upload_url.startswith(UPLOADS_URL_PREFIX):
+        return None
+    relative = upload_url.removeprefix(UPLOADS_URL_PREFIX).strip("/")
+    if not relative:
+        return None
+    path = (UPLOADS_ROOT / relative).resolve()
+    root = UPLOADS_ROOT.resolve()
+    if root == path or root not in path.parents:
+        return None
+    return path
+
+
+def cleanup_unreferenced_upload_urls(db: Session, upload_urls: set[str] | list[str] | tuple[str, ...]) -> int:
+    if not upload_urls:
+        return 0
+
+    active_urls = _collect_active_upload_urls(db)
+    removed_count = 0
+    for upload_url in set(upload_urls):
+        normalized_url = _extract_upload_url(upload_url)
+        if not normalized_url or normalized_url in active_urls:
+            continue
+        file_path = _upload_url_to_path(normalized_url)
+        if file_path is None:
+            continue
+        try:
+            file_path.unlink(missing_ok=True)
+            removed_count += 1
+        except OSError:
+            continue
+    return removed_count
 
 
 def cleanup_orphan_uploads(db: Session, *, now: datetime | None = None, max_age_hours: int = ORPHAN_MAX_AGE_HOURS) -> int:
