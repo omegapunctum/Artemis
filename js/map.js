@@ -6,6 +6,7 @@ const SELECTED_LAYER_ID = 'artemis-points-selected';
 const HOVER_LAYER_ID = 'artemis-points-hover';
 const CLUSTER_LAYER_ID = 'artemis-clusters';
 const CLUSTER_COUNT_LAYER_ID = 'artemis-cluster-count';
+const HEATMAP_LAYER_ID = 'artemis-heatmap';
 const POPUP_CLASS_NAME = 'artemis-popup';
 
 // Нормализует FeatureCollection и исключает битые объекты из карты.
@@ -84,7 +85,10 @@ export function initMap(containerId, features) {
     featureClickHandler: null,
     selectedFeatureId: null,
     hoveredFeatureId: null,
-    currentYearFilter: null
+    currentYearFilter: null,
+    displayMode: 'points',
+    lastFeatureSetSignature: '',
+    lastLayerFiltersSerialized: new Map()
   };
 
   map.on('load', () => {
@@ -100,11 +104,16 @@ export function initMap(containerId, features) {
 
 // Обновляет данные source без пересоздания карты.
 export function updateMapData(map, featureCollection, options = {}) {
+  map.__artemis = map.__artemis || {};
+  const featureSetSignature = buildFeatureSetSignature(featureCollection);
+  if (featureSetSignature && map.__artemis.lastFeatureSetSignature === featureSetSignature && !options.force) {
+    return map.__artemis.pendingFeatureCollection || featureCollection;
+  }
   const buildResult = buildMapFeatureCollection(featureCollection);
   const mapData = buildResult.collection;
-  map.__artemis = map.__artemis || {};
   map.__artemis.lastBuildDiagnostics = buildResult.diagnostics;
   map.__artemis.pendingFeatureCollection = mapData;
+  map.__artemis.lastFeatureSetSignature = featureSetSignature;
   const source = map.getSource(SOURCE_ID);
   if (source) {
     source.setData(mapData);
@@ -152,22 +161,38 @@ export function setMapFeatureHoverHandler(map, handler) {
 export function setMapLayerFilter(map, filterExpression = null) {
   if (!map || !map.getLayer) return;
   map.__artemis = map.__artemis || {};
+  const nextSerialized = serializeFilterExpression(filterExpression);
+  if (map.__artemis.currentYearFilterSerialized === nextSerialized) return;
   map.__artemis.currentYearFilter = filterExpression;
+  map.__artemis.currentYearFilterSerialized = nextSerialized;
   applyLayerFilters(map);
 }
 
 export function setSelectedFeatureId(map, featureId = null) {
   if (!map || !map.getLayer) return;
   map.__artemis = map.__artemis || {};
-  map.__artemis.selectedFeatureId = featureId ? String(featureId) : null;
+  const nextValue = featureId ? String(featureId) : null;
+  if (map.__artemis.selectedFeatureId === nextValue) return;
+  map.__artemis.selectedFeatureId = nextValue;
   applyLayerFilters(map);
 }
 
 export function setHoveredFeatureId(map, featureId = null) {
   if (!map || !map.getLayer) return;
   map.__artemis = map.__artemis || {};
-  map.__artemis.hoveredFeatureId = featureId ? String(featureId) : null;
+  const nextValue = featureId ? String(featureId) : null;
+  if (map.__artemis.hoveredFeatureId === nextValue) return;
+  map.__artemis.hoveredFeatureId = nextValue;
   applyLayerFilters(map);
+}
+
+export function setMapDisplayMode(map, mode = 'points') {
+  if (!map || !map.getLayer) return;
+  map.__artemis = map.__artemis || {};
+  const nextMode = mode === 'heatmap' ? 'heatmap' : 'points';
+  if (map.__artemis.displayMode === nextMode) return;
+  map.__artemis.displayMode = nextMode;
+  applyDisplayMode(map);
 }
 
 // Открывает popup и переводит карту к объекту, если геометрия существует.
@@ -223,6 +248,38 @@ function loadGeoJSON(map, featureCollection) {
     });
   }
 
+  map.addLayer({
+    id: HEATMAP_LAYER_ID,
+    type: 'heatmap',
+    source: SOURCE_ID,
+    layout: {
+      visibility: 'none'
+    },
+    paint: {
+      'heatmap-weight': ['interpolate', ['linear'], ['coalesce', ['get', 'influence_radius_km'], 1], 1, 0.2, 60, 1],
+      'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 2, 0.6, 8, 1.2],
+      'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 2, 12, 8, 32],
+      'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], 2, 0.85, 10, 0.45],
+      'heatmap-color': [
+        'interpolate',
+        ['linear'],
+        ['heatmap-density'],
+        0,
+        'rgba(15, 23, 42, 0)',
+        0.2,
+        '#1d4ed8',
+        0.4,
+        '#0ea5e9',
+        0.6,
+        '#22c55e',
+        0.8,
+        '#f59e0b',
+        1,
+        '#ef4444'
+      ]
+    }
+  });
+
   // === ИСПРАВЛЕННЫЙ ОСНОВНОЙ СЛОЙ ТОЧЕК ===
   const pointLayer = {
     id: LAYER_ID,
@@ -270,6 +327,7 @@ function loadGeoJSON(map, featureCollection) {
     filter: ['==', ['get', '_ui_id'], '__none__']
   });
   applyLayerFilters(map);
+  applyDisplayMode(map);
   // =========================================
 }
 
@@ -278,26 +336,68 @@ function applyLayerFilters(map) {
   const selectedFeatureId = map?.__artemis?.selectedFeatureId;
   const hoveredFeatureId = map?.__artemis?.hoveredFeatureId;
   if (map.getLayer(CLUSTER_LAYER_ID)) {
-    map.setFilter(CLUSTER_LAYER_ID, combineFilters([timelineFilter, ['has', 'point_count']]));
+    setLayerFilterIfChanged(map, CLUSTER_LAYER_ID, combineFilters([timelineFilter, ['has', 'point_count']]));
   }
   if (map.getLayer(CLUSTER_COUNT_LAYER_ID)) {
-    map.setFilter(CLUSTER_COUNT_LAYER_ID, combineFilters([timelineFilter, ['has', 'point_count']]));
+    setLayerFilterIfChanged(map, CLUSTER_COUNT_LAYER_ID, combineFilters([timelineFilter, ['has', 'point_count']]));
   }
   if (map.getLayer(LAYER_ID)) {
-    map.setFilter(LAYER_ID, combineFilters([timelineFilter, ['!', ['has', 'point_count']]]));
+    setLayerFilterIfChanged(map, LAYER_ID, combineFilters([timelineFilter, ['!', ['has', 'point_count']]]));
+  }
+  if (map.getLayer(HEATMAP_LAYER_ID)) {
+    setLayerFilterIfChanged(map, HEATMAP_LAYER_ID, combineFilters([timelineFilter, ['!', ['has', 'point_count']]]));
   }
   if (map.getLayer(SELECTED_LAYER_ID)) {
     const selectedFilter = selectedFeatureId
       ? ['==', ['get', '_ui_id'], selectedFeatureId]
       : ['==', ['get', '_ui_id'], '__none__'];
-    map.setFilter(SELECTED_LAYER_ID, combineFilters([timelineFilter, ['!', ['has', 'point_count']], selectedFilter]));
+    setLayerFilterIfChanged(map, SELECTED_LAYER_ID, combineFilters([timelineFilter, ['!', ['has', 'point_count']], selectedFilter]));
   }
   if (map.getLayer(HOVER_LAYER_ID)) {
     const hoverFilter = hoveredFeatureId
       ? ['==', ['get', '_ui_id'], hoveredFeatureId]
       : ['==', ['get', '_ui_id'], '__none__'];
-    map.setFilter(HOVER_LAYER_ID, combineFilters([timelineFilter, ['!', ['has', 'point_count']], hoverFilter]));
+    setLayerFilterIfChanged(map, HOVER_LAYER_ID, combineFilters([timelineFilter, ['!', ['has', 'point_count']], hoverFilter]));
   }
+}
+
+function applyDisplayMode(map) {
+  const mode = map?.__artemis?.displayMode === 'heatmap' ? 'heatmap' : 'points';
+  const showHeatmap = mode === 'heatmap';
+  setLayerVisibility(map, HEATMAP_LAYER_ID, showHeatmap);
+  setLayerVisibility(map, LAYER_ID, !showHeatmap);
+  setLayerVisibility(map, SELECTED_LAYER_ID, !showHeatmap);
+  setLayerVisibility(map, HOVER_LAYER_ID, !showHeatmap);
+  setLayerVisibility(map, CLUSTER_LAYER_ID, !showHeatmap);
+  setLayerVisibility(map, CLUSTER_COUNT_LAYER_ID, !showHeatmap);
+}
+
+function setLayerVisibility(map, layerId, isVisible) {
+  if (!map.getLayer(layerId)) return;
+  map.setLayoutProperty(layerId, 'visibility', isVisible ? 'visible' : 'none');
+}
+
+function setLayerFilterIfChanged(map, layerId, filterExpression) {
+  map.__artemis = map.__artemis || {};
+  if (!(map.__artemis.lastLayerFiltersSerialized instanceof Map)) {
+    map.__artemis.lastLayerFiltersSerialized = new Map();
+  }
+  const serialized = serializeFilterExpression(filterExpression);
+  if (map.__artemis.lastLayerFiltersSerialized.get(layerId) === serialized) return;
+  map.__artemis.lastLayerFiltersSerialized.set(layerId, serialized);
+  map.setFilter(layerId, filterExpression);
+}
+
+function serializeFilterExpression(expression) {
+  return expression ? JSON.stringify(expression) : '__none__';
+}
+
+function buildFeatureSetSignature(featureCollection) {
+  const features = Array.isArray(featureCollection?.features) ? featureCollection.features : [];
+  if (!features.length) return 'count:0';
+  const head = features.slice(0, 5).map((feature) => String(feature?.properties?._ui_id || '')).join('|');
+  const tail = features.slice(-5).map((feature) => String(feature?.properties?._ui_id || '')).join('|');
+  return `count:${features.length};head:${head};tail:${tail}`;
 }
 
 function combineFilters(filters) {

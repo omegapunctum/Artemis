@@ -101,3 +101,29 @@ python -m http.server 8000
 ```
 
 By default frontend tries `window.ARTEMIS_API_BASE`/meta override, then `/api`.
+
+### Import / Export datasets (local ETL input/output)
+Without direct Airtable writes, you can import prepared CSV/GeoJSON datasets into local `data/*`
+using the same validation contract as ETL:
+
+```bash
+python scripts/import_features.py import --input ./dataset.csv --format csv --layers data/layers.json --out-dir data
+python scripts/import_features.py import --input ./dataset.geojson --format geojson --layers data/layers.json --out-dir data
+```
+
+Import output:
+- `data/features.json` (validated records)
+- `data/features.geojson` (validated RFC 7946 FeatureCollection)
+- `data/rejected.json` (invalid records + reasons)
+
+Export validated dataset for external usage:
+
+```bash
+python scripts/import_features.py export --geojson-in data/features.geojson --out-dir data/export
+```
+
+Optional raw export (if `data/features.json` exists):
+
+```bash
+python scripts/import_features.py export --geojson-in data/features.geojson --raw-json-in data/features.json --include-raw --out-dir data/export
+```

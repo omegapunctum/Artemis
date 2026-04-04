@@ -3,11 +3,26 @@ import { showError, clearError, showLoading, hideLoading, showSystemMessage } fr
 // Кеш, чтобы не делать повторные запросы к локальным файлам.
 let featuresCache = null;
 let layersCache = null;
+let coursesCache = null;
 let featuresInFlight = null;
 let layersInFlight = null;
+let coursesInFlight = null;
 const DATA_BASE_PATH = 'data/';
 let hasShownCachedMessage = false;
 let hasShownNoCacheMessage = false;
+
+export function getRecentFeatures(limit = 12, featureCollection = null) {
+  const sourceFeatures = Array.isArray(featureCollection?.features)
+    ? featureCollection.features
+    : Array.isArray(featuresCache?.features)
+      ? featuresCache.features
+      : [];
+  const safeLimit = Math.max(1, Number(limit) || 12);
+  return sourceFeatures
+    .slice()
+    .sort((left, right) => getFeatureRecencyTimestamp(right) - getFeatureRecencyTimestamp(left))
+    .slice(0, safeLimit);
+}
 
 export async function loadFeatures() {
   if (featuresCache) return featuresCache;
@@ -87,6 +102,34 @@ export async function loadLayers() {
   }
 }
 
+export async function loadCourses() {
+  if (coursesCache) return coursesCache;
+  if (coursesInFlight) return coursesInFlight;
+
+  showLoading();
+  coursesInFlight = (async () => {
+    const response = await fetchWithRetry(`${DATA_BASE_PATH}courses.json`);
+    if (!response.ok) {
+      throw new Error(`Не удалось загрузить courses.json: HTTP ${response.status}`);
+    }
+    const payload = await response.json();
+    coursesCache = Array.isArray(payload?.courses) ? payload : { courses: [] };
+    clearError();
+    return coursesCache;
+  })();
+
+  try {
+    return await coursesInFlight;
+  } catch (error) {
+    console.error('Ошибка при загрузке data/courses.json:', error);
+    showSystemMessage('Courses временно недоступны', { variant: 'warning', timeout: 2800 });
+    throw createDataLoadError('courses.json', error);
+  } finally {
+    coursesInFlight = null;
+    hideLoading();
+  }
+}
+
 async function fetchWithRetry(url, retryDelay = 1000) {
   try {
     const firstResponse = await fetch(url);
@@ -128,4 +171,28 @@ function createDataLoadError(resourceName, cause) {
   error.resource = resourceName;
   error.cause = cause;
   return error;
+}
+
+function getFeatureRecencyTimestamp(feature) {
+  const props = feature?.properties || {};
+  const candidates = [
+    props.created_at,
+    props.updated_at,
+    props.date_start
+  ];
+  for (const value of candidates) {
+    const ts = toTimestamp(value);
+    if (Number.isFinite(ts)) return ts;
+  }
+  return Number.NEGATIVE_INFINITY;
+}
+
+function toTimestamp(value) {
+  if (value === null || value === undefined || value === '') return Number.NaN;
+  const text = String(value).trim();
+  const direct = Date.parse(text);
+  if (Number.isFinite(direct)) return direct;
+  const year = Number.parseInt(text, 10);
+  if (Number.isFinite(year)) return Date.UTC(year, 0, 1);
+  return Number.NaN;
 }

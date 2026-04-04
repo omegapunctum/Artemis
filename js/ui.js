@@ -1,7 +1,8 @@
-import { loadLayers } from './data.js';
-import { updateMapData, setLayerLookup, focusFeatureOnMap, getMapFeatureCount, getMapBuildDiagnostics, setMapFeatureClickHandler, setMapFeatureHoverHandler, setMapLayerFilter, setSelectedFeatureId, setHoveredFeatureId } from './map.js';
+import { loadLayers, loadCourses, getRecentFeatures } from './data.js';
+import { updateMapData, setLayerLookup, focusFeatureOnMap, getMapFeatureCount, getMapBuildDiagnostics, setMapFeatureClickHandler, setMapFeatureHoverHandler, setMapLayerFilter, setSelectedFeatureId, setHoveredFeatureId, setMapDisplayMode } from './map.js';
 import { debounce, createInlineStateBlock, showSystemMessage } from './ux.js';
 import { normalizeSafeUrl, setSafeImageSource, setSafeLink, toSafeText } from './safe-dom.js';
+import { DEFAULT_DISPLAY_MODE, aggregateFeaturesByDecade, createCoursesState, createLiveState, getSelectedCourse, moveCourseStep, selectCourse } from './state.js';
 
 let globalDataErrorRetryHandler = null;
 
@@ -65,6 +66,13 @@ export async function initUI(map, features) {
     showGlobalDataError({ message: 'Не удалось загрузить данные карты.' });
     throw error;
   }
+  let coursesPayload = { courses: [] };
+  let coursesError = '';
+  try {
+    coursesPayload = await loadCourses();
+  } catch (error) {
+    coursesError = 'Courses временно недоступны. Попробуйте позже.';
+  }
   const layerLookup = buildLayerLookup(layers, allFeatures);
   setLayerLookup(map, layers);
 
@@ -82,11 +90,16 @@ export async function initUI(map, features) {
     layersBtn: document.getElementById('layers-btn'),
     layersEntryHelper: document.getElementById('layers-entry-helper'),
     bookmarksBtn: document.getElementById('bookmarks-btn'),
+    coursesBtn: document.getElementById('courses-btn'),
+    liveBtn: document.getElementById('live-btn'),
     filtersPanel: document.getElementById('filters-panel'),
     layersPanel: document.getElementById('layers-panel'),
     bookmarksPanel: document.getElementById('bookmarks-panel'),
+    coursesPanel: document.getElementById('courses-panel'),
+    livePanel: document.getElementById('live-panel'),
     topHeader: document.getElementById('top-header'),
     topActions: document.querySelector('#top-header .top-actions'),
+    displayModeToggle: document.getElementById('display-mode-toggle'),
     overflowBtn: document.getElementById('overflow-btn'),
     timelineStart: document.getElementById('timeline-start'),
     timelineEnd: document.getElementById('timeline-end'),
@@ -138,7 +151,19 @@ export async function initUI(map, features) {
     searchResults: [],
     bookmarks: [],
     applyState: null,
-    warnings: []
+    warnings: [],
+    lastVisibilityKey: '',
+    lastRenderedCardsKey: '',
+    lastRenderedTopPanelsKey: '',
+    lastAppliedMapDataKey: '',
+    lastRenderedSearchKey: '',
+    filteredFeatureIds: [],
+    displayMode: DEFAULT_DISPLAY_MODE,
+    timeAggregation: {},
+    coursesState: createCoursesState(coursesPayload?.courses || []),
+    coursesError,
+    liveState: createLiveState(getRecentFeatures(18, { type: 'FeatureCollection', features: allFeatures })),
+    liveError: ''
   };
   state.yearBounds = years;
   initializeAnimatedPanels(elements);
@@ -154,24 +179,51 @@ export async function initUI(map, features) {
   setupOverlayManager(elements, state, map);
   setupLayerEntryHint(elements);
   setupResponsiveUi(elements, state, map);
+  ensureDisplayModeToggle(elements);
+  setupDisplayModeToggle(elements, state, map);
+  setMapDisplayMode(map, state.displayMode);
   renderTopPanels(elements, state, layers, confidenceValues, map);
   renderCardsState(elements, state);
 
   const applyState = () => {
-    state.filteredFeatures = state.allFeatures.filter((feature) => isFeatureVisible(feature, state));
-    updateMapData(map, { type: 'FeatureCollection', features: state.filteredFeatures });
+    const visibilityKey = buildVisibilityKey(state);
+    if (visibilityKey !== state.lastVisibilityKey) {
+      const nextFilteredFeatures = [];
+      const nextFilteredFeatureIds = [];
+      for (const feature of state.allFeatures) {
+        if (!isFeatureVisible(feature, state)) continue;
+        nextFilteredFeatures.push(feature);
+        nextFilteredFeatureIds.push(getFeatureUiId(feature));
+      }
+      state.filteredFeatures = nextFilteredFeatures;
+      state.filteredFeatureIds = nextFilteredFeatureIds;
+      state.timeAggregation = aggregateFeaturesByDecade(nextFilteredFeatures);
+      state.lastVisibilityKey = visibilityKey;
+    }
+
+    const mapDataKey = buildMapDataKey(state);
+    if (mapDataKey !== state.lastAppliedMapDataKey) {
+      updateMapData(map, { type: 'FeatureCollection', features: state.filteredFeatures });
+      state.lastAppliedMapDataKey = mapDataKey;
+    }
+
     setMapLayerFilter(map, buildMapYearFilter(state.currentStartYear, state.currentEndYear));
-    if (state.selectedFeatureId && !state.filteredFeatures.some((f) => getFeatureUiId(f) === state.selectedFeatureId)) {
+    const filteredIdsSet = new Set(state.filteredFeatureIds);
+    if (state.selectedFeatureId && !filteredIdsSet.has(state.selectedFeatureId)) {
       clearSelection(state, elements, map);
     }
-    if (state.hoveredFeatureId && !state.filteredFeatures.some((f) => getFeatureUiId(f) === state.hoveredFeatureId)) {
+    if (state.hoveredFeatureId && !filteredIdsSet.has(state.hoveredFeatureId)) {
       clearHoveredFeature(state, map);
     }
     setSelectedFeatureId(map, state.selectedFeatureId);
-    state.searchResults = buildSearchResults(state.filteredFeatures, state.search);
+    const searchResultsKey = `${state.search}::${visibilityKey}::${state.filteredFeatureIds.length}`;
+    if (searchResultsKey !== state.lastRenderedSearchKey) {
+      state.searchResults = buildSearchResults(state.filteredFeatures, state.search);
+      state.lastRenderedSearchKey = searchResultsKey;
+    }
     updateSearchNoResultsState(elements, state);
     renderSearchDropdown(elements, state, map);
-    renderTopPanels(elements, state, layers, confidenceValues, map);
+    renderTopPanels(elements, state, layers, confidenceValues, map, visibilityKey);
     updateFilterFeedback(elements, state);
     renderCards(elements, state, map);
     updateCounters(elements, state, map);
@@ -225,6 +277,12 @@ export async function initUI(map, features) {
   elements.filtersBtn?.addEventListener('click', () => togglePrimaryPanel(elements, state, 'filters', elements.filtersBtn));
   elements.layersBtn?.addEventListener('click', () => togglePrimaryPanel(elements, state, 'layers', elements.layersBtn));
   elements.bookmarksBtn?.addEventListener('click', () => togglePrimaryPanel(elements, state, 'bookmarks', elements.bookmarksBtn));
+  elements.coursesBtn?.addEventListener('click', () => togglePrimaryPanel(elements, state, 'courses', elements.coursesBtn));
+  elements.liveBtn?.addEventListener('click', () => {
+    const nextOpen = state.overlay.activePrimary !== 'live';
+    state.liveState.isLiveMode = nextOpen;
+    togglePrimaryPanel(elements, state, 'live', elements.liveBtn);
+  });
   elements.overflowBtn?.addEventListener('click', () => {
     if (!elements.topActions) return;
     if (state.overlay.activePrimary) closePrimaryPanel(elements, state, state.overlay.activePrimary);
@@ -310,6 +368,40 @@ function setupOnboardingOverlay(elements) {
   dismissBtn.addEventListener('click', closeOverlay);
 }
 
+function ensureDisplayModeToggle(elements) {
+  if (elements.displayModeToggle) return;
+  const host = elements.topActions || document.getElementById('top-header');
+  if (!host) return;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.id = 'display-mode-toggle';
+  button.className = 'ghost-btn';
+  button.setAttribute('aria-pressed', 'false');
+  host.appendChild(button);
+  elements.displayModeToggle = button;
+}
+
+function setupDisplayModeToggle(elements, state, map) {
+  const button = elements.displayModeToggle;
+  if (!button) return;
+  const syncLabel = () => {
+    const isHeatmap = state.displayMode === 'heatmap';
+    button.textContent = isHeatmap ? 'Heatmap' : 'Points';
+    button.setAttribute('aria-pressed', String(isHeatmap));
+    button.setAttribute('aria-label', isHeatmap ? 'Switch to points mode' : 'Switch to heatmap mode');
+  };
+  syncLabel();
+  button.addEventListener('click', () => {
+    state.displayMode = state.displayMode === 'points' ? 'heatmap' : 'points';
+    setMapDisplayMode(map, state.displayMode);
+    syncLabel();
+    showSystemMessage(state.displayMode === 'heatmap' ? 'Heatmap mode enabled' : 'Points mode enabled', {
+      variant: 'success',
+      timeout: 1600
+    });
+  });
+}
+
 function isFeatureVisible(feature, state) {
   const props = normalizeProps(feature);
   const text = state.search.toLowerCase();
@@ -329,10 +421,15 @@ function isFeatureVisible(feature, state) {
   return true;
 }
 
-function renderTopPanels(elements, state, layers, confidenceValues, map) {
+function renderTopPanels(elements, state, layers, confidenceValues, map, visibilityKey = '') {
+  const panelKey = `${visibilityKey}::${state.confidenceFilter}::${state.enabledLayerIds.size}`;
+  if (state.lastRenderedTopPanelsKey === panelKey) return;
+  state.lastRenderedTopPanelsKey = panelKey;
   renderFiltersPanel(elements, state, layers, confidenceValues);
   renderLayersPanel(elements, state, layers);
   renderBookmarksPanel(elements, state, map);
+  renderCoursesPanel(elements, state, map);
+  renderLivePanel(elements, state, map);
 }
 
 function renderFiltersPanel(elements, state, layers, confidenceValues) {
@@ -503,6 +600,200 @@ function renderBookmarksPanel(elements, state, map) {
   });
 }
 
+function renderCoursesPanel(elements, state, map) {
+  const panel = elements.coursesPanel;
+  if (!panel) return;
+  panel.replaceChildren();
+  const title = document.createElement('h3');
+  title.className = 'panel-title';
+  title.textContent = 'Courses';
+  panel.appendChild(title);
+
+  if (state.coursesError) {
+    panel.appendChild(createInlineStateBlock({
+      variant: 'warning',
+      title: 'Courses unavailable',
+      message: state.coursesError
+    }));
+    return;
+  }
+
+  const courses = state.coursesState?.courses || [];
+  if (!courses.length) {
+    panel.appendChild(createInlineStateBlock({
+      variant: 'info',
+      title: 'No courses yet',
+      message: 'Educational modules will appear here soon.'
+    }));
+    return;
+  }
+
+  const selectedCourse = getSelectedCourse(state.coursesState);
+  const selectedStepIndex = Number(state.coursesState?.selectedCourseStepIndex || 0);
+
+  const list = document.createElement('div');
+  list.className = 'courses-list';
+  courses.forEach((course) => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = `course-item${selectedCourse?.id === course.id ? ' is-selected' : ''}`;
+    item.textContent = String(course?.title || 'Untitled course');
+    item.addEventListener('click', () => {
+      selectCourse(state.coursesState, course?.id);
+      renderCoursesPanel(elements, state, map);
+      applyCourseStepMapContext(state, map);
+    });
+    list.appendChild(item);
+  });
+  panel.appendChild(list);
+
+  if (!selectedCourse) {
+    panel.appendChild(createInlineStateBlock({
+      variant: 'info',
+      title: 'Select a course',
+      message: 'Choose a course to start step-by-step navigation.'
+    }));
+    return;
+  }
+
+  const courseCard = document.createElement('article');
+  courseCard.className = 'course-card';
+  const heading = document.createElement('h4');
+  heading.textContent = String(selectedCourse?.title || 'Untitled course');
+  const description = document.createElement('p');
+  description.className = 'course-description';
+  description.textContent = String(selectedCourse?.description || 'Описание отсутствует.');
+  courseCard.append(heading, description);
+
+  const steps = Array.isArray(selectedCourse?.steps) ? selectedCourse.steps : [];
+  if (!steps.length) {
+    courseCard.appendChild(createInlineStateBlock({
+      variant: 'warning',
+      title: 'No steps',
+      message: 'This course does not have steps yet.'
+    }));
+    panel.appendChild(courseCard);
+    return;
+  }
+
+  const safeStepIndex = Math.max(0, Math.min(steps.length - 1, selectedStepIndex));
+  state.coursesState.selectedCourseStepIndex = safeStepIndex;
+  const currentStep = steps[safeStepIndex];
+
+  const stepInfo = document.createElement('div');
+  stepInfo.className = 'course-step';
+  const stepBadge = document.createElement('p');
+  stepBadge.className = 'course-step-badge';
+  stepBadge.textContent = `Step ${safeStepIndex + 1} / ${steps.length}`;
+  const stepTitle = document.createElement('h5');
+  stepTitle.textContent = String(currentStep?.title || 'Untitled step');
+  const stepText = document.createElement('p');
+  stepText.textContent = String(currentStep?.text || 'Описание шага отсутствует.');
+  stepInfo.append(stepBadge, stepTitle, stepText);
+  courseCard.appendChild(stepInfo);
+
+  const nav = document.createElement('div');
+  nav.className = 'course-nav';
+  const prevBtn = document.createElement('button');
+  prevBtn.type = 'button';
+  prevBtn.className = 'ui-button ui-button-secondary';
+  prevBtn.textContent = 'Prev';
+  prevBtn.disabled = safeStepIndex <= 0;
+  prevBtn.addEventListener('click', () => {
+    moveCourseStep(state.coursesState, -1);
+    renderCoursesPanel(elements, state, map);
+    applyCourseStepMapContext(state, map);
+  });
+  const nextBtn = document.createElement('button');
+  nextBtn.type = 'button';
+  nextBtn.className = 'ui-button ui-button-secondary';
+  nextBtn.textContent = 'Next';
+  nextBtn.disabled = safeStepIndex >= steps.length - 1;
+  nextBtn.addEventListener('click', () => {
+    moveCourseStep(state.coursesState, 1);
+    renderCoursesPanel(elements, state, map);
+    applyCourseStepMapContext(state, map);
+  });
+  nav.append(prevBtn, nextBtn);
+  courseCard.appendChild(nav);
+  panel.appendChild(courseCard);
+}
+
+function applyCourseStepMapContext(state, map) {
+  const selectedCourse = getSelectedCourse(state.coursesState);
+  const steps = Array.isArray(selectedCourse?.steps) ? selectedCourse.steps : [];
+  const step = steps[state.coursesState?.selectedCourseStepIndex || 0];
+  if (!step) return;
+  if (Number.isFinite(Number(step.lng)) && Number.isFinite(Number(step.lat))) {
+    map.flyTo({
+      center: [Number(step.lng), Number(step.lat)],
+      zoom: Number.isFinite(Number(step.zoom)) ? Number(step.zoom) : 8,
+      essential: true
+    });
+    return;
+  }
+  if (step.feature_id) {
+    const feature = state.allFeatures.find((item) => getFeatureUiId(item) === String(step.feature_id));
+    if (feature) {
+      focusFeatureOnMap(map, feature);
+    }
+  }
+}
+
+function renderLivePanel(elements, state, map) {
+  const panel = elements.livePanel;
+  if (!panel) return;
+  panel.replaceChildren();
+  const title = document.createElement('h3');
+  title.className = 'panel-title';
+  title.textContent = 'LIVE / Recent';
+  panel.appendChild(title);
+
+  if (state.liveError) {
+    panel.appendChild(createInlineStateBlock({
+      variant: 'warning',
+      title: 'Live feed unavailable',
+      message: state.liveError
+    }));
+    return;
+  }
+
+  const recent = state.liveState?.liveFeatures || [];
+  if (!recent.length) {
+    panel.appendChild(createInlineStateBlock({
+      variant: 'info',
+      title: 'Нет последних событий',
+      message: 'Попробуйте обновить данные позже.'
+    }));
+    return;
+  }
+
+  const list = document.createElement('div');
+  list.className = 'live-list';
+  recent.forEach((feature) => {
+    const props = normalizeProps(feature);
+    const featureId = getFeatureUiId(feature);
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = `live-item${state.selectedFeatureId === featureId ? ' is-active' : ''}`;
+    const titleNode = document.createElement('strong');
+    titleNode.textContent = String(props.name_ru || props.title_short || 'Без названия');
+    const metaNode = document.createElement('span');
+    metaNode.className = 'live-item-meta';
+    const dateValue = String(props.created_at || props.updated_at || props.date_start || 'Дата не указана');
+    const layerValue = String(props.layer_id || 'Layer');
+    metaNode.textContent = `${dateValue} · ${layerValue}`;
+    item.append(titleNode, metaNode);
+    item.addEventListener('click', () => {
+      selectFeature(state, elements, map, feature, { centerOnMap: true, openDetail: true, scrollCard: true });
+      closePrimaryPanel(elements, state, 'live');
+      state.liveState.isLiveMode = false;
+    });
+    list.appendChild(item);
+  });
+  panel.appendChild(list);
+}
+
 function buildSearchResults(filteredFeatures, searchText) {
   if (!searchText) return [];
   return filteredFeatures.slice(0, 5);
@@ -558,7 +849,7 @@ function renderSearchDropdown(elements, state, map) {
 
 function setupOverlayManager(elements, state, map) {
   const closeAll = () => {
-    ['search', 'filters', 'layers', 'bookmarks'].forEach((key) => closePrimaryPanel(elements, state, key));
+    ['search', 'filters', 'layers', 'bookmarks', 'courses', 'live'].forEach((key) => closePrimaryPanel(elements, state, key));
   };
   state.overlay.closeAll = closeAll;
 
@@ -604,7 +895,7 @@ function openPrimaryPanel(elements, state, key, trigger = null) {
     elements.topActions.classList.remove('is-expanded');
     elements.overflowBtn?.setAttribute('aria-expanded', 'false');
   }
-  ['search', 'filters', 'layers', 'bookmarks'].forEach((name) => {
+  ['search', 'filters', 'layers', 'bookmarks', 'courses', 'live'].forEach((name) => {
     const panel = getPanelByKey(elements, name);
     const button = getButtonByKey(elements, name);
     const isActive = name === key;
@@ -624,6 +915,7 @@ function closePrimaryPanel(elements, state, key) {
   if (panel) setPanelOpenState(panel, false);
   if (button) button.setAttribute('aria-expanded', 'false');
   if (state.overlay.activePrimary === key) state.overlay.activePrimary = null;
+  if (key === 'live' && state?.liveState) state.liveState.isLiveMode = false;
 }
 
 function getPanelByKey(elements, key) {
@@ -631,7 +923,9 @@ function getPanelByKey(elements, key) {
     search: elements.searchDropdown,
     filters: elements.filtersPanel,
     layers: elements.layersPanel,
-    bookmarks: elements.bookmarksPanel
+    bookmarks: elements.bookmarksPanel,
+    courses: elements.coursesPanel,
+    live: elements.livePanel
   }[key] || null;
 }
 
@@ -639,7 +933,9 @@ function getButtonByKey(elements, key) {
   return {
     filters: elements.filtersBtn,
     layers: elements.layersBtn,
-    bookmarks: elements.bookmarksBtn
+    bookmarks: elements.bookmarksBtn,
+    courses: elements.coursesBtn,
+    live: elements.liveBtn
   }[key] || null;
 }
 
@@ -727,6 +1023,13 @@ function updateSearchNoResultsState(elements, state) {
 function renderCards(elements, state, map) {
   const list = elements.cardsRibbon;
   if (!list) return;
+  const cardsKey = state.filteredFeatureIds.slice(0, 80).join('|');
+  if (!state.error && state.filteredFeatures.length && cardsKey === state.lastRenderedCardsKey) {
+    syncSelectedCardState(elements, state.selectedFeatureId);
+    syncMapHoveredCardState(elements, state.hoveredFeatureId);
+    return;
+  }
+  state.lastRenderedCardsKey = cardsKey;
   list.replaceChildren();
 
   if (state.error) {
@@ -790,6 +1093,24 @@ function renderCards(elements, state, map) {
     list.appendChild(item);
   });
   syncMapHoveredCardState(elements, state.hoveredFeatureId);
+}
+
+function buildVisibilityKey(state) {
+  const enabledLayerIds = [...state.enabledLayerIds].sort().join(',');
+  return [
+    state.search,
+    state.currentStartYear,
+    state.currentEndYear,
+    state.confidenceFilter,
+    enabledLayerIds
+  ].join('|');
+}
+
+function buildMapDataKey(state) {
+  if (!state.filteredFeatureIds.length) return 'count:0';
+  const head = state.filteredFeatureIds.slice(0, 5).join(',');
+  const tail = state.filteredFeatureIds.slice(-5).join(',');
+  return `count:${state.filteredFeatureIds.length};head:${head};tail:${tail}`;
 }
 
 function syncSelectedCardState(elements, selectedFeatureId) {
@@ -1230,7 +1551,8 @@ function updateCounters(elements, state, map) {
 function updateStatus(elements, state, map) {
   if (!elements.statusMessage) return;
   const diagnostics = getMapBuildDiagnostics(map);
-  elements.statusMessage.textContent = `Карта готова. Загружено ${diagnostics.inputTotal}, отображается ${getMapFeatureCount(map)}, в ленте ${state.filteredFeatures.length}.`;
+  const bucketCount = Object.keys(state.timeAggregation || {}).length;
+  elements.statusMessage.textContent = `Карта готова. Загружено ${diagnostics.inputTotal}, отображается ${getMapFeatureCount(map)}, в ленте ${state.filteredFeatures.length}, временных бакетов: ${bucketCount}.`;
 }
 
 function selectFeature(state, elements, map, feature, options = {}) {
