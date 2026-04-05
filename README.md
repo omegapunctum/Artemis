@@ -27,6 +27,13 @@ The system is designed to be **simple, modular, and scalable**.
   - `/data/features.json`
   - `/data/features.geojson`
   - `/data/layers.json`
+  - `/data/export_meta.json`
+  - `/data/rejected.json`
+- Publication chain:
+  1. Airtable `Features` records are exported by ETL
+  2. validated artifacts are written to `data/*`
+  3. artifacts are committed to GitHub `main`
+  4. GitHub Pages serves the map from published `data/*`
 
 ### Frontend
 Vanilla JavaScript (no frameworks):
@@ -64,6 +71,20 @@ Vanilla JavaScript (no frameworks):
 - **GeoJSON is the single source of truth** for the map
 - No direct Airtable access from frontend
 - Minimal, clean code (no overengineering)
+
+---
+
+## Data Validation Rules
+
+- `data/features.geojson` MUST be a valid GeoJSON `FeatureCollection` and MUST be non-empty for release.
+- `coordinates_source` uses a strict ETL allowlist; unknown values are rejected with `invalid_coordinates_source`.
+- Rejected records are tracked in `data/rejected.json`, and aggregate reasons are exposed via `data/export_meta.json`.
+
+## Static Runtime Constraints
+
+- GitHub Pages is a static runtime: it serves frontend + published `data/*` without backend API execution.
+- In static mode, auth refresh flow must not spam POST refresh attempts against unavailable endpoints.
+- Auth refresh guard prevents recurring `405` noise on static runtime by using controlled fallback behavior.
 
 ---
 
@@ -131,4 +152,3 @@ python scripts/import_features.py export --geojson-in data/features.geojson --ra
 ## Reference Documentation
 
 Canonical reference docs for audit/patch validation are located in [`docs/reference/`](docs/reference/README.md).
-

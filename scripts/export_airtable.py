@@ -57,6 +57,9 @@ TRUE_SET = {True, 1, "1", "true", "yes", "y", "да"}
 FALSE_SET = {False, 0, "0", "false", "no", "n", "нет"}
 ALLOWED_LICENSES = {"CC0", "CC BY", "CC BY-SA", "PD"}
 ALLOWED_COORDINATES_CONFIDENCE = {"exact", "approximate", "conditional"}
+# IMPORTANT:
+# This allowlist MUST be kept in sync with Airtable 'coordinates_source' enum.
+# Adding new source values in Airtable requires updating this list.
 ALLOWED_COORDINATES_SOURCES = {
     "Wikipedia",
     "Pleiades",
