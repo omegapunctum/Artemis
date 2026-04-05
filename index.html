@@ -280,7 +280,7 @@
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <script type="module">
-    import { loadFeatures } from './js/data.js';
+    import { loadFeatures, loadMapFeed } from './js/data.js';
     import { initMap } from './js/map.js';
     import { initUI, showGlobalDataError, hideGlobalDataError, showGlobalDataLoading, hideGlobalDataLoading } from './js/ui.js';
     import { initAuth } from './js/auth.js';
@@ -294,6 +294,7 @@
     const statusMessage = document.getElementById('status-message');
     const statusError = document.getElementById('status-error');
     const statusLoading = document.getElementById('status-loading');
+    const USE_MAP_FEED = false;
 
     // Обновляет строку состояния приложения без лишнего шума.
     function setStatus(message, { error = false, loading = true } = {}) {
@@ -322,9 +323,12 @@
         clearError();
         if (cardsStateHost) cardsStateHost.replaceChildren(createInlineStateBlock({ variant: 'info', title: 'Loading', message: 'Loading data…' }));
         setStatus('Загрузка данных…', { loading: true });
-        const features = await loadFeatures();
+        const features = USE_MAP_FEED
+          ? await loadMapFeed()
+          : await loadFeatures();
         const sourceCount = Array.isArray(features?.features) ? features.features.length : 0;
-        setStatus(`Данные загружены: ${sourceCount} из файла features.geojson.`, { loading: true });
+        const sourceLabel = USE_MAP_FEED ? '/api/map/feed' : 'data/features.geojson';
+        setStatus(`Данные загружены: ${sourceCount} из источника ${sourceLabel}.`, { loading: true });
 
         setStatus('Инициализация карты…', { loading: true });
         const map = initMap('map', features);

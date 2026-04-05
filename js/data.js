@@ -8,6 +8,7 @@ let featuresInFlight = null;
 let layersInFlight = null;
 let coursesInFlight = null;
 const DATA_BASE_PATH = 'data/';
+const MAP_FEED_PATH = '/api/map/feed';
 let hasShownCachedMessage = false;
 let hasShownNoCacheMessage = false;
 
@@ -69,6 +70,27 @@ export async function loadFeatures() {
     throw createDataLoadError('features.geojson', error);
   } finally {
     featuresInFlight = null;
+    hideLoading();
+  }
+}
+
+export async function loadMapFeed(params = {}) {
+  showLoading();
+  try {
+    const requestUrl = buildMapFeedUrl(params);
+    const response = await fetch(requestUrl.href);
+    if (!response.ok) {
+      throw new Error(`Не удалось загрузить map feed: HTTP ${response.status}`);
+    }
+    const payload = await response.json();
+    const featureCollection = mapFeedResponseToFeatureCollection(payload);
+    clearError();
+    return featureCollection;
+  } catch (error) {
+    console.error('Ошибка при загрузке /api/map/feed:', error);
+    showError('Ошибка загрузки данных');
+    throw createDataLoadError('/api/map/feed', error);
+  } finally {
     hideLoading();
   }
 }
@@ -171,6 +193,54 @@ function createDataLoadError(resourceName, cause) {
   error.resource = resourceName;
   error.cause = cause;
   return error;
+}
+
+function buildMapFeedUrl(params = {}) {
+  const url = new URL(MAP_FEED_PATH, document.baseURI);
+  const query = url.searchParams;
+  appendOptionalParam(query, 'entity_type', params.entity_type);
+  appendOptionalParam(query, 'bbox', params.bbox);
+  appendOptionalParam(query, 'limit', params.limit);
+  appendOptionalParam(query, 'offset', params.offset);
+  return url;
+}
+
+function appendOptionalParam(query, key, value) {
+  if (value === null || value === undefined || value === '') return;
+  query.set(key, String(value));
+}
+
+function mapFeedResponseToFeatureCollection(payload) {
+  const items = Array.isArray(payload?.items) ? payload.items : [];
+  return {
+    type: 'FeatureCollection',
+    features: items.map((item) => mapFeedItemToFeature(item))
+  };
+}
+
+function mapFeedItemToFeature(item = {}) {
+  const lon = Number(item?.longitude);
+  const lat = Number(item?.latitude);
+  const hasPoint = Number.isFinite(lon) && Number.isFinite(lat);
+  const entityType = String(item?.entity_type || '').trim();
+  const featureId = String(item?.id || '').trim();
+  const name = String(item?.name || '').trim();
+  const layerId = String(item?.layer_id || entityType || 'map_feed').trim();
+  return {
+    type: 'Feature',
+    geometry: hasPoint ? { type: 'Point', coordinates: [lon, lat] } : null,
+    properties: {
+      id: featureId,
+      object_id: featureId,
+      name_ru: name || `Entity ${featureId || 'without-id'}`,
+      title_short: name,
+      layer_id: layerId,
+      entity_type: entityType || 'unknown',
+      geometry_type: item?.geometry_type || null,
+      date_start: item?.date_start || null,
+      date_end: item?.date_end || null
+    }
+  };
 }
 
 function getFeatureRecencyTimestamp(feature) {
