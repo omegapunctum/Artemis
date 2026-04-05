@@ -74,6 +74,3 @@
 {"id": "reczZVbBhaCDZx97j", "record_id": "reczZVbBhaCDZx97j", "field": "latitude", "warning": "using legacy fallback field", "value": 41.0086, "reason": "using legacy fallback field", "severity": "warning"}
 {"id": "reczZVbBhaCDZx97j", "record_id": "reczZVbBhaCDZx97j", "field": "source_license", "warning": "using legacy fallback field", "value": "CC BY-SA", "reason": "using legacy fallback field", "severity": "warning"}
 {"id": "reczZVbBhaCDZx97j", "record_id": "reczZVbBhaCDZx97j", "field": "coordinates_confidence", "warning": "using legacy fallback field", "value": "exact", "reason": "using legacy fallback field", "severity": "warning"}
-{"id": "recHqE46e2W3EDBlO", "record_id": "recHqE46e2W3EDBlO", "reason": "invalid_coordinates_source", "severity": "critical", "field": "coordinates_source", "error": "invalid_coordinates_source"}
-{"id": "recZbIE0P3vL62bPj", "record_id": "recZbIE0P3vL62bPj", "reason": "invalid_coordinates_source", "severity": "critical", "field": "coordinates_source", "error": "invalid_coordinates_source"}
-{"id": "recr1NbkVTbJwP5Ia", "record_id": "recr1NbkVTbJwP5Ia", "reason": "invalid_coordinates_source", "severity": "critical", "field": "coordinates_source", "error": "invalid_coordinates_source"}

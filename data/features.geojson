@@ -45,6 +45,48 @@
     },
     {
       "type": "Feature",
+      "id": "recHqE46e2W3EDBlO",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -73.9755,
+          40.7516
+        ]
+      },
+      "properties": {
+        "id": "recHqE46e2W3EDBlO",
+        "normalized_id": null,
+        "canonical_publish_id": "recHqE46e2W3EDBlO",
+        "airtable_record_id": "recHqE46e2W3EDBlO",
+        "external_id": null,
+        "source_draft_id": null,
+        "origin_key": "recHqE46e2W3EDBlO",
+        "layer_id": "art_deco_usa",
+        "layer_type": "architecture",
+        "name_ru": "Крайслер-билдинг",
+        "name_en": "Chrysler Building",
+        "date_start": "1928",
+        "date_construction_end": null,
+        "date_end": "1930",
+        "longitude": -73.9755,
+        "latitude": 40.7516,
+        "influence_radius_km": 1,
+        "title_short": "Самый узнаваемый небоскрёб в стиле ар-деко",
+        "description": "Стальная корона с треугольными окнами и орнаментами. Символ индустриальной роскоши.",
+        "image_url": "https://commons.wikimedia.org/wiki/File:Chrysler_Building_Midtown_Manhattan.jpg",
+        "source_url": "https://en.wikipedia.org/wiki/Chrysler_Building",
+        "source_license": "CC BY-SA",
+        "coordinates_confidence": "exact",
+        "coordinates_source": "PBS",
+        "sequence_order": null,
+        "tags": [],
+        "validated": true,
+        "date_valid": true,
+        "has_geometry": true
+      }
+    },
+    {
+      "type": "Feature",
       "id": "recmLwS8nYaR2dYEF",
       "geometry": {
         "type": "Point",
@@ -129,6 +171,48 @@
     },
     {
       "type": "Feature",
+      "id": "recr1NbkVTbJwP5Ia",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.1142,
+          51.5072
+        ]
+      },
+      "properties": {
+        "id": "recr1NbkVTbJwP5Ia",
+        "normalized_id": null,
+        "canonical_publish_id": "recr1NbkVTbJwP5Ia",
+        "airtable_record_id": "recr1NbkVTbJwP5Ia",
+        "external_id": null,
+        "source_draft_id": null,
+        "origin_key": "recr1NbkVTbJwP5Ia",
+        "layer_id": "brutalism_uk",
+        "layer_type": "architecture",
+        "name_ru": "Королевский национальный театр",
+        "name_en": "Royal National Theatre",
+        "date_start": "1963",
+        "date_construction_end": null,
+        "date_end": "1976",
+        "longitude": -0.1142,
+        "latitude": 51.5072,
+        "influence_radius_km": 1,
+        "title_short": "Икона британского брутализма на берегу Темзы",
+        "description": "Многоуровневые бетонные террасы. Использование «грубого бетона» как эстетической основы.",
+        "image_url": "https://commons.wikimedia.org/wiki/File:National_Theatre_South_Bank_2015.jpg",
+        "source_url": "https://en.wikipedia.org/wiki/Royal_National_Theatre",
+        "source_license": "CC BY-SA",
+        "coordinates_confidence": "exact",
+        "coordinates_source": "Dezeen",
+        "sequence_order": null,
+        "tags": [],
+        "validated": true,
+        "date_valid": true,
+        "has_geometry": true
+      }
+    },
+    {
+      "type": "Feature",
       "id": "reczZVbBhaCDZx97j",
       "geometry": {
         "type": "Point",
@@ -162,6 +246,48 @@
         "source_license": "CC BY-SA",
         "coordinates_confidence": "exact",
         "coordinates_source": "UNESCO",
+        "sequence_order": null,
+        "tags": [],
+        "validated": true,
+        "date_valid": true,
+        "has_geometry": true
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "recZbIE0P3vL62bPj",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          23.7266,
+          37.9715
+        ]
+      },
+      "properties": {
+        "id": "recZbIE0P3vL62bPj",
+        "normalized_id": null,
+        "canonical_publish_id": "recZbIE0P3vL62bPj",
+        "airtable_record_id": "recZbIE0P3vL62bPj",
+        "external_id": null,
+        "source_draft_id": null,
+        "origin_key": "recZbIE0P3vL62bPj",
+        "layer_id": "classical_greece",
+        "layer_type": "architecture",
+        "name_ru": "Парфенон",
+        "name_en": "Parthenon",
+        "date_start": "-0447",
+        "date_construction_end": null,
+        "date_end": "-0432",
+        "longitude": 23.7266,
+        "latitude": 37.9715,
+        "influence_radius_km": 1,
+        "title_short": "Кульминация классического дорического ордера",
+        "description": "Мраморный храм Афины на Акрополе. Использует сложные оптические корректировки линий.",
+        "image_url": "https://commons.wikimedia.org/wiki/File:The_Parthenon_Athens.jpg",
+        "source_url": "https://en.wikipedia.org/wiki/Parthenon",
+        "source_license": "CC BY-SA",
+        "coordinates_confidence": "exact",
+        "coordinates_source": "Saylor",
         "sequence_order": null,
         "tags": [],
         "validated": true,

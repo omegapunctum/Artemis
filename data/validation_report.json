@@ -1,9 +1,9 @@
 {
   "total_records": 19,
-  "valid_records": 16,
-  "skipped_records": 3,
+  "valid_records": 19,
+  "skipped_records": 0,
   "warnings_count": 76,
-  "errors_count": 3,
+  "errors_count": 0,
   "warnings": [
     {
       "id": "rec0x9MvhXQFWErOy",
@@ -690,30 +690,5 @@
       "severity": "warning"
     }
   ],
-  "errors": [
-    {
-      "id": "recHqE46e2W3EDBlO",
-      "record_id": "recHqE46e2W3EDBlO",
-      "reason": "invalid_coordinates_source",
-      "severity": "critical",
-      "field": "coordinates_source",
-      "error": "invalid_coordinates_source"
-    },
-    {
-      "id": "recZbIE0P3vL62bPj",
-      "record_id": "recZbIE0P3vL62bPj",
-      "reason": "invalid_coordinates_source",
-      "severity": "critical",
-      "field": "coordinates_source",
-      "error": "invalid_coordinates_source"
-    },
-    {
-      "id": "recr1NbkVTbJwP5Ia",
-      "record_id": "recr1NbkVTbJwP5Ia",
-      "reason": "invalid_coordinates_source",
-      "severity": "critical",
-      "field": "coordinates_source",
-      "error": "invalid_coordinates_source"
-    }
-  ]
+  "errors": []
 }
