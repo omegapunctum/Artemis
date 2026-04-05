@@ -59,8 +59,7 @@ jobs:
 
           raw = path.read_text(encoding="utf-8").strip()
           if not raw:
-              print("WARNING: data/features.geojson is empty, skipping schema check")
-              raise SystemExit(0)
+              raise SystemExit("ERROR: data/features.geojson is empty")
 
           try:
               payload = json.loads(raw)
@@ -70,7 +69,15 @@ jobs:
           if not isinstance(payload, dict) or payload.get("type") != "FeatureCollection":
               raise SystemExit("ERROR: data/features.geojson must be a GeoJSON FeatureCollection")
 
-          print("Release guard OK: FeatureCollection is valid")
+          features = payload.get("features")
+          if features is None:
+              raise SystemExit("ERROR: data/features.geojson must contain top-level 'features'")
+          if not isinstance(features, list):
+              raise SystemExit("ERROR: data/features.geojson field 'features' must be a list")
+          if len(features) == 0:
+              raise SystemExit("ERROR: data/features.geojson contains 0 features")
+
+          print(f"Release guard OK: FeatureCollection is valid and has {len(features)} feature(s)")
           PY
 
       - name: Debug data files

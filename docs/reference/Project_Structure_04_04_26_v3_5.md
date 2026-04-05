@@ -13,7 +13,10 @@ last_updated: 2026-04-04
 ## Contract
 - Canonical backend runtime расположен в `app/*` (entrypoint: `app.main:app`).
 - Frontend runtime расположен в root + `js/*` + `css/*` + `index.html`.
-- Data/map contract обслуживается через `data/*` и ETL/import scripts.
+- Canonical public map source расположен в `data/*` (прежде всего `data/features.geojson`), frontend public map читает только published `data/*`.
+- ETL/publish/data-contract слой обслуживает canonical public delivery path для карты.
+- `/api/map/feed` допускается только как auxiliary/runtime/internal слой и не является canonical map source.
+- Frontend map не должен зависеть от runtime API как primary source карты.
 - Любые structural изменения должны сохранять audit-traceability и совместимость с текущим CI/test контуром.
 
 ## Repository structure (current)
@@ -47,6 +50,11 @@ last_updated: 2026-04-04
   - `data/export_meta.json`,
   - `data/validation_report.json`,
   - `data/export_errors.log`.
+- Public lifecycle (governance-bound):
+  - AI-assisted/manual intake/import -> Review #1 -> Review #2 -> release batch -> publish overwrite в public `data/*`.
+  - Public map layer читает только опубликованный набор `data/*`.
+  - Publish unit = пакетный релиз; итоговый public dataset перезаписывает текущий `data/features.geojson`.
+  - Историзация/versioning public dataset на текущем этапе не требуется.
 
 ### 4) Scripts / ETL / import-export
 - `scripts/export_airtable.py` — основной ETL export и валидационный контур.
@@ -62,6 +70,7 @@ last_updated: 2026-04-04
 - `.github/workflows/etl.yml` — ETL + pytest checks.
 - `.github/workflows/export-airtable.yml` — scheduled export pipeline.
 - `.github/workflows/pages.yml` — GitHub Pages deploy flow.
+- Final publish инициируется отдельным release operator / CI workflow как publish gate после прохождения governance-модерации.
 
 ### 7) Governance and docs
 - `README.md` — high-level architecture/operations reference.
@@ -70,5 +79,6 @@ last_updated: 2026-04-04
 
 ## Structural invariants
 1. Backend changes не должны обходить canonical `app/*` runtime.
-2. Frontend data-flow должен оставаться привязанным к canonical `/api/*` и `data/*` контрактам.
+2. Frontend публичный map data-flow должен оставаться привязанным к canonical `data/*` path; `/api/map/feed` не формирует competing architecture.
 3. Изменения в `data/*`, `scripts/*`, `tests/*`, `workflows/*` должны оставаться согласованными как единый release контур.
+4. AI-generated/imported данные не становятся source of truth без human review (двухступенчатый governance gate до publish).

@@ -10,6 +10,7 @@ from scripts.export_airtable import (
     map_layers,
     map_record,
     normalize_coordinates_confidence,
+    normalize_coordinates_source,
     validate_feature,
 )
 
@@ -102,6 +103,17 @@ class ExportAirtableIdempotencyTests(unittest.TestCase):
         is_valid = validate_feature(mapped, {"roman_empire"}, warnings, errors)
         self.assertTrue(is_valid)
         self.assertFalse(any(e.get("reason") == "invalid_coordinates_source" for e in errors))
+
+    def test_coordinates_source_observed_trusted_values_are_allowed(self):
+        observed_sources = ["Official Site", "Britannica", "Vatican", "UNESCO", "Pompidou Site"]
+        for source in observed_sources:
+            with self.subTest(source=source):
+                mapped = self._build_mapped(coordinates_source=normalize_coordinates_source(source))
+                warnings = []
+                errors = []
+                is_valid = validate_feature(mapped, {"roman_empire"}, warnings, errors)
+                self.assertTrue(is_valid)
+                self.assertFalse(any(e.get("reason") == "invalid_coordinates_source" for e in errors))
 
     def test_missing_id_rejected(self):
         warnings = []
@@ -269,6 +281,30 @@ class ExportAirtablePipelineTests(unittest.TestCase):
         self.assertEqual(meta["records_total_source"], 1)
         self.assertEqual(meta["records_exported"], 0)
         self.assertEqual(meta["records_geojson"], 0)
+        self.assertEqual(meta["error_stats"].get("invalid_coordinates_source"), 1)
+
+    def test_known_observed_coordinates_sources_do_not_increase_invalid_stats(self):
+        records = [
+            self._feature_record(record_id=f"rec-{idx}", coordinates_source=source)
+            for idx, source in enumerate(
+                ["Official Site", "Britannica", "Vatican", "UNESCO", "Pompidou Site"],
+                start=1,
+            )
+        ]
+        geojson, rejected, report, meta = self._run_pipeline(records)
+        self.assertEqual(len(geojson["features"]), 5)
+        self.assertEqual(rejected, [])
+        self.assertEqual(report["valid_records"], 5)
+        self.assertIsNone(meta["error_stats"].get("invalid_coordinates_source"))
+
+    def test_unknown_coordinates_source_stays_invalid(self):
+        geojson, rejected, report, meta = self._run_pipeline(
+            [self._feature_record(record_id="rec-random", coordinates_source="Random Blog")]
+        )
+        self.assertEqual(geojson["features"], [])
+        self.assertEqual(len(rejected), 1)
+        self.assertIn("invalid_coordinates_source", rejected[0]["reasons"])
+        self.assertEqual(report["valid_records"], 0)
         self.assertEqual(meta["error_stats"].get("invalid_coordinates_source"), 1)
 
 

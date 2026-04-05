@@ -4,7 +4,7 @@
 
 ## Documents
 
-- `artemis_master_prompt_v3_3.md` — status: canonical (stub); master prompt и глобальные правила проекта.
+- `artemis_master_prompt_v3_4.md` — status: canonical (stub); master prompt и глобальные правила проекта.
 - `ARTEMIS_CODEX_OPERATING_INSTRUCTION_v1.01.md` — status: canonical (stub); операционные инструкции для Codex.
 - `Artemis_Analysis_Conclusion_04_04_2026.md` — status: canonical (stub); аналитические выводы на контрольную дату.
 - `Priorities_04_04_26_v3_5.md` — status: canonical (stub); приоритеты и порядок исправлений.

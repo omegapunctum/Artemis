@@ -57,7 +57,18 @@ TRUE_SET = {True, 1, "1", "true", "yes", "y", "да"}
 FALSE_SET = {False, 0, "0", "false", "no", "n", "нет"}
 ALLOWED_LICENSES = {"CC0", "CC BY", "CC BY-SA", "PD"}
 ALLOWED_COORDINATES_CONFIDENCE = {"exact", "approximate", "conditional"}
-ALLOWED_COORDINATES_SOURCES = {"Wikipedia", "Pleiades", "GBIF", "IUCN", "expert estimate"}
+ALLOWED_COORDINATES_SOURCES = {
+    "Wikipedia",
+    "Pleiades",
+    "GBIF",
+    "IUCN",
+    "expert estimate",
+    "Official Site",
+    "Britannica",
+    "Vatican",
+    "UNESCO",
+    "Pompidou Site",
+}
 ALLOWED_LAYER_TYPES = {"architecture", "route_point", "biogeography", "biography"}
 LAYERS_TABLE_NAME = "Layers"
 
@@ -248,6 +259,11 @@ def normalize_coordinates_source(value: Any) -> Optional[str]:
     aliases = {
         "unesco / wikipedia": "Wikipedia",
         "unesco/wikipedia": "Wikipedia",
+        "official site": "Official Site",
+        "britannica": "Britannica",
+        "vatican": "Vatican",
+        "unesco": "UNESCO",
+        "pompidou site": "Pompidou Site",
     }
     return aliases.get(normalized.lower(), normalized)
 
